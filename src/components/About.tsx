@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle2, Award, Heart, ShieldCheck, UserCheck } from 'lucide-react';
 import { motion } from 'motion/react';
-import portraitImg from '../assets/images/gamze_tosun_new_portrait_1783783600184.jpg';
+import logoImg from '../assets/images/gamze_tosun_main_logo_1783784317486.jpg';
 
 export default function About() {
   const values = [
@@ -41,23 +41,23 @@ export default function About() {
           <div className="lg:col-span-5 relative">
             <div className="absolute inset-0 bg-gradient-to-tr from-emerald-600/10 to-amber-600/10 rounded-3xl filter blur-xl transform rotate-3" />
             
-            <div className="relative border border-[#2D2D2D]/15 bg-[#0E0E10] p-6 rounded-none shadow-xl space-y-6">
+            <div className="relative border border-[#2D2D2D]/10 bg-white p-6 shadow-xl space-y-6">
               <img 
-                src={portraitImg} 
+                src={logoImg} 
                 alt="Gamze Tosun Eğitim Danışmanı" 
                 referrerPolicy="no-referrer"
-                className="w-full aspect-square object-contain bg-black border border-stone-800"
+                className="w-full aspect-square object-contain bg-white border border-stone-100 p-2"
               />
               
               <div className="space-y-3 text-left">
-                <h4 className="font-serif font-bold text-[#FAF9F6] text-lg">Gamze Tosun kimdir?</h4>
-                <p className="text-xs text-stone-300 leading-relaxed">
+                <h4 className="font-serif font-bold text-[#2D2D2D] text-lg">Gamze Tosun kimdir?</h4>
+                <p className="text-xs text-stone-600 leading-relaxed">
                   Uzun yıllardır eğitim danışmanlığı, profesyonel öğrenci koçluğu, YKS-LGS tercih uzmanlığı ve hızlı okuma teknikleri eğitmenliği yapmaktadır. Temel vizyonu, sınav maratonunda kaybolan gençleri en doğru rotaya sokmaktır.
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
-                  <span className="text-[10px] font-bold bg-[#C5A059]/15 text-[#C5A059] border border-[#C5A059]/30 px-2.5 py-1">Profesyonel Koç</span>
-                  <span className="text-[10px] font-bold bg-[#C5A059]/15 text-[#C5A059] border border-[#C5A059]/30 px-2.5 py-1">Hızlı Okuma Eğitmeni</span>
-                  <span className="text-[10px] font-bold bg-[#C5A059]/15 text-[#C5A059] border border-[#C5A059]/30 px-2.5 py-1">Tercih Danışmanı</span>
+                  <span className="text-[10px] font-bold bg-[#C5A059]/10 text-[#C5A059] border border-[#C5A059]/20 px-2.5 py-1">Profesyonel Koç</span>
+                  <span className="text-[10px] font-bold bg-[#C5A059]/10 text-[#C5A059] border border-[#C5A059]/20 px-2.5 py-1">Hızlı Okuma Eğitmeni</span>
+                  <span className="text-[10px] font-bold bg-[#C5A059]/10 text-[#C5A059] border border-[#C5A059]/20 px-2.5 py-1">Tercih Danışmanı</span>
                 </div>
               </div>
             </div>
