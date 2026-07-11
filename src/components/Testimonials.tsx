@@ -30,6 +30,8 @@ export default function Testimonials() {
         } catch (e) {
           console.error(e);
         }
+      } else {
+        setTestimonials(TESTIMONIALS_DATA);
       }
     };
     window.addEventListener('gamze-testimonials-updated', handleUpdate);

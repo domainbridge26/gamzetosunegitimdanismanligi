@@ -17,7 +17,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('gamze_admin_remember') === 'true');
   const [loginError, setLoginError] = useState('');
   const [activeTab, setActiveTab] = useState<'requests' | 'planner' | 'comments'>('requests');
 

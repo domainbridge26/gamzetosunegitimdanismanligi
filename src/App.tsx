@@ -25,6 +25,45 @@ export default function App() {
   const [activeSection, setActiveSection] = useState('hero');
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [notifCount, setNotifCount] = useState(0);
+
+  const updateNotifCount = () => {
+    let count = 0;
+    try {
+      const inqs = localStorage.getItem('gamze_inquiries');
+      if (inqs) {
+        const parsed = JSON.parse(inqs);
+        count += parsed.filter((i: any) => i.status === 'Yeni').length;
+      }
+      const tests = localStorage.getItem('gamze_testimonials');
+      if (tests) {
+        const parsed = JSON.parse(tests);
+        count += parsed.filter((t: any) => t.approved === false).length;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setNotifCount(count);
+  };
+
+  useEffect(() => {
+    updateNotifCount();
+    
+    // Listen to custom events
+    window.addEventListener('gamze-new-inquiry', updateNotifCount);
+    window.addEventListener('gamze-new-testimonial', updateNotifCount);
+    window.addEventListener('gamze-testimonials-updated', updateNotifCount);
+    
+    // Also listen to storage events
+    window.addEventListener('storage', updateNotifCount);
+
+    return () => {
+      window.removeEventListener('gamze-new-inquiry', updateNotifCount);
+      window.removeEventListener('gamze-new-testimonial', updateNotifCount);
+      window.removeEventListener('gamze-testimonials-updated', updateNotifCount);
+      window.removeEventListener('storage', updateNotifCount);
+    };
+  }, []);
 
   // Monitor scrolling to highlight Navbar items and show "back to top" button
   useEffect(() => {
@@ -214,9 +253,20 @@ export default function App() {
               <a href="#" className="hover:text-slate-300">Gizlilik Politikası</a>
               <button 
                 onClick={() => setIsAdminOpen(true)}
-                className="hover:text-emerald-400 font-semibold cursor-pointer"
+                className="hover:text-emerald-400 font-semibold cursor-pointer flex items-center gap-1.5 transition-colors group"
               >
-                Yönetici Paneli Girişi
+                <span>Yönetici Paneli Girişi</span>
+                {notifCount > 0 && (
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                  </span>
+                )}
+                {notifCount > 0 && (
+                  <span className="bg-rose-600 text-white font-extrabold text-[9px] px-1.5 py-0.5 rounded-full leading-none group-hover:bg-rose-500 transition-colors">
+                    {notifCount}
+                  </span>
+                )}
               </button>
             </div>
           </div>
