@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, GraduationCap, Settings, User } from 'lucide-react';
+import { Menu, X, Settings, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import LogoIcon from './LogoIcon';
 
 interface NavbarProps {
   activeSection: string;
@@ -68,8 +69,8 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin }:
             className="flex items-center gap-3 cursor-pointer group"
             onClick={() => handleNavClick('hero')}
           >
-            <div className="bg-[#2D2D2D] p-2 text-[#FAF9F6] group-hover:bg-[#C5A059] transition-colors duration-300">
-              <GraduationCap className="w-5 h-5" />
+            <div className="flex items-center justify-center text-[#2D2D2D] group-hover:text-[#C5A059] transition-colors duration-300">
+              <LogoIcon className="w-11 h-11" color="currentColor" />
             </div>
             <div className="flex flex-col">
               <h1 className="font-serif text-xl sm:text-2xl font-normal italic uppercase tracking-tight text-[#2D2D2D] leading-none">

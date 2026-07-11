@@ -12,6 +12,7 @@ import About from './components/About';
 import Testimonials from './components/Testimonials';
 import ContactForm from './components/ContactForm';
 import AdminPanel from './components/AdminPanel';
+import LogoIcon from './components/LogoIcon';
 import { 
   GraduationCap, Mail, Phone, ArrowUp, Instagram, 
   Linkedin, Calendar, Sparkles, BookOpen, Clock, Globe
@@ -115,15 +116,15 @@ export default function App() {
             {/* Branding Column (5 cols) */}
             <div className="lg:col-span-5 space-y-4">
               <div className="flex items-center gap-2.5">
-                <div className="bg-emerald-600 p-2.5 rounded-xl text-white shadow-md">
-                  <GraduationCap className="w-6 h-6" />
+                <div className="text-[#C5A059] flex items-center justify-center">
+                  <LogoIcon className="w-12 h-12" color="currentColor" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-display font-extrabold text-xl text-white tracking-tight leading-none">
+                  <span className="font-serif font-normal italic text-xl text-white tracking-tight leading-none uppercase">
                     Gamze Tosun
                   </span>
-                  <span className="text-[10px] font-bold text-emerald-400 tracking-widest uppercase mt-0.5">
-                    Eğitim & Danışmanlık
+                  <span className="text-[10px] font-bold text-[#C5A059] tracking-widest uppercase mt-0.5">
+                    Eğitim Danışmanlığı & Öğrenci Koçluğu
                   </span>
                 </div>
               </div>
