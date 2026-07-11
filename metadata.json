@@ -1,0 +1,6 @@
+{
+  "name": "Gamze Tosun Eğitim Danışmanlığı",
+  "description": "Öğrenci koçluğu, YKS-LGS tercih danışmanlığı, hızlı okuma teknikleri ve profesyonel eğitim danışmanlığı.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

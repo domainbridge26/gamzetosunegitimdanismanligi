@@ -1,0 +1,259 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect } from 'react';
+import Navbar from './components/Navbar';
+import Hero from './components/Hero';
+import Services from './components/Services';
+import InteractiveTools from './components/InteractiveTools';
+import About from './components/About';
+import Testimonials from './components/Testimonials';
+import ContactForm from './components/ContactForm';
+import AdminPanel from './components/AdminPanel';
+import { 
+  GraduationCap, Mail, Phone, ArrowUp, Instagram, 
+  Linkedin, Calendar, Sparkles, BookOpen, Clock, Globe
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+
+export default function App() {
+  const [activeSection, setActiveSection] = useState('hero');
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  // Monitor scrolling to highlight Navbar items and show "back to top" button
+  useEffect(() => {
+    const handleScroll = () => {
+      // Back to top visibility
+      if (window.scrollY > 400) {
+        setShowBackToTop(true);
+      } else {
+        setShowBackToTop(false);
+      }
+
+      // Detect active section on scroll
+      const sections = ['hero', 'services', 'tools', 'about', 'testimonials', 'contact'];
+      const scrollPosition = window.scrollY + 160; // offset
+
+      for (const sectionId of sections) {
+        const el = document.getElementById(sectionId);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPosition >= top && scrollPosition < top + height) {
+            setActiveSection(sectionId);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    setActiveSection(id);
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 80;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-stone-50 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden flex flex-col justify-between">
+      
+      {/* Navigation Bar */}
+      <Navbar 
+        activeSection={activeSection} 
+        setActiveSection={setActiveSection} 
+        onOpenAdmin={() => setIsAdminOpen(true)}
+      />
+
+      {/* Main Content Sections */}
+      <main className="flex-grow">
+        
+        {/* HERO SECTION */}
+        <Hero 
+          onExploreServices={() => scrollToSection('services')}
+          onTryTools={() => scrollToSection('tools')}
+        />
+
+        {/* SERVICES SECTION */}
+        <Services />
+
+        {/* INTERACTIVE TOOLS */}
+        <InteractiveTools />
+
+        {/* ABOUT BIOGRAPHY */}
+        <About />
+
+        {/* SUCCESS STORIES */}
+        <Testimonials />
+
+        {/* CONTACT & BOOKING FORM */}
+        <ContactForm />
+
+      </main>
+
+      {/* HIGH-END FOOTER */}
+      <footer className="bg-slate-900 text-stone-200 pt-16 pb-8 border-t border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 border-b border-slate-800 pb-12 text-left">
+            
+            {/* Branding Column (5 cols) */}
+            <div className="lg:col-span-5 space-y-4">
+              <div className="flex items-center gap-2.5">
+                <div className="bg-emerald-600 p-2.5 rounded-xl text-white shadow-md">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-display font-extrabold text-xl text-white tracking-tight leading-none">
+                    Gamze Tosun
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-400 tracking-widest uppercase mt-0.5">
+                    Eğitim & Danışmanlık
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
+                Öğrenci koçluğu, YKS-LGS tercih danışmanlığı, hızlı okuma teknikleri ve bütünsel eğitim danışmanlığı ile öğrencilerin hayallerini geleceğe dönüştüren profesyonel rehberlik platformu.
+              </p>
+              
+              {/* Contact mini links */}
+              <div className="space-y-2 pt-2">
+                <a href="tel:+905051234567" className="flex items-center gap-2 text-xs text-slate-300 hover:text-emerald-400 transition-colors">
+                  <Phone className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>+90 (505) 123 45 67</span>
+                </a>
+                <a href="mailto:iletisim@gamzetosunegitimdanismanligi.com" className="flex items-center gap-2 text-xs text-slate-300 hover:text-emerald-400 transition-colors">
+                  <Mail className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>iletisim@gamzetosunegitimdanismanligi.com</span>
+                </a>
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <Globe className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>gamzetosunegitimdanismanligi.com</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Links Column (3 cols) */}
+            <div className="lg:col-span-3 space-y-4">
+              <h4 className="font-display font-bold text-sm text-white uppercase tracking-wider">Hızlı Bağlantılar</h4>
+              <ul className="space-y-2 text-xs">
+                {['Ana Sayfa', 'Hizmetlerimiz', 'İnteraktif Araçlar', 'Hakkımda', 'Başarı Hikayeleri', 'İletişim'].map((lbl, idx) => {
+                  const ids = ['hero', 'services', 'tools', 'about', 'testimonials', 'contact'];
+                  return (
+                    <li key={idx}>
+                      <button
+                        onClick={() => scrollToSection(ids[idx])}
+                        className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        {lbl}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            {/* Services Bullet list Column (4 cols) */}
+            <div className="lg:col-span-4 space-y-4">
+              <h4 className="font-display font-bold text-sm text-white uppercase tracking-wider">Çalışma Konularımız</h4>
+              <ul className="space-y-2 text-xs">
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1.5 shrink-0" />
+                  <span className="text-slate-400">YKS Sınav Koçluğu & Haftalık Planlama</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1.5 shrink-0" />
+                  <span className="text-slate-400">LGS Sınav Kampı & Motivasyon Çalışmaları</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1.5 shrink-0" />
+                  <span className="text-slate-400">Okuduğunu Anlama Odaklı Hızlı Okuma</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1.5 shrink-0" />
+                  <span className="text-slate-400">Bütünsel Veli-Öğrenci İletişim Koçluğu</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1.5 shrink-0" />
+                  <span className="text-slate-400">Stratejik Lise ve Üniversite Tercihi</span>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+
+          {/* Copyright and Legal row */}
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
+            <span>
+              &copy; {new Date().getFullYear()} Gamze Tosun Eğitim Danışmanlığı. Tüm Hakları Saklıdır.
+            </span>
+            <div className="flex items-center gap-4">
+              <a href="#" className="hover:text-slate-300">Kullanım Koşulları</a>
+              <a href="#" className="hover:text-slate-300">Gizlilik Politikası</a>
+              <button 
+                onClick={() => setIsAdminOpen(true)}
+                className="hover:text-emerald-400 font-semibold cursor-pointer"
+              >
+                Yönetici Paneli Girişi
+              </button>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* ADMIN PANEL DIALOG CONTAINER */}
+      <AdminPanel 
+        isOpen={isAdminOpen} 
+        onClose={() => setIsAdminOpen(false)} 
+      />
+
+      {/* FLOATING ACTION & BACK TO TOP BUTTONS */}
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="fixed bottom-6 right-6 z-40 flex flex-col gap-2"
+          >
+            {/* Quick Whatsapp CTA */}
+            <a
+              href="https://wa.me/905051234567"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center"
+              title="WhatsApp Destek Hattı"
+            >
+              <Phone className="w-5 h-5" />
+            </a>
+
+            {/* Back to top scroll button */}
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="p-3 bg-slate-900 hover:bg-slate-800 text-white rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer border border-slate-800"
+              title="Yukarı Git"
+            >
+              <ArrowUp className="w-5 h-5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+    </div>
+  );
+}
