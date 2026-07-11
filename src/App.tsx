@@ -7,12 +7,14 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Services from './components/Services';
+import InfoPosters from './components/InfoPosters';
 import InteractiveTools from './components/InteractiveTools';
 import About from './components/About';
 import Testimonials from './components/Testimonials';
 import ContactForm from './components/ContactForm';
 import AdminPanel from './components/AdminPanel';
 import LogoIcon from './components/LogoIcon';
+import logoImg from './assets/images/gamze_tosun_logo_1783782272260.jpg';
 import { 
   GraduationCap, Mail, Phone, ArrowUp, Instagram, 
   Linkedin, Calendar, Sparkles, BookOpen, Clock, Globe
@@ -94,6 +96,9 @@ export default function App() {
         {/* SERVICES SECTION */}
         <Services />
 
+        {/* PROGRAM DETAILS & GUIDES (INFO POSTERS) */}
+        <InfoPosters />
+
         {/* INTERACTIVE TOOLS */}
         <InteractiveTools />
 
@@ -116,8 +121,13 @@ export default function App() {
             {/* Branding Column (5 cols) */}
             <div className="lg:col-span-5 space-y-4">
               <div className="flex items-center gap-2.5">
-                <div className="text-[#C5A059] flex items-center justify-center">
-                  <LogoIcon className="w-12 h-12" color="currentColor" />
+                <div className="flex items-center justify-center w-12 h-12 bg-white border border-[#2D2D2D]/10 rounded shadow-sm overflow-hidden p-0.5">
+                  <img 
+                    src={logoImg} 
+                    alt="Gamze Tosun Logo" 
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <div className="flex flex-col">
                   <span className="font-serif font-normal italic text-xl text-white tracking-tight leading-none uppercase">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Settings, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import LogoIcon from './LogoIcon';
+import logoImg from '../assets/images/gamze_tosun_logo_1783782272260.jpg';
 
 interface NavbarProps {
   activeSection: string;
@@ -69,8 +69,13 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin }:
             className="flex items-center gap-3 cursor-pointer group"
             onClick={() => handleNavClick('hero')}
           >
-            <div className="flex items-center justify-center text-[#2D2D2D] group-hover:text-[#C5A059] transition-colors duration-300">
-              <LogoIcon className="w-11 h-11" color="currentColor" />
+            <div className="flex items-center justify-center w-11 h-11 bg-white border border-[#2D2D2D]/10 rounded shadow-sm overflow-hidden group-hover:border-[#C5A059] transition-colors duration-300">
+              <img 
+                src={logoImg} 
+                alt="Gamze Tosun Logo" 
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div className="flex flex-col">
               <h1 className="font-serif text-xl sm:text-2xl font-normal italic uppercase tracking-tight text-[#2D2D2D] leading-none">

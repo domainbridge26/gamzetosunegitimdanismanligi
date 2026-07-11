@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, Sparkles, BookOpen, GraduationCap, Compass, Trophy } from 'lucide-react';
 import { motion } from 'motion/react';
+import portraitImg from '../assets/images/gamze_tosun_portrait_1783782291041.jpg';
 
 interface HeroProps {
   onExploreServices: () => void;
@@ -103,10 +104,10 @@ export default function Hero({ onExploreServices, onTryTools }: HeroProps) {
               {/* Profile Card */}
               <div className="col-span-2 flex items-center gap-4 p-4 border-l-2 border-[#C5A059] bg-white/50 hover:bg-white transition-colors duration-300 text-left">
                 <img 
-                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80" 
+                  src={portraitImg} 
                   alt="Gamze Tosun" 
                   referrerPolicy="no-referrer"
-                  className="w-14 h-14 object-cover filter grayscale contrast-125 border border-[#2D2D2D]/10 bg-stone-100"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-[#C5A059] shadow-sm bg-stone-100"
                 />
                 <div className="flex flex-col">
                   <h4 className="font-serif text-lg italic text-[#2D2D2D] leading-snug">Gamze Tosun</h4>

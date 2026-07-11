@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckCircle2, Award, Heart, ShieldCheck, UserCheck } from 'lucide-react';
 import { motion } from 'motion/react';
+import portraitImg from '../assets/images/gamze_tosun_portrait_1783782291041.jpg';
 
 export default function About() {
   const values = [
@@ -42,10 +43,10 @@ export default function About() {
             
             <div className="relative border border-stone-200 bg-white p-6 rounded-3xl shadow-xl space-y-6">
               <img 
-                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&auto=format&fit=crop&q=80" 
+                src={portraitImg} 
                 alt="Gamze Tosun Eğitim Danışmanı" 
                 referrerPolicy="no-referrer"
-                className="w-full h-80 object-cover rounded-2xl shadow-inner bg-stone-100 border border-stone-100"
+                className="w-full h-80 object-cover rounded-2xl shadow-inner bg-stone-100 border border-stone-200"
               />
               
               <div className="space-y-3 text-left">
