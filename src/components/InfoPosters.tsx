@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import tercihImg from '../assets/images/tercih_danismanligi_1783782315075.jpg';
 import koclukImg from '../assets/images/ogrenci_koclugu_1783782332463.jpg';
-import portraitImg from '../assets/images/gamze_tosun_portrait_1783782291041.jpg';
+import portraitImg from '../assets/images/gamze_tosun_new_portrait_1783783600184.jpg';
 
 export default function InfoPosters() {
   const [activeTab, setActiveTab] = useState<'tercih' | 'kocluk' | 'faydalar'>('tercih');
@@ -291,19 +291,19 @@ export default function InfoPosters() {
               >
                 {/* Visual / Image Side */}
                 <div className="lg:col-span-5 space-y-6">
-                  <div className="relative group overflow-hidden border border-stone-200">
+                  <div className="relative group overflow-hidden border border-[#2D2D2D]/10 bg-[#0E0E10] h-[400px] flex items-center justify-center">
                     <img 
                       src={portraitImg} 
                       alt="Gamze Tosun Koçluk Felsefesi" 
                       referrerPolicy="no-referrer"
-                      className="w-full h-[400px] object-cover transition-transform duration-700 group-hover:scale-105"
+                      className="h-full aspect-square object-contain transition-transform duration-700 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#2D2D2D]/60 via-transparent to-transparent flex items-end p-6">
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#2D2D2D]/90 via-transparent to-transparent flex items-end p-6">
                       <div className="text-left text-white space-y-1">
                         <span className="text-[10px] font-bold text-[#C5A059] uppercase tracking-widest">
                           Rehberlik Vizyonu
                         </span>
-                        <h4 className="font-serif text-lg italic font-medium leading-tight">
+                        <h4 className="font-serif text-sm italic font-medium leading-tight">
                           "Her öğrencinin potansiyeli vardır, önemli olan doğru rehberlikle onu ortaya çıkarmaktır."
                         </h4>
                       </div>

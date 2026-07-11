@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Phone, Mail, Clock, Send, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
+import { Phone, Mail, Clock, Send, CheckCircle2, AlertCircle, Calendar, Instagram } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ContactSubmission } from '../types';
 
@@ -84,13 +84,13 @@ export default function ContactForm() {
             {/* Contact Cards */}
             <div className="space-y-4 pt-2">
               <div className="flex items-center gap-4 p-4 bg-white border border-stone-200/60 rounded-2xl shadow-sm">
-                <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl">
-                  <Phone className="w-5 h-5" />
+                <div className="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                  <Instagram className="w-5 h-5" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Telefon / WhatsApp</span>
-                  <a href="tel:+905001234567" className="text-sm font-bold text-slate-800 hover:text-emerald-700 transition-colors">
-                    +90 (505) 123 45 67
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Instagram</span>
+                  <a href="https://www.instagram.com/gamzetosundanismanlikvekocluk" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-slate-800 hover:text-rose-600 transition-colors">
+                    gamzetosundanışmanlıkvekoçluk
                   </a>
                 </div>
               </div>
@@ -101,8 +101,8 @@ export default function ContactForm() {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">E-Posta Adresi</span>
-                  <a href="mailto:iletisim@gamzetosunegitimdanismanligi.com" className="text-sm font-bold text-slate-800 hover:text-emerald-700 transition-colors">
-                    iletisim@gamzetosunegitimdanismanligi.com
+                  <a href="mailto:gamzetosunegitimdanismanligi@gmail.com" className="text-sm font-bold text-slate-800 hover:text-emerald-700 transition-colors">
+                    gamzetosunegitimdanismanligi@gmail.com
                   </a>
                 </div>
               </div>
@@ -125,7 +125,7 @@ export default function ContactForm() {
               <div className="absolute -right-12 -bottom-12 w-40 h-40 bg-white/5 rounded-full filter blur-2xl" />
               <h4 className="font-display font-bold text-sm">Hizmet Bölgesi</h4>
               <p className="text-xs text-emerald-100 leading-relaxed">
-                Eğitim danışmanlığı, koçluk ve hızlı okuma seanslarımız yüz yüze (ofisimizde) veya online (zoom üzerinden kesintisiz interaktif katılım ile) Türkiye geneli uygulanmaktadır.
+                Eğitim danışmanlığı, koçluk ve hızlı okuma seanslarımız yüz yüze veya online (zoom üzerinden kesintisiz interaktif katılım ile) Türkiye geneli uygulanmaktadır.
               </p>
             </div>
           </div>

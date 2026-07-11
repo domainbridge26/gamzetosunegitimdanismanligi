@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowRight, Sparkles, BookOpen, GraduationCap, Compass, Trophy } from 'lucide-react';
 import { motion } from 'motion/react';
-import portraitImg from '../assets/images/gamze_tosun_portrait_1783782291041.jpg';
+import portraitImg from '../assets/images/gamze_tosun_new_portrait_1783783600184.jpg';
 
 interface HeroProps {
   onExploreServices: () => void;
@@ -102,16 +102,16 @@ export default function Hero({ onExploreServices, onTryTools }: HeroProps) {
             <div className="relative bg-[#FAF9F6]/30 border border-[#2D2D2D]/10 p-6 sm:p-8 grid grid-cols-2 gap-4">
               
               {/* Profile Card */}
-              <div className="col-span-2 flex items-center gap-4 p-4 border-l-2 border-[#C5A059] bg-white/50 hover:bg-white transition-colors duration-300 text-left">
+              <div className="col-span-2 flex items-center gap-4 p-4 border-l-2 border-[#C5A059] bg-[#0E0E10] text-[#FAF9F6] shadow-md text-left transition-colors duration-300">
                 <img 
                   src={portraitImg} 
                   alt="Gamze Tosun" 
                   referrerPolicy="no-referrer"
-                  className="w-16 h-16 rounded-full object-cover border-2 border-[#C5A059] shadow-sm bg-stone-100"
+                  className="w-16 h-16 object-contain"
                 />
                 <div className="flex flex-col">
-                  <h4 className="font-serif text-lg italic text-[#2D2D2D] leading-snug">Gamze Tosun</h4>
-                  <p className="text-[10px] tracking-widest uppercase text-[#2D2D2D]/60 font-semibold mt-0.5">Eğitim Danışmanı & Öğrenci Koçluğu</p>
+                  <h4 className="font-serif text-lg italic text-[#FAF9F6] leading-snug">Gamze Tosun</h4>
+                  <p className="text-[10px] tracking-widest uppercase text-stone-400 font-semibold mt-0.5">Eğitim Danışmanı & Öğrenci Koçluğu</p>
                   <div className="flex items-center gap-1.5 mt-1.5 text-[9px] font-bold uppercase tracking-widest text-[#C5A059] bg-[#C5A059]/10 px-2.5 py-1 w-max">
                     <span className="w-1 h-1 bg-[#C5A059] rounded-full animate-ping" />
                     Aktif Danışmanlık Açık

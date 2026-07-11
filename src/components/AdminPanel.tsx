@@ -11,9 +11,24 @@ interface AdminPanelProps {
 }
 
 export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
+  const [usernameInput, setUsernameInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
   const [inquiries, setInquiries] = useState<ContactSubmission[]>([]);
   const [filterStatus, setFilterStatus] = useState<'Tümü' | 'Yeni' | 'Görüşüldü' | 'Arşivlendi'>('Tümü');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Reset authentication states when panel is closed or opened
+  useEffect(() => {
+    if (!isOpen) {
+      setIsAuthenticated(false);
+      setUsernameInput('');
+      setPasswordInput('');
+      setLoginError('');
+    }
+  }, [isOpen]);
 
   // Load inquiries from localStorage
   const loadInquiries = () => {
@@ -118,6 +133,81 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   };
 
   if (!isOpen) return null;
+
+  if (!isAuthenticated) {
+    return (
+      <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-55 flex items-center justify-center p-4">
+        <div className="bg-white p-8 max-w-sm w-full border border-[#2D2D2D]/10 shadow-2xl space-y-6 text-center relative rounded-none">
+          {/* Close button */}
+          <button 
+            onClick={onClose}
+            className="absolute top-4 right-4 p-1.5 text-[#2D2D2D]/60 hover:text-[#2D2D2D] hover:bg-[#2D2D2D]/5 transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <div className="w-16 h-16 bg-[#C5A059]/10 text-[#C5A059] flex items-center justify-center mx-auto border border-[#C5A059]/20">
+            <Shield className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-serif text-xl font-bold text-[#2D2D2D]">Yönetici Girişi</h3>
+            <p className="text-stone-500 text-xs leading-relaxed">
+              Bu bölüme sadece eğitim danışmanı Gamze Tosun erişebilir. Lütfen kullanıcı adı ve şifrenizi girin.
+            </p>
+          </div>
+
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (usernameInput === 'Gamze' && passwordInput === 'Gamze1283') {
+              setIsAuthenticated(true);
+              setLoginError('');
+            } else {
+              setLoginError('Kullanıcı adı veya şifre hatalı! Lütfen tekrar deneyin.');
+            }
+          }} className="space-y-4">
+            <div className="space-y-1.5 text-left">
+              <label className="text-[10px] font-bold text-stone-500 uppercase tracking-widest block">Kullanıcı Adı</label>
+              <input 
+                type="text"
+                required
+                value={usernameInput}
+                onChange={(e) => setUsernameInput(e.target.value)}
+                placeholder="Kullanıcı adı girin"
+                autoFocus
+                className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#2D2D2D]/15 text-sm focus:border-[#C5A059] focus:outline-none transition-colors"
+              />
+            </div>
+
+            <div className="space-y-1.5 text-left">
+              <label className="text-[10px] font-bold text-stone-500 uppercase tracking-widest block">Yönetici Şifresi</label>
+              <input 
+                type="password"
+                required
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#2D2D2D]/15 text-sm focus:border-[#C5A059] focus:outline-none transition-colors"
+              />
+            </div>
+
+            {loginError && (
+              <p className="text-rose-600 text-[11px] font-semibold text-center bg-rose-50 border border-rose-100 p-2 leading-relaxed">
+                {loginError}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="w-full py-3.5 bg-[#2D2D2D] hover:bg-[#C5A059] text-white text-[10px] font-bold uppercase tracking-widest transition-all rounded-none cursor-pointer"
+            >
+              Giriş Yap
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-55 flex items-center justify-center p-4">

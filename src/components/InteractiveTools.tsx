@@ -7,7 +7,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function InteractiveTools() {
-  const [activeTab, setActiveTab] = useState<'reading' | 'calculator' | 'planner'>('reading');
+  const [activeTab, setActiveTab] = useState<'reading' | 'calculator'>('reading');
 
   // --- Reading Speed Test State ---
   const [selectedTextIdx, setSelectedTextIdx] = useState(0);
@@ -217,13 +217,13 @@ export default function InteractiveTools() {
             Akıllı İnteraktif Eğitim Araçlarımız
           </h2>
           <p className="text-[#2D2D2D]/80 text-sm sm:text-base leading-relaxed">
-            Okuma hızınızı test edin, deneme netlerinizi puanlayın veya seviyenize en uygun haftalık ders çalışma planını anında ücretsiz oluşturun.
+            Okuma hızınızı test edin veya deneme netlerinizi hesaplayarak sınavlara doğru stratejiyle hazırlanın.
           </p>
         </div>
 
         {/* Tab Selection */}
         <div className="flex justify-center mb-10">
-          <div className="bg-[#2D2D2D]/5 p-1.5 rounded-none flex gap-1 border border-[#2D2D2D]/10 w-full max-w-lg">
+          <div className="bg-[#2D2D2D]/5 p-1.5 rounded-none flex gap-1 border border-[#2D2D2D]/10 w-full max-w-sm">
             <button
               onClick={() => setActiveTab('reading')}
               className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-none text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
@@ -245,17 +245,6 @@ export default function InteractiveTools() {
             >
               <Calculator className="w-4 h-4 text-[#C5A059]" />
               <span>Net-Puan Hesapla</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('planner')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-none text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-                activeTab === 'planner'
-                  ? 'bg-white text-[#2D2D2D] border border-[#2D2D2D]/10 shadow-sm'
-                  : 'text-[#2D2D2D]/60 hover:text-[#2D2D2D] hover:bg-white/45'
-              }`}
-            >
-              <Calendar className="w-4 h-4 text-[#C5A059]" />
-              <span>Ders Programı</span>
             </button>
           </div>
         </div>
