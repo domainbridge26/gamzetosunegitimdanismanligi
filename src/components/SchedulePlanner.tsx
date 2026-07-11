@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, Calendar, Plus, Trash2, Edit2, Copy, Download, Save, 
   RefreshCw, Printer, BookOpen, Clock, AlertCircle, CheckCircle, 
-  FileText, Share2, Send, ChevronRight, GraduationCap, X, Check
+  FileText, Share2, Send, ChevronRight, GraduationCap, X, Check,
+  FileSpreadsheet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -397,6 +398,124 @@ export default function SchedulePlanner() {
     window.print();
   };
 
+  // Export Weekly Schedule as Excel Format (HTML base table with application/vnd.ms-excel)
+  const handleExportExcel = () => {
+    if (!isGenerated) return;
+
+    let html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>Haftalik Ders Programi</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          table { border-collapse: collapse; font-family: 'Segoe UI', Arial, sans-serif; }
+          td, th { border: 1px solid #D1D5DB; padding: 10px; font-size: 11px; vertical-align: top; }
+          th { background-color: #2D2D2D; color: #FFFFFF; font-weight: bold; font-size: 12px; text-align: center; }
+          .header-title { font-size: 16px; font-weight: bold; color: #C5A059; text-align: center; padding: 15px; background-color: #FAF9F6; border: 1px solid #C5A059; }
+          .student-info { font-weight: bold; font-size: 11px; background-color: #F3F4F6; }
+          .time-col { background-color: #FAF9F6; font-weight: bold; color: #4B5563; text-align: center; font-family: monospace; }
+          .day-header { background-color: #C5A059; color: #FFFFFF; font-weight: bold; text-align: center; }
+          .advice-text { font-style: italic; color: #7C2D12; font-size: 10px; background-color: #FFF7ED; padding: 4px; border-radius: 4px; }
+          .subject-name { font-weight: bold; color: #1E3A8A; font-size: 12px; }
+          .focus-text { color: #374151; font-weight: 500; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <tr>
+            <td colspan="8" class="header-title">GAMZE TOSUN DANIŞMANLIK & ÖĞRENCİ KOÇLUĞU - HAFTALIK DERS PROGRAMI</td>
+          </tr>
+          <tr class="student-info">
+            <td colspan="2" style="background-color: #F5F5F4;">ÖĞRENCİ ADI:</td>
+            <td colspan="2" style="color: #2D2D2D;">${studentName}</td>
+            <td colspan="2" style="background-color: #F5F5F4;">ALAN / GRUP:</td>
+            <td colspan="2" style="color: #2D2D2D;">${examGroup}</td>
+          </tr>
+          <tr class="student-info">
+            <td colspan="2" style="background-color: #F5F5F4;">HEDEF / PROGRAM:</td>
+            <td colspan="6" style="color: #C5A059;">${targetGoal || 'Genel Gelişim / Bireysel Başarı Hedefi'}</td>
+          </tr>
+          <tr><td colspan="8" style="border:none; height:10px;"></td></tr>
+          
+          <!-- DAYS HEADER -->
+          <tr>
+            <th style="width: 130px; background-color: #1F2937; color: white;">DERS SAATİ</th>
+            ${DAYS.map(day => `<th class="day-header" style="width: 260px;">${day.toUpperCase()}</th>`).join('')}
+          </tr>
+    `;
+
+    const maxSlots = Math.max(...DAYS.map(day => (schedule[day] || []).length));
+
+    for (let slotIdx = 0; slotIdx < maxSlots; slotIdx++) {
+      html += `<tr>`;
+      
+      // Get time for this row
+      let slotTime = '';
+      for (const d of DAYS) {
+        if (schedule[d] && schedule[d][slotIdx]) {
+          slotTime = schedule[d][slotIdx].time;
+          break;
+        }
+      }
+      if (!slotTime) slotTime = `${slotIdx + 1}. Etüt`;
+
+      html += `<td class="time-col" style="vertical-align: middle;">${slotTime}</td>`;
+
+      for (const day of DAYS) {
+        const slot = schedule[day] && schedule[day][slotIdx];
+        if (slot) {
+          html += `
+            <td style="background-color: #FFFFFF;">
+              <div class="subject-name">${slot.subject}</div>
+              <div class="focus-text" style="margin-top: 4px;">• ${slot.focus}</div>
+              <div class="advice-text" style="margin-top: 6px;">
+                Gamze Hoca: ${slot.advice}
+              </div>
+            </td>
+          `;
+        } else {
+          html += `<td style="background-color: #FAFBFB; text-align: center; color: #9CA3AF; font-style: italic; vertical-align: middle;">Serbest Zaman / Dinlenme</td>`;
+        }
+      }
+      html += `</tr>`;
+    }
+
+    html += `
+          <tr><td colspan="8" style="border:none; height:15px;"></td></tr>
+          <tr>
+            <td colspan="8" style="text-align: center; font-style: italic; font-weight: bold; background-color: #FAF9F6; color: #2D2D2D; padding: 14px; border: 1px solid #C5A059; font-size: 12px;">
+              "Başarı tesadüf değil, doğru rehberliğin sonucudur. Sana inanıyorum, harika bir çalışma haftası dilerim!" - Gamze Tosun
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${studentName.replace(/\s+/g, '_')}_Haftalik_Calisma_Programi.xls`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
       
@@ -611,6 +730,15 @@ export default function SchedulePlanner() {
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>WhatsApp Kopyala</span>
+                </button>
+
+                <button
+                  onClick={handleExportExcel}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200/40 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  title="Excel (Haftalık Program) indir"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>Excel İndir</span>
                 </button>
 
                 <button

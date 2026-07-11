@@ -121,6 +121,7 @@ export default function App() {
         activeSection={activeSection} 
         setActiveSection={setActiveSection} 
         onOpenAdmin={() => setIsAdminOpen(true)}
+        notifCount={notifCount}
       />
 
       {/* Main Content Sections */}

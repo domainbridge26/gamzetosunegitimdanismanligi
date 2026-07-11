@@ -7,9 +7,10 @@ interface NavbarProps {
   activeSection: string;
   setActiveSection: (section: string) => void;
   onOpenAdmin: () => void;
+  notifCount?: number;
 }
 
-export default function Navbar({ activeSection, setActiveSection, onOpenAdmin }: NavbarProps) {
+export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, notifCount = 0 }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -117,11 +118,22 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin }:
             <button
               id="btn-admin-portal"
               onClick={onOpenAdmin}
-              className="flex items-center gap-1.5 px-3 py-2 border border-[#2D2D2D]/20 text-[10px] font-bold uppercase tracking-widest text-[#2D2D2D]/60 hover:text-[#2D2D2D] hover:bg-[#2D2D2D]/5 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 border border-[#2D2D2D]/20 text-[10px] font-bold uppercase tracking-widest text-[#2D2D2D]/60 hover:text-[#2D2D2D] hover:bg-[#2D2D2D]/5 transition-colors cursor-pointer relative"
               title="Yönetici Paneli"
             >
               <User className="w-3.5 h-3.5" />
               <span>Yönetici Girişi</span>
+              {notifCount > 0 && (
+                <span className="flex items-center gap-1 ml-1">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                  </span>
+                  <span className="bg-rose-600 text-white font-extrabold text-[8px] px-1.5 py-0.5 rounded-full leading-none">
+                    {notifCount}
+                  </span>
+                </span>
+              )}
             </button>
             <button
               id="btn-quick-consult"
@@ -136,10 +148,16 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin }:
           <div className="flex items-center gap-2 md:hidden">
             <button
               onClick={onOpenAdmin}
-              className="p-1.5 text-[#2D2D2D]/60 hover:text-[#C5A059] hover:bg-[#2D2D2D]/5 border border-[#2D2D2D]/20"
+              className="p-1.5 text-[#2D2D2D]/60 hover:text-[#C5A059] hover:bg-[#2D2D2D]/5 border border-[#2D2D2D]/20 relative"
               title="Yönetici Paneli"
             >
               <User className="w-4 h-4" />
+              {notifCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                </span>
+              )}
             </button>
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -184,10 +202,21 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin }:
                     setIsOpen(false);
                     onOpenAdmin();
                   }}
-                  className="flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-widest text-[#2D2D2D]/70 bg-[#2D2D2D]/5 hover:bg-[#2D2D2D]/10 transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-widest text-[#2D2D2D]/70 bg-[#2D2D2D]/5 hover:bg-[#2D2D2D]/10 transition-colors relative"
                 >
                   <Settings className="w-4 h-4 text-[#C5A059]" />
                   <span>Yönetici Girişi</span>
+                  {notifCount > 0 && (
+                    <span className="flex items-center gap-1.5 ml-1">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                      </span>
+                      <span className="bg-rose-600 text-white font-extrabold text-[8px] px-1.5 py-0.5 rounded-full leading-none">
+                        {notifCount}
+                      </span>
+                    </span>
+                  )}
                 </button>
                 <button
                   onClick={() => handleNavClick('contact')}
