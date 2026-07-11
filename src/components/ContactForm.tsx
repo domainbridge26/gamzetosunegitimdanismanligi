@@ -47,6 +47,9 @@ export default function ContactForm() {
         inquiries.unshift(newInquiry);
         localStorage.setItem('gamze_inquiries', JSON.stringify(inquiries));
 
+        // Dispatch custom event to notify Admin Panel instantly
+        window.dispatchEvent(new CustomEvent('gamze-new-inquiry', { detail: newInquiry }));
+
         setSuccess(true);
         // Clear Form
         setFullName('');

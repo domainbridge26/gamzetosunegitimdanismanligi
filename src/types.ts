@@ -16,6 +16,7 @@ export interface Testimonial {
   achievement: string;
   comment: string;
   avatarUrl?: string;
+  approved?: boolean;
 }
 
 export interface ContactSubmission {

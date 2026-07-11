@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Check, Trash2, Archive, Shield, Phone, 
-  Mail, Calendar, Users, FileSpreadsheet, PlusCircle, UserCheck
+  Mail, Calendar, Users, FileSpreadsheet, PlusCircle, UserCheck,
+  ListFilter, Sparkles, MessageSquare, ThumbsUp, LogOut, Clock, Info
 } from 'lucide-react';
-import { ContactSubmission } from '../types';
+import { ContactSubmission, Testimonial } from '../types';
+import { TESTIMONIALS_DATA } from '../data';
+import SchedulePlanner from './SchedulePlanner';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -14,21 +17,24 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [activeTab, setActiveTab] = useState<'requests' | 'planner' | 'comments'>('requests');
 
   const [inquiries, setInquiries] = useState<ContactSubmission[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [filterStatus, setFilterStatus] = useState<'Tümü' | 'Yeni' | 'Görüşüldü' | 'Arşivlendi'>('Tümü');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Reset authentication states when panel is closed or opened
-  useEffect(() => {
-    if (!isOpen) {
-      setIsAuthenticated(false);
-      setUsernameInput('');
-      setPasswordInput('');
-      setLoginError('');
-    }
-  }, [isOpen]);
+  // Real-time live notifications state
+  const [liveNotifications, setLiveNotifications] = useState<{
+    id: string;
+    type: 'inquiry' | 'testimonial';
+    title: string;
+    message: string;
+    time: string;
+    data: any;
+  }[]>([]);
 
   // Load inquiries from localStorage
   const loadInquiries = () => {
@@ -40,11 +46,117 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     }
   };
 
+  // Load testimonials from localStorage
+  const loadTestimonials = () => {
+    const raw = localStorage.getItem('gamze_testimonials');
+    if (raw) {
+      setTestimonials(JSON.parse(raw));
+    } else {
+      setTestimonials(TESTIMONIALS_DATA);
+    }
+  };
+
+  // Check auto-login and load data on open
   useEffect(() => {
     if (isOpen) {
+      const isRemembered = localStorage.getItem('gamze_admin_remember') === 'true';
+      if (isRemembered) {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
       loadInquiries();
+      loadTestimonials();
+    } else {
+      const isRemembered = localStorage.getItem('gamze_admin_remember') === 'true';
+      if (!isRemembered) {
+        setIsAuthenticated(false);
+      }
+      setUsernameInput('');
+      setPasswordInput('');
+      setLoginError('');
     }
   }, [isOpen]);
+
+  // Real-time Event Listeners for new inquiries and testimonials
+  useEffect(() => {
+    const handleNewInquiry = (e: Event) => {
+      const customEvent = e as CustomEvent<ContactSubmission>;
+      const newInq = customEvent.detail;
+      
+      // Update inquiries state immediately so the list receives it!
+      setInquiries(prev => {
+        if (prev.some(x => x.id === newInq.id)) return prev;
+        return [newInq, ...prev];
+      });
+
+      // Show real-time notification banner
+      const newNotif = {
+        id: Math.random().toString(36).substring(2, 9),
+        type: 'inquiry' as const,
+        title: 'Yeni Başvuru Alındı! 📩',
+        message: `${newInq.fullName} (${newInq.studentClass}) adlı öğrencimiz ön görüşme başvurusu yaptı.`,
+        data: newInq,
+        time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+      };
+      setLiveNotifications(prev => [newNotif, ...prev]);
+    };
+
+    const handleNewTestimonial = (e: Event) => {
+      const customEvent = e as CustomEvent<Testimonial>;
+      const newTest = customEvent.detail;
+
+      // Update testimonials state immediately
+      setTestimonials(prev => {
+        if (prev.some(x => x.id === newTest.id)) return prev;
+        return [newTest, ...prev];
+      });
+
+      // Show real-time notification banner
+      const newNotif = {
+        id: Math.random().toString(36).substring(2, 9),
+        type: 'testimonial' as const,
+        title: 'Yeni Yorum Onayı Bekliyor! 💬',
+        message: `${newTest.name} (${newTest.role}) yeni bir başarı hikayesi paylaştı.`,
+        data: newTest,
+        time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+      };
+      setLiveNotifications(prev => [newNotif, ...prev]);
+    };
+
+    window.addEventListener('gamze-new-inquiry', handleNewInquiry);
+    window.addEventListener('gamze-new-testimonial', handleNewTestimonial);
+
+    return () => {
+      window.removeEventListener('gamze-new-inquiry', handleNewInquiry);
+      window.removeEventListener('gamze-new-testimonial', handleNewTestimonial);
+    };
+  }, []);
+
+  const handleApproveComment = (id: string) => {
+    const updated = testimonials.map(test => {
+      if (test.id === id) {
+        return { ...test, approved: true };
+      }
+      return test;
+    });
+    localStorage.setItem('gamze_testimonials', JSON.stringify(updated));
+    setTestimonials(updated);
+    
+    // Notify public view to refresh in real-time
+    window.dispatchEvent(new Event('gamze-testimonials-updated'));
+  };
+
+  const handleDeleteComment = (id: string) => {
+    if (confirm('Bu yorumu silmek istediğinize emin misiniz?')) {
+      const updated = testimonials.filter(test => test.id !== id);
+      localStorage.setItem('gamze_testimonials', JSON.stringify(updated));
+      setTestimonials(updated);
+      
+      // Notify public view to refresh in real-time
+      window.dispatchEvent(new Event('gamze-testimonials-updated'));
+    }
+  };
 
   // Seed sample data for preview
   const handleSeedSamples = () => {
@@ -162,6 +274,11 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
             if (usernameInput === 'Gamze' && passwordInput === 'Gamze1283') {
               setIsAuthenticated(true);
               setLoginError('');
+              if (rememberMe) {
+                localStorage.setItem('gamze_admin_remember', 'true');
+              } else {
+                localStorage.removeItem('gamze_admin_remember');
+              }
             } else {
               setLoginError('Kullanıcı adı veya şifre hatalı! Lütfen tekrar deneyin.');
             }
@@ -189,6 +306,19 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                 placeholder="••••••••"
                 className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#2D2D2D]/15 text-sm focus:border-[#C5A059] focus:outline-none transition-colors"
               />
+            </div>
+
+            {/* Remember Me Checkbox */}
+            <div className="flex items-center justify-between pt-1 text-left">
+              <label className="flex items-center gap-2 text-xs text-slate-600 font-medium cursor-pointer">
+                <input 
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="rounded border-stone-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+                />
+                <span>Beni Hatırla</span>
+              </label>
             </div>
 
             {loginError && (
@@ -232,11 +362,125 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
           </button>
         </div>
 
+        {/* Tab Switcher */}
+        <div className="bg-slate-900/95 border-t border-slate-800 px-6 py-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab('requests')}
+              className={`px-4 py-2 text-xs font-bold transition-all rounded-lg flex items-center gap-2 cursor-pointer ${
+                activeTab === 'requests'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>Gelen Başvurular</span>
+              {stats.new > 0 && (
+                <span className="bg-rose-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold animate-pulse">
+                  {stats.new}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('comments')}
+              className={`px-4 py-2 text-xs font-bold transition-all rounded-lg flex items-center gap-2 cursor-pointer ${
+                activeTab === 'comments'
+                  ? 'bg-amber-600 text-white shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Yorum Onayları</span>
+              {testimonials.filter(t => t.approved === false).length > 0 && (
+                <span className="bg-amber-500 text-slate-950 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                  {testimonials.filter(t => t.approved === false).length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('planner')}
+              className={`px-4 py-2 text-xs font-bold transition-all rounded-lg flex items-center gap-2 cursor-pointer ${
+                activeTab === 'planner'
+                  ? 'bg-[#C5A059] text-slate-950 shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Ders Programı Robotu</span>
+            </button>
+          </div>
+
+          <button
+            onClick={() => {
+              setIsAuthenticated(false);
+              localStorage.removeItem('gamze_admin_remember');
+              setUsernameInput('');
+              setPasswordInput('');
+              onClose();
+            }}
+            className="px-3 py-1.5 text-xs font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer border border-rose-900/40"
+            title="Oturumu Kapat ve Çıkış Yap"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Güvenli Çıkış</span>
+          </button>
+        </div>
+
         {/* Inner Content Area */}
         <div className="flex-1 overflow-y-auto p-6 bg-stone-50 flex flex-col space-y-6">
-          
-          {/* Dashboard Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+          {/* Real-time Notifications Alert Box */}
+          {liveNotifications.length > 0 && (
+            <div className="space-y-3">
+              {liveNotifications.map((notif) => (
+                <div 
+                  key={notif.id}
+                  className={`p-4 rounded-2xl border flex items-start justify-between shadow-md text-left transition-all relative overflow-hidden ${
+                    notif.type === 'inquiry' 
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-950' 
+                      : 'bg-amber-50 border-amber-200 text-amber-950'
+                  }`}
+                >
+                  <div className="flex gap-3 items-start">
+                    <div className={`p-2 rounded-xl shrink-0 ${
+                      notif.type === 'inquiry' ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-slate-950'
+                    }`}>
+                      {notif.type === 'inquiry' ? <Mail className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-display font-black text-xs uppercase tracking-wider">{notif.title}</span>
+                        <span className="text-[9px] opacity-60 font-mono flex items-center gap-0.5">
+                          <Clock className="w-2.5 h-2.5" />
+                          {notif.time}
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium leading-relaxed max-w-2xl">{notif.message}</p>
+                      {notif.type === 'inquiry' && notif.data && (
+                        <div className="text-[11px] bg-emerald-100/50 p-2.5 rounded-lg border border-emerald-200/40 font-mono mt-1 space-y-0.5">
+                          <div><strong>Aday Adı:</strong> {notif.data.fullName}</div>
+                          <div><strong>Telefon:</strong> {notif.data.phone}</div>
+                          <div><strong>Seçilen Hizmet:</strong> {notif.data.selectedService}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setLiveNotifications(prev => prev.filter(x => x.id !== notif.id))}
+                    className="p-1 hover:bg-stone-900/10 rounded-lg transition-colors cursor-pointer shrink-0 ml-4 animate-pulse"
+                    title="Bildirimi Kapat"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeTab === 'requests' ? (
+            <>
+              {/* Dashboard Quick Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm flex items-center gap-3 text-left">
               <div className="p-2.5 bg-blue-50 text-blue-700 rounded-xl">
                 <Users className="w-5 h-5" />
@@ -467,6 +711,162 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
               </div>
             )}
           </div>
+          </>
+          ) : activeTab === 'comments' ? (
+            <div className="flex flex-col space-y-6">
+              {/* Comment Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm flex items-center gap-3 text-left">
+                  <div className="p-2.5 bg-amber-50 text-amber-700 rounded-xl">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Toplam Yorum</span>
+                    <span className="text-xl font-extrabold text-slate-800">{testimonials.length}</span>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm flex items-center gap-3 text-left">
+                  <div className={`p-2.5 rounded-xl ${testimonials.some(t => t.approved === false) ? 'bg-amber-100 text-amber-800 animate-pulse' : 'bg-stone-50 text-stone-400'}`}>
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Onay Bekleyenler</span>
+                    <span className="text-xl font-extrabold text-slate-800">
+                      {testimonials.filter(t => t.approved === false).length}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm flex items-center gap-3 text-left">
+                  <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl">
+                    <ThumbsUp className="w-5 h-5" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Yayınlananlar</span>
+                    <span className="text-xl font-extrabold text-slate-800">
+                      {testimonials.filter(t => t.approved !== false).length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Title & Actions */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-stone-200 shadow-sm text-left">
+                <div>
+                  <h3 className="font-display font-bold text-slate-900 text-sm">Yorum & Başarı Hikayeleri Denetimi</h3>
+                  <p className="text-xs text-slate-400">Yeni gönderilen yorumları inceleyerek sitede yayınlanmasına onay verebilir veya kaldırabilirsiniz.</p>
+                </div>
+                {testimonials.length > 0 && (
+                  <button
+                    onClick={() => {
+                      if (confirm('Tüm yorum onay geçmişini sıfırlayıp varsayılan yorumları yüklemek istediğinize emin misiniz?')) {
+                        localStorage.removeItem('gamze_testimonials');
+                        setTestimonials(TESTIMONIALS_DATA);
+                        window.dispatchEvent(new Event('gamze-testimonials-updated'));
+                      }
+                    }}
+                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-stone-50 hover:bg-stone-100 text-stone-600 border border-stone-200 rounded-lg text-xs font-bold transition-all cursor-pointer self-start sm:self-center"
+                    title="Yorum listesini sıfırlar"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Yorumları Sıfırla</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Comments Grid */}
+              {testimonials.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {testimonials.map((test) => {
+                    const isApproved = test.approved !== false;
+                    return (
+                      <div 
+                        key={test.id} 
+                        className={`bg-white border p-6 shadow-sm flex flex-col justify-between text-left relative overflow-hidden rounded-2xl transition-all ${
+                          !isApproved ? 'border-amber-300 bg-amber-50/15' : 'border-stone-200 hover:border-stone-300'
+                        }`}
+                      >
+                        {/* Approved Indicator Badge */}
+                        <div className="absolute right-6 top-6">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                            isApproved 
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                              : 'bg-amber-100 text-amber-800 border border-amber-200 animate-pulse'
+                          }`}>
+                            {isApproved ? 'Sitede Yayında' : 'Onay Bekliyor'}
+                          </span>
+                        </div>
+
+                        <div className="space-y-3 mt-4 sm:mt-0">
+                          <div className="flex gap-1 text-amber-500">
+                            <MessageSquare className="w-4 h-4 text-slate-400" />
+                          </div>
+                          <p className="text-slate-700 text-xs sm:text-sm leading-relaxed italic">
+                            "{test.comment}"
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-6 border-t border-stone-100 pt-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-[#C5A059]/10 text-[#C5A059] flex items-center justify-center font-serif font-bold text-xs uppercase">
+                              {test.name ? test.name.charAt(0) : 'Y'}
+                            </div>
+                            <div>
+                              <h4 className="font-serif font-bold text-slate-900 text-xs">
+                                {test.name}
+                              </h4>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[9px] font-bold tracking-wider text-[#C5A059] uppercase">
+                                  {test.role}
+                                </span>
+                                {test.examType && (
+                                  <span className="text-[9px] font-semibold text-stone-500 bg-stone-100 px-1.5 py-0.5 rounded">
+                                    {test.examType}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {!isApproved && (
+                              <button
+                                onClick={() => handleApproveComment(test.id)}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-sm"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Onayla</span>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteComment(test.id)}
+                              className="px-3 py-1.5 bg-stone-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 hover:border-rose-200 border border-stone-200 text-[10px] font-bold uppercase tracking-wider rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>{isApproved ? 'Sil' : 'Reddet / Sil'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-24 space-y-4 bg-white rounded-2xl border border-stone-200">
+                  <MessageSquare className="w-16 h-16 text-stone-300 stroke-1" />
+                  <div className="space-y-1.5 px-6 max-w-sm">
+                    <h4 className="font-display font-bold text-slate-900 text-sm">Hiç Yorum Bulunmuyor</h4>
+                    <p className="text-xs text-slate-400">
+                      Sistemde onay bekleyen veya yayınlanmış yorum bulunmuyor.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <SchedulePlanner />
+          )}
 
         </div>
 

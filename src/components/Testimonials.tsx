@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TESTIMONIALS_DATA } from '../data';
 import { Star, GraduationCap, Quote, MessageSquare, Send, Check, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -20,6 +20,22 @@ export default function Testimonials() {
     return TESTIMONIALS_DATA;
   });
 
+  // Keep state updated in real-time when comments are approved or deleted by Admin
+  useEffect(() => {
+    const handleUpdate = () => {
+      const saved = localStorage.getItem('gamze_testimonials');
+      if (saved) {
+        try {
+          setTestimonials(JSON.parse(saved));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+    window.addEventListener('gamze-testimonials-updated', handleUpdate);
+    return () => window.removeEventListener('gamze-testimonials-updated', handleUpdate);
+  }, []);
+
   // Review Form States
   const [name, setName] = useState('');
   const [role, setRole] = useState<'Öğrenci' | 'Veli'>('Öğrenci');
@@ -31,6 +47,7 @@ export default function Testimonials() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const filteredData = testimonials.filter((item) => {
+    if (item.approved === false) return false;
     if (filter === 'Tümü') return true;
     return item.role === filter;
   });
@@ -48,12 +65,19 @@ export default function Testimonials() {
       role: role,
       examType: examType,
       achievement: achievement.trim(),
-      comment: comment.trim()
+      comment: comment.trim(),
+      approved: false // Requires admin moderation
     };
 
-    const updated = [newTestimonial, ...testimonials];
+    // Retrieve full list, merge, and save
+    const saved = localStorage.getItem('gamze_testimonials');
+    const existingList: Testimonial[] = saved ? JSON.parse(saved) : [...TESTIMONIALS_DATA];
+    const updated = [newTestimonial, ...existingList];
     setTestimonials(updated);
     localStorage.setItem('gamze_testimonials', JSON.stringify(updated));
+
+    // Dispatch event to notify the Admin Panel in real time
+    window.dispatchEvent(new CustomEvent('gamze-new-testimonial', { detail: newTestimonial }));
 
     // Reset Form
     setName('');
@@ -61,7 +85,7 @@ export default function Testimonials() {
     setComment('');
     setErrorMsg('');
     setSuccessMsg(true);
-    setTimeout(() => setSuccessMsg(false), 5000);
+    setTimeout(() => setSuccessMsg(false), 8000);
   };
 
   return (
@@ -258,7 +282,7 @@ export default function Testimonials() {
             {successMsg && (
               <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
                 <Check className="w-4 h-4 shrink-0 text-emerald-600" />
-                <span>Yorumunuz başarıyla eklendi ve yukarıdaki listede listelenmeye başlandı! Değerli geri bildiriminiz için teşekkür ederiz.</span>
+                <span>Yorumunuz başarıyla alındı ve yönetici onayına gönderildi! Gamze Hanım'ın onayının ardından sitemizde yayınlanacaktır. Teşekkür ederiz.</span>
               </div>
             )}
 
