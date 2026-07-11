@@ -69,10 +69,15 @@ export default function About() {
               <span className="text-xs font-bold text-emerald-700 tracking-widest uppercase bg-emerald-100/60 px-3 py-1 rounded-full">
                 Hakkımda ve Değerlerim
               </span>
-              <h2 className="text-3xl sm:text-4xl font-display font-black text-slate-900 tracking-tight">
+              <h2 className="text-3xl sm:text-4xl font-serif font-bold text-[#2D2D2D] tracking-tight">
                 Geleceğe Güvenle Yürüyen Nesiller Yetiştiriyoruz
               </h2>
-              <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+              <div className="border-l-2 border-[#C5A059] pl-4 py-1">
+                <p className="font-serif italic text-base text-[#C5A059] font-medium">
+                  "Başarı tesadüf değil, doğru rehberliğin sonucudur."
+                </p>
+              </div>
+              <p className="text-stone-600 text-sm sm:text-base leading-relaxed">
                 Her sene binlerce öğrenci YKS ve LGS maratonuna giriyor; ancak sadece çok ders çalışanlar değil, <strong>doğru ve stratejik çalışanlar</strong> hak ettikleri okulları kazanıyor. Eğitim danışmanlığı ve öğrenci koçluğu süreçlerimizde, öğrencilerimize ders planı hazırlamanın çok ötesinde, hayat boyu kullanabilecekleri <strong>öğrenmeyi öğrenme</strong> yeteneğini ve zaman yönetimini kazandırıyoruz.
               </p>
             </div>

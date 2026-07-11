@@ -21,14 +21,19 @@ export default function Services() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <div className="text-center max-w-3xl mx-auto mb-16 space-y-5">
           <span className="text-[12px] font-bold tracking-[0.3em] uppercase text-[#C5A059] block">
             Neler Yapıyoruz?
           </span>
           <h2 className="text-3xl sm:text-4xl font-serif text-[#2D2D2D] tracking-tight">
             Uzmanlık Alanlarımız ve Profesyonel Hizmetler
           </h2>
-          <p className="text-[#2D2D2D]/80 text-sm sm:text-base leading-relaxed">
+          <div className="inline-block border-y border-[#C5A059]/30 py-2.5 px-6 my-2">
+            <p className="font-serif italic text-lg sm:text-xl text-[#2D2D2D] font-medium tracking-wide">
+              "Hayalini hedefe, hedefini başarıya dönüştür."
+            </p>
+          </div>
+          <p className="text-[#2D2D2D]/80 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
             Eğitim yolculuğunun her durağında öğrenciye güven, veliye huzur ve hedefe netlik kazandıran bilimsel, takip odaklı ve modern metotlar uyguluyoruz.
           </p>
         </div>

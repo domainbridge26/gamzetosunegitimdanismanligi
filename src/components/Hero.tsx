@@ -53,10 +53,21 @@ export default function Hero({ onExploreServices, onTryTools }: HeroProps) {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-lg leading-relaxed opacity-80 max-w-lg mb-10 text-left"
+              className="text-lg leading-relaxed opacity-80 max-w-lg mb-4 text-left"
             >
               YKS ve LGS süreçlerinde profesyonel rehberlik, bireysel öğrenci koçluğu, hızlı okuma teknikleri ve bütünsel eğitim danışmanlığı ile akademik yolculuğunuzda yanınızdayız.
             </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.25 }}
+              className="border-l-2 border-[#C5A059] pl-4 py-1 mb-8 text-left"
+            >
+              <p className="font-serif italic text-base text-[#2D2D2D]/90 font-medium">
+                "Potansiyelini keşfet, hedeflerine emin adımlarla ilerle."
+              </p>
+            </motion.div>
 
             {/* CTAs */}
             <motion.div 
