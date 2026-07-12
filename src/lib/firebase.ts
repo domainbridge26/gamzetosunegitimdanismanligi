@@ -31,10 +31,12 @@ export const db = getFirestore(app, "ai-studio-gamzetosuneitimd-ec7309c5-c6da-40
 // INQUIRIES (Contact Submissions) SERVICES
 // ==========================================
 
+// Track whether the last load succeeded from Firestore or fell back to local storage
+export let isLoadedFromCloud = false;
+
 export async function dbGetInquiries(): Promise<ContactSubmission[]> {
   try {
-    const q = query(collection(db, 'inquiries'), orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await getDocs(collection(db, 'inquiries'));
     const result: ContactSubmission[] = [];
     querySnapshot.forEach((docSnap) => {
       const data = docSnap.data();
@@ -50,12 +52,50 @@ export async function dbGetInquiries(): Promise<ContactSubmission[]> {
         status: data.status || 'Yeni'
       });
     });
+
+    // Sort in memory by parsed date or createdAt string descending
+    result.sort((a, b) => {
+      const dateA = a.createdAt ? parseTurkishDateTime(a.createdAt) : 0;
+      const dateB = b.createdAt ? parseTurkishDateTime(b.createdAt) : 0;
+      return dateB - dateA;
+    });
+
+    isLoadedFromCloud = true;
     return result;
   } catch (error) {
     console.error('Failed to fetch inquiries from Firestore, falling back to localStorage:', error);
+    isLoadedFromCloud = false;
     const raw = localStorage.getItem('gamze_inquiries');
     return raw ? JSON.parse(raw) : [];
   }
+}
+
+// Simple date parser helper for "12.07.2026 11:32:09" style Turkish date-time strings
+function parseTurkishDateTime(str: string): number {
+  try {
+    const parts = str.split(' ');
+    if (parts.length >= 1) {
+      const dateParts = parts[0].split('.');
+      if (dateParts.length === 3) {
+        const day = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1;
+        const year = parseInt(dateParts[2], 10);
+        
+        let hours = 0, minutes = 0, seconds = 0;
+        if (parts[1]) {
+          const timeParts = parts[1].split(':');
+          hours = parseInt(timeParts[0] || '0', 10);
+          minutes = parseInt(timeParts[1] || '0', 10);
+          seconds = parseInt(timeParts[2] || '0', 10);
+        }
+        return new Date(year, month, day, hours, minutes, seconds).getTime();
+      }
+    }
+  } catch (e) {
+    // Fallback
+  }
+  const parsed = Date.parse(str);
+  return isNaN(parsed) ? 0 : parsed;
 }
 
 export async function dbAddInquiry(inquiry: Omit<ContactSubmission, 'id'>): Promise<ContactSubmission> {

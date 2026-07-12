@@ -15,7 +15,8 @@ import {
   dbGetTestimonials, 
   dbApproveTestimonial, 
   dbDeleteTestimonial,
-  dbAddInquiry
+  dbAddInquiry,
+  isLoadedFromCloud
 } from '../lib/firebase';
 
 interface AdminPanelProps {
@@ -229,12 +230,18 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
 
   // Filter & Search
   const filteredInquiries = inquiries.filter(inq => {
+    if (!inq) return false;
+    const fullName = inq.fullName || '';
+    const phone = inq.phone || '';
+    const selectedService = inq.selectedService || '';
+    const message = inq.message || '';
+
     const matchesStatus = filterStatus === 'Tümü' || inq.status === filterStatus;
     const matchesSearch = 
-      inq.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      inq.phone.includes(searchQuery) ||
-      inq.selectedService.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      inq.message.toLowerCase().includes(searchQuery.toLowerCase());
+      fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      phone.includes(searchQuery) ||
+      selectedService.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      message.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
@@ -351,8 +358,21 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div className="text-left">
-              <h2 className="font-display font-bold text-lg leading-none">Gamze Hanım Yönetici Paneli</h2>
-              <span className="text-xs text-slate-400 font-medium">Gelen Danışmanlık ve Koçluk Talepleri Takip Sistemi</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="font-display font-bold text-lg leading-none">Gamze Hanım Yönetici Paneli</h2>
+                {isLoadedFromCloud ? (
+                  <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full border border-emerald-500/30 font-semibold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping shrink-0" />
+                    <span>Bulut Bağlantısı Aktif (Firestore)</span>
+                  </span>
+                ) : (
+                  <span className="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-full border border-amber-500/30 font-semibold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0" />
+                    <span>Yerel Depolama (Çevrimdışı)</span>
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-slate-400 font-medium mt-1 block">Gelen Danışmanlık ve Koçluk Talepleri Takip Sistemi</span>
             </div>
           </div>
           <button 
@@ -578,7 +598,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
           </div>
 
           {/* Leads Table or List */}
-          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden md:flex-1 md:flex md:flex-col">
+          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden flex-1 flex flex-col">
             {filteredInquiries.length > 0 ? (
               <>
                 {/* Desktop View (Table) */}
@@ -822,14 +842,23 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center py-24 space-y-4">
-                <FileSpreadsheet className="w-16 h-16 text-stone-300 stroke-1" />
-                <div className="space-y-1.5 px-6 max-w-sm">
-                  <h4 className="font-display font-bold text-slate-900 text-sm">Hiç Başvuru Bulunmuyor</h4>
-                  <p className="text-xs text-slate-400">
-                    Sistemde henüz kayıtlı başvuru yok veya seçtiğiniz filtreye uygun kayıt bulunmuyor. Test etmek için "Örnek Veri Ekle" butonuna basabilirsiniz!
+              <div className="flex-1 flex flex-col items-center justify-center text-center py-16 px-6 space-y-4 bg-stone-50/50 rounded-2xl border-2 border-dashed border-stone-200 m-4">
+                <div className="p-4 bg-white rounded-full shadow-sm text-slate-300 border border-stone-200">
+                  <FileSpreadsheet className="w-12 h-12 stroke-1 text-slate-400" />
+                </div>
+                <div className="space-y-2 max-w-sm">
+                  <h4 className="font-display font-bold text-slate-900 text-sm">Başvuru Kaydı Bulunamadı</h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Sisteminizde henüz hiç kayıt bulunmuyor veya uyguladığınız filtreye uygun sonuç yok. İletişim sayfasındaki formu doldurarak gerçek bir başvuru oluşturabilir veya aşağıdaki butonla hemen 3 adet örnek başvuru yükleyebilirsiniz.
                   </p>
                 </div>
+                <button
+                  onClick={handleSeedSamples}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow flex items-center gap-2 cursor-pointer"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>Sistemi Test Etmek İçin Örnek Veri Ekle</span>
+                </button>
               </div>
             )}
           </div>
