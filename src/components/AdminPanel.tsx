@@ -602,7 +602,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
             {filteredInquiries.length > 0 ? (
               <>
                 {/* Desktop View (Table) */}
-                <div className="hidden md:block overflow-x-auto">
+                <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-stone-50/80 border-b border-stone-200 text-slate-500 font-bold text-xs uppercase tracking-wider">
@@ -723,8 +723,8 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                   </table>
                 </div>
 
-                {/* Mobile View (Cards for easier touch access) */}
-                <div className="md:hidden block p-4 space-y-4 text-left">
+                {/* Mobile & Tablet View (Cards for easier touch access) */}
+                <div className="lg:hidden block p-4 space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 text-left">
                   {filteredInquiries.map((inq) => (
                     <div key={inq.id} className="bg-stone-50/50 border border-stone-200 rounded-2xl p-4 shadow-sm space-y-3.5">
                       

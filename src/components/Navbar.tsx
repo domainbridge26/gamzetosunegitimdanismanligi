@@ -89,7 +89,7 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, n
           </div>
 
           {/* Desktop Navigation */}
-          <nav id="desktop-nav" className="hidden md:flex items-center gap-2">
+          <nav id="desktop-nav" className="hidden lg:flex items-center gap-2">
             {navItems.map((item) => (
               <button
                 key={item.id}
@@ -145,7 +145,7 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, n
           </div>
 
           {/* Mobile menu button */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             <button
               onClick={onOpenAdmin}
               className="p-1.5 text-[#2D2D2D]/60 hover:text-[#C5A059] hover:bg-[#2D2D2D]/5 border border-[#2D2D2D]/20 relative"
@@ -179,7 +179,7 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, n
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="md:hidden bg-[#FAF9F6] border-b border-[#2D2D2D]/10 overflow-hidden"
+            className="lg:hidden bg-[#FAF9F6] border-b border-[#2D2D2D]/10 overflow-hidden"
           >
             <div className="px-4 pt-2 pb-6 space-y-1">
               {navItems.map((item) => (
