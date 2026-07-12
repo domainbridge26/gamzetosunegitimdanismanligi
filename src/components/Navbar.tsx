@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Settings, User } from 'lucide-react';
+import { Menu, X, Settings, User, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import logoImg from '../assets/images/gamze_tosun_logo_1783782272260.jpg';
+import { dbSubscribeToPageViews, PageViews } from '../lib/firebase';
 
 interface NavbarProps {
   activeSection: string;
@@ -13,6 +14,16 @@ interface NavbarProps {
 export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, notifCount = 0 }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [pageViews, setPageViews] = useState<PageViews>({ todayViews: 0, totalViews: 0 });
+
+  useEffect(() => {
+    const unsubscribe = dbSubscribeToPageViews((views) => {
+      setPageViews(views);
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -115,6 +126,21 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, n
 
           {/* Right actions (Admin Portal + CTA) */}
           <div id="nav-actions" className="hidden lg:flex items-center gap-4">
+            {/* Canlı Site Ziyaret Sayacı */}
+            <div 
+              id="live-visit-counter-desktop"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#FAF9F6] border border-[#2D2D2D]/15 rounded shadow-sm text-left mr-1"
+            >
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <div className="flex flex-col">
+                <span className="text-[8px] font-bold text-[#2D2D2D]/55 uppercase tracking-widest leading-none">Site ziyaret sayısı</span>
+                <span className="text-xs font-black text-[#2D2D2D] leading-none mt-1 font-mono">{pageViews.totalViews}</span>
+              </div>
+            </div>
+
             <button
               id="btn-admin-portal"
               onClick={onOpenAdmin}
@@ -146,6 +172,21 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, n
 
           {/* Mobile menu button */}
           <div className="flex items-center gap-2 lg:hidden">
+            {/* Canlı Site Ziyaret Sayacı (Mobil/Tablet) */}
+            <div 
+              id="live-visit-counter-mobile"
+              className="flex items-center gap-1.5 px-2 py-1 bg-[#FAF9F6] border border-[#2D2D2D]/15 rounded shadow-sm text-left"
+            >
+              <span className="flex h-1.5 w-1.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+              </span>
+              <div className="flex flex-col">
+                <span className="text-[7px] font-bold text-[#2D2D2D]/55 uppercase tracking-wider leading-none">Site ziyaret sayısı</span>
+                <span className="text-[10px] font-black text-[#2D2D2D] leading-none mt-0.5 font-mono">{pageViews.totalViews}</span>
+              </div>
+            </div>
+
             <button
               onClick={onOpenAdmin}
               className="p-1.5 text-[#2D2D2D]/60 hover:text-[#C5A059] hover:bg-[#2D2D2D]/5 border border-[#2D2D2D]/20 relative"
@@ -197,6 +238,18 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, n
                 </button>
               ))}
               <div className="pt-4 border-t border-[#2D2D2D]/10 flex flex-col gap-2">
+                {/* Mobil Çekmece Canlı Ziyaret Sayacı */}
+                <div className="flex items-center justify-between px-4 py-2.5 bg-stone-50 border border-[#2D2D2D]/15 rounded">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2 w-2 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-[9px] font-bold text-[#2D2D2D]/55 uppercase tracking-widest">Site ziyaret sayısı</span>
+                  </div>
+                  <span className="text-sm font-black text-[#2D2D2D] font-mono">{pageViews.totalViews}</span>
+                </div>
+
                 <button
                   onClick={() => {
                     setIsOpen(false);
