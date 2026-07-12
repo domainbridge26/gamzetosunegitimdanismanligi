@@ -9,7 +9,11 @@ import {
   doc, 
   query, 
   orderBy,
-  writeBatch
+  writeBatch,
+  getDoc,
+  setDoc,
+  increment,
+  onSnapshot
 } from 'firebase/firestore';
 import { ContactSubmission, Testimonial } from '../types';
 import { TESTIMONIALS_DATA } from '../data';
@@ -306,3 +310,74 @@ export async function dbDeleteTestimonial(id: string): Promise<void> {
     console.error(e);
   }
 }
+
+// ==========================================
+// ANALYTICS (Görüntülenme Sayıları) SERVICES
+// ==========================================
+
+export interface PageViews {
+  todayViews: number;
+  totalViews: number;
+}
+
+export async function dbIncrementPageViews(): Promise<void> {
+  // Prevent duplicate increment in the same browser session
+  if (sessionStorage.getItem('gamze_session_view_registered')) {
+    return;
+  }
+  
+  try {
+    const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local timezone date format
+    
+    const overallRef = doc(db, 'analytics', 'overall');
+    const dailyRef = doc(db, 'analytics', `daily_${todayStr}`);
+    
+    // Atomically increment the counters
+    const batch = writeBatch(db);
+    batch.set(overallRef, { totalViews: increment(1) }, { merge: true });
+    batch.set(dailyRef, { date: todayStr, views: increment(1) }, { merge: true });
+    
+    await batch.commit();
+    sessionStorage.setItem('gamze_session_view_registered', 'true');
+  } catch (error) {
+    console.error('Failed to increment page views:', error);
+  }
+}
+
+export function dbSubscribeToPageViews(callback: (views: PageViews) => void): () => void {
+  const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+  
+  const overallRef = doc(db, 'analytics', 'overall');
+  const dailyRef = doc(db, 'analytics', `daily_${todayStr}`);
+  
+  let totalViewsVal = 0;
+  let todayViewsVal = 0;
+  
+  const triggerCallback = () => {
+    callback({ todayViews: todayViewsVal, totalViews: totalViewsVal });
+  };
+
+  const unsubOverall = onSnapshot(overallRef, (docSnap) => {
+    if (docSnap.exists()) {
+      totalViewsVal = docSnap.data().totalViews || 0;
+    }
+    triggerCallback();
+  }, (error) => {
+    console.error("Failed to subscribe overall views:", error);
+  });
+  
+  const unsubDaily = onSnapshot(dailyRef, (docSnap) => {
+    if (docSnap.exists()) {
+      todayViewsVal = docSnap.data().views || 0;
+    }
+    triggerCallback();
+  }, (error) => {
+    console.error("Failed to subscribe daily views:", error);
+  });
+  
+  return () => {
+    unsubOverall();
+    unsubDaily();
+  };
+}
+

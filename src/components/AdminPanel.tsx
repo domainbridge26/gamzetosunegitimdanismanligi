@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, Check, Trash2, Archive, Shield, Phone, 
   Mail, Calendar, Users, FileSpreadsheet, PlusCircle, UserCheck,
-  ListFilter, Sparkles, MessageSquare, ThumbsUp, LogOut, Clock, Info
+  ListFilter, Sparkles, MessageSquare, ThumbsUp, LogOut, Clock, Info,
+  Eye, TrendingUp, Globe
 } from 'lucide-react';
 import { ContactSubmission, Testimonial } from '../types';
 import { TESTIMONIALS_DATA } from '../data';
@@ -16,7 +17,9 @@ import {
   dbApproveTestimonial, 
   dbDeleteTestimonial,
   dbAddInquiry,
-  isLoadedFromCloud
+  isLoadedFromCloud,
+  dbSubscribeToPageViews,
+  PageViews
 } from '../lib/firebase';
 
 interface AdminPanelProps {
@@ -36,6 +39,19 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [filterStatus, setFilterStatus] = useState<'Tümü' | 'Yeni' | 'Görüşüldü' | 'Arşivlendi'>('Tümü');
   const [searchQuery, setSearchQuery] = useState('');
+  const [pageViews, setPageViews] = useState<PageViews>({ todayViews: 0, totalViews: 0 });
+
+  // Live page views subscription
+  useEffect(() => {
+    if (isOpen && isAuthenticated) {
+      const unsubscribe = dbSubscribeToPageViews((views) => {
+        setPageViews(views);
+      });
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, [isOpen, isAuthenticated]);
 
   // Real-time live notifications state
   const [liveNotifications, setLiveNotifications] = useState<{
@@ -539,6 +555,40 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
               <div className="flex flex-col">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Arşivlenen</span>
                 <span className="text-xl font-extrabold text-slate-800">{stats.archived}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Canlı Görüntülenme Analizi (Ziyaretçi Takibi) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-gradient-to-br from-slate-900 to-indigo-950 p-5 rounded-2xl border border-indigo-500/20 shadow-md text-left text-white flex items-center justify-between relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-6 opacity-5 transform translate-x-4 -translate-y-4 transition-transform group-hover:scale-110">
+                <Globe className="w-24 h-24 text-white" />
+              </div>
+              <div className="space-y-1.5 z-10">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                  <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Bugünkü Görüntülenme</span>
+                </div>
+                <h3 className="text-3xl font-black tracking-tight">{pageViews.todayViews}</h3>
+                <p className="text-[10px] text-indigo-200/60 font-medium">Sitenizin bugün aldığı anlık ziyaret sayısı</p>
+              </div>
+              <div className="p-3 bg-white/10 rounded-xl border border-white/10 z-10">
+                <Eye className="w-5 h-5 text-indigo-200" />
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-[#1c1811] to-stone-900 p-5 rounded-2xl border border-[#C5A059]/20 shadow-md text-left text-white flex items-center justify-between relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-6 opacity-5 transform translate-x-4 -translate-y-4 transition-transform group-hover:scale-110">
+                <TrendingUp className="w-24 h-24 text-white" />
+              </div>
+              <div className="space-y-1.5 z-10">
+                <span className="text-[10px] font-black text-[#C5A059] uppercase tracking-widest">Toplam Görüntülenme</span>
+                <h3 className="text-3xl font-black tracking-tight">{pageViews.totalViews}</h3>
+                <p className="text-[10px] text-stone-300/60 font-medium">Sitenizin yayına alındığından beri toplam ziyaretçi sayısı</p>
+              </div>
+              <div className="p-3 bg-white/10 rounded-xl border border-white/10 z-10">
+                <Globe className="w-5 h-5 text-[#C5A059]" />
               </div>
             </div>
           </div>

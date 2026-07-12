@@ -20,7 +20,7 @@ import {
   Linkedin, Calendar, Sparkles, BookOpen, Clock, Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { dbGetInquiries, dbGetTestimonials } from './lib/firebase';
+import { dbGetInquiries, dbGetTestimonials, dbIncrementPageViews } from './lib/firebase';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState('hero');
@@ -44,6 +44,7 @@ export default function App() {
 
   useEffect(() => {
     updateNotifCount();
+    dbIncrementPageViews();
     
     // Listen to custom events
     window.addEventListener('gamze-new-inquiry', updateNotifCount);
