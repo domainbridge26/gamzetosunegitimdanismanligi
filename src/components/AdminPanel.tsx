@@ -249,7 +249,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
 
   if (!isAuthenticated) {
     return (
-      <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-55 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[999] flex items-center justify-center p-4">
         <div className="bg-white p-8 max-w-sm w-full border border-[#2D2D2D]/10 shadow-2xl space-y-6 text-center relative rounded-none">
           {/* Close button */}
           <button 
@@ -341,8 +341,8 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-55 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl w-full max-w-6xl h-[85vh] shadow-2xl flex flex-col overflow-hidden border border-stone-200">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-6xl h-[95vh] sm:h-[85vh] shadow-2xl flex flex-col overflow-hidden border border-stone-200">
         
         {/* Header */}
         <div className="bg-slate-900 text-white px-6 py-5 flex items-center justify-between">
@@ -704,7 +704,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                 </div>
 
                 {/* Mobile View (Cards for easier touch access) */}
-                <div className="md:hidden block p-4 space-y-4 overflow-y-auto max-h-[60vh] text-left">
+                <div className="md:hidden block p-4 space-y-4 text-left">
                   {filteredInquiries.map((inq) => (
                     <div key={inq.id} className="bg-stone-50/50 border border-stone-200 rounded-2xl p-4 shadow-sm space-y-3.5">
                       
