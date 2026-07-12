@@ -6,7 +6,7 @@ import { Testimonial } from '../types';
 import { dbGetTestimonials, dbAddTestimonial } from '../lib/firebase';
 
 export default function Testimonials() {
-  const [filter, setFilter] = useState<'Tümü' | 'Öğrenci' | 'Veli'>('Tümü');
+  const [filter, setFilter] = useState<'Tümü' | 'Öğrenci' | 'Veli' | 'Öğretmen'>('Tümü');
   const [testimonials, setTestimonials] = useState<Testimonial[]>(TESTIMONIALS_DATA);
 
   // Load dynamically from Firestore on mount
@@ -33,7 +33,7 @@ export default function Testimonials() {
 
   // Review Form States
   const [name, setName] = useState('');
-  const [role, setRole] = useState<'Öğrenci' | 'Veli'>('Öğrenci');
+  const [role, setRole] = useState<'Öğrenci' | 'Veli' | 'Öğretmen'>('Öğrenci');
   const [examType, setExamType] = useState<'YKS' | 'LGS' | 'Hızlı Okuma' | 'Genel'>('Genel');
   const [achievement, setAchievement] = useState('');
   const [comment, setComment] = useState('');
@@ -50,7 +50,7 @@ export default function Testimonials() {
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !comment.trim() || !achievement.trim()) {
-      setErrorMsg('Lütfen Ad Soyad, Başarı/Kazanılan Okul ve Yorum alanlarını doldurun.');
+      setErrorMsg(role === 'Öğretmen' ? 'Lütfen Ad Soyad, Branş/Kurum ve Yorum alanlarını doldurun.' : 'Lütfen Ad Soyad, Başarı/Kazanılan Okul ve Yorum alanlarını doldurun.');
       return;
     }
 
@@ -103,7 +103,7 @@ export default function Testimonials() {
 
         {/* Filter Buttons */}
         <div className="flex justify-center gap-2 mb-12">
-          {(['Tümü', 'Öğrenci', 'Veli'] as const).map((roleVal) => (
+          {(['Tümü', 'Öğrenci', 'Veli', 'Öğretmen'] as const).map((roleVal) => (
             <button
               key={roleVal}
               onClick={() => setFilter(roleVal)}
@@ -212,12 +212,14 @@ export default function Testimonials() {
 
               {/* Başarı / Kazanılan Okul */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-[#2D2D2D]/60 uppercase tracking-widest block">Başarı / Kazanılan Okul *</label>
+                <label className="text-[10px] font-bold text-[#2D2D2D]/60 uppercase tracking-widest block">
+                  {role === 'Öğretmen' ? 'Branş / Kurum *' : 'Başarı / Kazanılan Okul *'}
+                </label>
                 <input 
                   type="text" 
                   value={achievement}
                   onChange={(e) => setAchievement(e.target.value)}
-                  placeholder="Örn: Kabataş Lisesi veya Net Artışı"
+                  placeholder={role === 'Öğretmen' ? 'Örn: Matematik Öğretmeni' : 'Örn: Kabataş Lisesi veya Net Artışı'}
                   required
                   className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#2D2D2D]/15 text-sm focus:border-[#C5A059] focus:outline-none transition-colors"
                 />
@@ -230,11 +232,12 @@ export default function Testimonials() {
                 <label className="text-[10px] font-bold text-[#2D2D2D]/60 uppercase tracking-widest block">Rolünüz</label>
                 <select 
                   value={role}
-                  onChange={(e) => setRole(e.target.value as 'Öğrenci' | 'Veli')}
+                  onChange={(e) => setRole(e.target.value as 'Öğrenci' | 'Veli' | 'Öğretmen')}
                   className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#2D2D2D]/15 text-sm focus:border-[#C5A059] focus:outline-none transition-colors appearance-none cursor-pointer"
                 >
                   <option value="Öğrenci">Öğrenci</option>
                   <option value="Veli">Veli</option>
+                  <option value="Öğretmen">Öğretmen</option>
                 </select>
               </div>
 

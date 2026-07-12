@@ -311,6 +311,42 @@ export async function dbDeleteTestimonial(id: string): Promise<void> {
   }
 }
 
+export async function dbResetTestimonials(): Promise<Testimonial[]> {
+  try {
+    const q = query(collection(db, 'testimonials'));
+    const querySnapshot = await getDocs(q);
+    const batchDelete = writeBatch(db);
+    querySnapshot.forEach((docSnap) => {
+      batchDelete.delete(docSnap.ref);
+    });
+    await batchDelete.commit();
+
+    const batchSeed = writeBatch(db);
+    const seededList: Testimonial[] = [];
+    TESTIMONIALS_DATA.forEach((item) => {
+      const docRef = doc(collection(db, 'testimonials'));
+      batchSeed.set(docRef, {
+        name: item.name,
+        role: item.role,
+        examType: item.examType || 'Genel',
+        achievement: item.achievement,
+        comment: item.comment,
+        avatarUrl: item.avatarUrl || '',
+        approved: true
+      });
+      seededList.push({ ...item, id: docRef.id, approved: true });
+    });
+    await batchSeed.commit();
+
+    localStorage.setItem('gamze_testimonials', JSON.stringify(seededList));
+    return seededList;
+  } catch (error) {
+    console.error('Failed to reset testimonials in Firestore:', error);
+    localStorage.setItem('gamze_testimonials', JSON.stringify(TESTIMONIALS_DATA));
+    return TESTIMONIALS_DATA;
+  }
+}
+
 // ==========================================
 // ANALYTICS (Görüntülenme Sayıları) SERVICES
 // ==========================================

@@ -16,6 +16,7 @@ import {
   dbGetTestimonials, 
   dbApproveTestimonial, 
   dbDeleteTestimonial,
+  dbResetTestimonials,
   dbAddInquiry,
   isLoadedFromCloud,
   dbSubscribeToPageViews,
@@ -960,10 +961,10 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                 </div>
                 {testimonials.length > 0 && (
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (confirm('Tüm yorum onay geçmişini sıfırlayıp varsayılan yorumları yüklemek istediğinize emin misiniz?')) {
-                        localStorage.removeItem('gamze_testimonials');
-                        setTestimonials(TESTIMONIALS_DATA);
+                        const resetList = await dbResetTestimonials();
+                        setTestimonials(resetList);
                         window.dispatchEvent(new Event('gamze-testimonials-updated'));
                       }
                     }}

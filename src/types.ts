@@ -11,7 +11,7 @@ export interface Service {
 export interface Testimonial {
   id: string;
   name: string;
-  role: 'Öğrenci' | 'Veli';
+  role: 'Öğrenci' | 'Veli' | 'Öğretmen';
   examType?: 'YKS' | 'LGS' | 'Hızlı Okuma' | 'Genel';
   achievement: string;
   comment: string;
