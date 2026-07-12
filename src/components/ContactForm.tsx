@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Phone, Mail, Clock, Send, CheckCircle2, AlertCircle, Calendar, Instagram } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ContactSubmission } from '../types';
+import { dbAddInquiry } from '../lib/firebase';
 
 export default function ContactForm() {
   const [fullName, setFullName] = useState('');
@@ -15,7 +16,7 @@ export default function ContactForm() {
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -26,42 +27,34 @@ export default function ContactForm() {
 
     setLoading(true);
 
-    // Simulate network delay
-    setTimeout(() => {
-      try {
-        const newInquiry: ContactSubmission = {
-          id: Math.random().toString(36).substring(2, 9),
-          fullName,
-          phone,
-          email,
-          studentClass,
-          selectedService,
-          message,
-          createdAt: new Date().toLocaleString('tr-TR'),
-          status: 'Yeni'
-        };
+    try {
+      const inquiryData: Omit<ContactSubmission, 'id'> = {
+        fullName,
+        phone,
+        email,
+        studentClass,
+        selectedService,
+        message,
+        createdAt: new Date().toLocaleString('tr-TR'),
+        status: 'Yeni'
+      };
 
-        // Get existing or create new list
-        const existingRaw = localStorage.getItem('gamze_inquiries');
-        const inquiries: ContactSubmission[] = existingRaw ? JSON.parse(existingRaw) : [];
-        inquiries.unshift(newInquiry);
-        localStorage.setItem('gamze_inquiries', JSON.stringify(inquiries));
+      const savedInquiry = await dbAddInquiry(inquiryData);
 
-        // Dispatch custom event to notify Admin Panel instantly
-        window.dispatchEvent(new CustomEvent('gamze-new-inquiry', { detail: newInquiry }));
+      // Dispatch custom event to notify Admin Panel instantly if open in the same tab/window
+      window.dispatchEvent(new CustomEvent('gamze-new-inquiry', { detail: savedInquiry }));
 
-        setSuccess(true);
-        // Clear Form
-        setFullName('');
-        setPhone('');
-        setEmail('');
-        setMessage('');
-      } catch (err) {
-        setErrorMsg('Bir hata oluştu. Lütfen bilgilerinizi kontrol edip tekrar deneyin.');
-      } finally {
-        setLoading(false);
-      }
-    }, 1200);
+      setSuccess(true);
+      // Clear Form
+      setFullName('');
+      setPhone('');
+      setEmail('');
+      setMessage('');
+    } catch (err) {
+      setErrorMsg('Bir hata oluştu. Lütfen bilgilerinizi kontrol edip tekrar deneyin.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

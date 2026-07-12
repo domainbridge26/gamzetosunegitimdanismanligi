@@ -3,36 +3,29 @@ import { TESTIMONIALS_DATA } from '../data';
 import { Star, GraduationCap, Quote, MessageSquare, Send, Check, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Testimonial } from '../types';
+import { dbGetTestimonials, dbAddTestimonial } from '../lib/firebase';
 
 export default function Testimonials() {
   const [filter, setFilter] = useState<'Tümü' | 'Öğrenci' | 'Veli'>('Tümü');
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(TESTIMONIALS_DATA);
 
-  // Load dynamically, fallback to static initial list
-  const [testimonials, setTestimonials] = useState<Testimonial[]>(() => {
-    const saved = localStorage.getItem('gamze_testimonials');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error("Yorumlar yüklenirken hata oluştu:", e);
+  // Load dynamically from Firestore on mount
+  useEffect(() => {
+    let isMounted = true;
+    dbGetTestimonials().then((data) => {
+      if (isMounted) {
+        setTestimonials(data);
       }
-    }
-    return TESTIMONIALS_DATA;
-  });
+    });
+    return () => { isMounted = false; };
+  }, []);
 
   // Keep state updated in real-time when comments are approved or deleted by Admin
   useEffect(() => {
     const handleUpdate = () => {
-      const saved = localStorage.getItem('gamze_testimonials');
-      if (saved) {
-        try {
-          setTestimonials(JSON.parse(saved));
-        } catch (e) {
-          console.error(e);
-        }
-      } else {
-        setTestimonials(TESTIMONIALS_DATA);
-      }
+      dbGetTestimonials().then((data) => {
+        setTestimonials(data);
+      });
     };
     window.addEventListener('gamze-testimonials-updated', handleUpdate);
     return () => window.removeEventListener('gamze-testimonials-updated', handleUpdate);
@@ -54,40 +47,41 @@ export default function Testimonials() {
     return item.role === filter;
   });
 
-  const handleSubmitReview = (e: React.FormEvent) => {
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !comment.trim() || !achievement.trim()) {
       setErrorMsg('Lütfen Ad Soyad, Başarı/Kazanılan Okul ve Yorum alanlarını doldurun.');
       return;
     }
 
-    const newTestimonial: Testimonial = {
-      id: String(Date.now()),
-      name: name.trim(),
-      role: role,
-      examType: examType,
-      achievement: achievement.trim(),
-      comment: comment.trim(),
-      approved: false // Requires admin moderation
-    };
+    try {
+      const testimonialData: Omit<Testimonial, 'id'> = {
+        name: name.trim(),
+        role: role,
+        examType: examType,
+        achievement: achievement.trim(),
+        comment: comment.trim(),
+        approved: false // Requires admin moderation
+      };
 
-    // Retrieve full list, merge, and save
-    const saved = localStorage.getItem('gamze_testimonials');
-    const existingList: Testimonial[] = saved ? JSON.parse(saved) : [...TESTIMONIALS_DATA];
-    const updated = [newTestimonial, ...existingList];
-    setTestimonials(updated);
-    localStorage.setItem('gamze_testimonials', JSON.stringify(updated));
+      const savedTestimonial = await dbAddTestimonial(testimonialData);
 
-    // Dispatch event to notify the Admin Panel in real time
-    window.dispatchEvent(new CustomEvent('gamze-new-testimonial', { detail: newTestimonial }));
+      // Add to local state (even though unapproved, so it does not flicker or we keep full sync)
+      setTestimonials(prev => [savedTestimonial, ...prev]);
 
-    // Reset Form
-    setName('');
-    setAchievement('');
-    setComment('');
-    setErrorMsg('');
-    setSuccessMsg(true);
-    setTimeout(() => setSuccessMsg(false), 8000);
+      // Dispatch event to notify the Admin Panel in real time
+      window.dispatchEvent(new CustomEvent('gamze-new-testimonial', { detail: savedTestimonial }));
+
+      // Reset Form
+      setName('');
+      setAchievement('');
+      setComment('');
+      setErrorMsg('');
+      setSuccessMsg(true);
+      setTimeout(() => setSuccessMsg(false), 8000);
+    } catch (err) {
+      setErrorMsg('Yorum gönderilirken bir hata oluştu. Lütfen tekrar deneyin.');
+    }
   };
 
   return (

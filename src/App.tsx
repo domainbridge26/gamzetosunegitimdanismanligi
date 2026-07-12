@@ -20,6 +20,7 @@ import {
   Linkedin, Calendar, Sparkles, BookOpen, Clock, Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { dbGetInquiries, dbGetTestimonials } from './lib/firebase';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState('hero');
@@ -27,19 +28,14 @@ export default function App() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [notifCount, setNotifCount] = useState(0);
 
-  const updateNotifCount = () => {
+  const updateNotifCount = async () => {
     let count = 0;
     try {
-      const inqs = localStorage.getItem('gamze_inquiries');
-      if (inqs) {
-        const parsed = JSON.parse(inqs);
-        count += parsed.filter((i: any) => i.status === 'Yeni').length;
-      }
-      const tests = localStorage.getItem('gamze_testimonials');
-      if (tests) {
-        const parsed = JSON.parse(tests);
-        count += parsed.filter((t: any) => t.approved === false).length;
-      }
+      const inqs = await dbGetInquiries();
+      count += inqs.filter((i: any) => i.status === 'Yeni').length;
+      
+      const tests = await dbGetTestimonials();
+      count += tests.filter((t: any) => t.approved === false).length;
     } catch (e) {
       console.error(e);
     }
@@ -289,17 +285,6 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.8 }}
             className="fixed bottom-6 right-6 z-40 flex flex-col gap-2"
           >
-            {/* Quick Whatsapp CTA */}
-            <a
-              href="https://wa.me/905051234567"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center"
-              title="WhatsApp Destek Hattı"
-            >
-              <Phone className="w-5 h-5" />
-            </a>
-
             {/* Back to top scroll button */}
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
