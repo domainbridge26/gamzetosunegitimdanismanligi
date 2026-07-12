@@ -428,7 +428,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
         </div>
 
         {/* Inner Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 bg-stone-50 flex flex-col space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-stone-50 flex flex-col space-y-6">
 
           {/* Real-time Notifications Alert Box */}
           {liveNotifications.length > 0 && (
@@ -578,7 +578,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
           </div>
 
           {/* Leads Table or List */}
-          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden flex-1 flex flex-col">
+          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden md:flex-1 md:flex md:flex-col">
             {filteredInquiries.length > 0 ? (
               <>
                 {/* Desktop View (Table) */}
