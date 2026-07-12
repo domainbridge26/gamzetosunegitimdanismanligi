@@ -1,0 +1,17 @@
+{
+  "short_name": "Gamze Tosun",
+  "name": "Gamze Tosun | Eğitim & Koçluk",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "display": "standalone",
+  "orientation": "portrait"
+}
