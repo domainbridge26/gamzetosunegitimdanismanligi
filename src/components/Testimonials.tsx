@@ -47,6 +47,13 @@ export default function Testimonials() {
     return item.role === filter;
   });
 
+  // Sort testimonials descending by createdAt (newest first)
+  const sortedTestimonials = [...filteredData].sort((a, b) => {
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateB - dateA;
+  });
+
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !comment.trim() || !achievement.trim()) {
@@ -121,7 +128,7 @@ export default function Testimonials() {
         {/* Testimonials Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mb-20">
           <AnimatePresence mode="popLayout">
-            {filteredData.map((test) => (
+            {sortedTestimonials.map((test) => (
               <motion.div
                 key={test.id}
                 layout
@@ -131,52 +138,67 @@ export default function Testimonials() {
                 transition={{ duration: 0.35 }}
                 className="bg-white border border-[#2D2D2D]/10 p-6 sm:p-8 shadow-sm flex flex-col justify-between text-left relative overflow-hidden group hover:border-[#C5A059]/30 transition-all rounded-none"
               >
-                {/* Visual quote accent */}
-                <Quote className="absolute right-6 top-6 w-14 h-14 text-stone-100 opacity-60 group-hover:scale-110 transition-transform" />
+                <div>
+                  {/* Visual quote accent */}
+                  <Quote className="absolute right-6 top-6 w-14 h-14 text-stone-100 opacity-60 group-hover:scale-110 transition-transform" />
 
-                <div className="space-y-4 relative">
-                  {/* Stars */}
-                  <div className="flex gap-1 text-amber-500">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 fill-current" />
-                    ))}
+                  <div className="space-y-4 relative">
+                    {/* Stars */}
+                    <div className="flex gap-1 text-amber-500">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="w-3.5 h-3.5 fill-current" />
+                      ))}
+                    </div>
+
+                    {/* Comment */}
+                    <p className="text-[#2D2D2D]/90 text-xs sm:text-sm leading-relaxed italic">
+                      "{test.comment}"
+                    </p>
                   </div>
 
-                  {/* Comment */}
-                  <p className="text-[#2D2D2D]/90 text-xs sm:text-sm leading-relaxed italic">
-                    "{test.comment}"
-                  </p>
-                </div>
-
-                {/* Profile detail (WITHOUT PHOTO / FOTOĞRAFSIZ) */}
-                <div className="flex items-center gap-4 mt-6 border-t border-[#2D2D2D]/5 pt-4 relative">
-                  <div className="w-10 h-10 rounded-none bg-[#C5A059]/10 text-[#C5A059] flex items-center justify-center font-serif font-bold text-sm shrink-0 border border-[#C5A059]/20 uppercase">
-                    {test.name ? test.name.charAt(0) : 'Y'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-serif font-bold text-[#2D2D2D] text-sm truncate">
-                      {test.name}
-                    </h4>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                      <span className="text-[9px] font-bold tracking-wider text-[#C5A059] uppercase">
-                        {test.role}
-                      </span>
-                      {test.examType && (
-                        <span className="text-[9px] font-semibold text-stone-500 bg-stone-100 px-1.5 py-0.5">
-                          {test.examType}
+                  {/* Profile detail (WITHOUT PHOTO / FOTOĞRAFSIZ) */}
+                  <div className="flex items-center gap-4 mt-6 border-t border-[#2D2D2D]/5 pt-4 relative">
+                    <div className="w-10 h-10 rounded-none bg-[#C5A059]/10 text-[#C5A059] flex items-center justify-center font-serif font-bold text-sm shrink-0 border border-[#C5A059]/20 uppercase">
+                      {test.name ? test.name.charAt(0) : 'Y'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-serif font-bold text-[#2D2D2D] text-sm truncate">
+                        {test.name}
+                      </h4>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                        <span className="text-[9px] font-bold tracking-wider text-[#C5A059] uppercase">
+                          {test.role}
                         </span>
-                      )}
+                        {test.examType && (
+                          <span className="text-[9px] font-semibold text-stone-500 bg-stone-100 px-1.5 py-0.5">
+                            {test.examType}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Achievement badge */}
-                  <div className="text-right shrink-0">
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-[#2D2D2D] bg-[#FAF9F6] px-2.5 py-1 border border-[#2D2D2D]/10">
-                      <GraduationCap className="w-3.5 h-3.5 text-[#C5A059]" />
-                      <span>{test.achievement}</span>
+                    {/* Achievement badge */}
+                    <div className="text-right shrink-0">
+                      <div className="flex items-center gap-1 text-[10px] font-bold text-[#2D2D2D] bg-[#FAF9F6] px-2.5 py-1 border border-[#2D2D2D]/10">
+                        <GraduationCap className="w-3.5 h-3.5 text-[#C5A059]" />
+                        <span>{test.achievement}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Gamze Hanım'ın Yanıtı (Admin Reply) */}
+                {test.adminReply && (
+                  <div className="mt-5 p-4 bg-stone-50 border-l-2 border-[#C5A059] relative text-left space-y-1 z-10">
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#C5A059] uppercase tracking-wider">
+                      <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+                      <span>Gamze Hanım'ın Yanıtı</span>
+                    </div>
+                    <p className="text-[#2D2D2D]/85 text-xs leading-relaxed italic">
+                      "{test.adminReply}"
+                    </p>
+                  </div>
+                )}
 
               </motion.div>
             ))}

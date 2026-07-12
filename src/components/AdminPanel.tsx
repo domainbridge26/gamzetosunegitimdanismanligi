@@ -17,6 +17,7 @@ import {
   dbApproveTestimonial, 
   dbDeleteTestimonial,
   dbResetTestimonials,
+  dbReplyToTestimonial,
   dbAddInquiry,
   isLoadedFromCloud,
   dbSubscribeToPageViews,
@@ -38,6 +39,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
 
   const [inquiries, setInquiries] = useState<ContactSubmission[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
   const [filterStatus, setFilterStatus] = useState<'Tümü' | 'Yeni' | 'Görüşüldü' | 'Arşivlendi'>('Tümü');
   const [searchQuery, setSearchQuery] = useState('');
   const [pageViews, setPageViews] = useState<PageViews>({ todayViews: 0, totalViews: 0 });
@@ -175,6 +177,28 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
       
       // Notify public view to refresh in real-time
       window.dispatchEvent(new Event('gamze-testimonials-updated'));
+    }
+  };
+
+  const handleReplyComment = async (id: string, replyText: string) => {
+    if (!replyText.trim()) return;
+    try {
+      await dbReplyToTestimonial(id, replyText.trim());
+      const updated = testimonials.map(test => {
+        if (test.id === id) {
+          return { ...test, adminReply: replyText.trim() };
+        }
+        return test;
+      });
+      setTestimonials(updated);
+      
+      // Clear specific reply input
+      setReplyInputs(prev => ({ ...prev, [id]: '' }));
+
+      // Notify public view to refresh in real-time
+      window.dispatchEvent(new Event('gamze-testimonials-updated'));
+    } catch (error) {
+      console.error('Failed to save comment reply:', error);
     }
   };
 
@@ -1047,6 +1071,33 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                               <span>{isApproved ? 'Sil' : 'Reddet / Sil'}</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Gamze Hanım Cevap Yazma Bölümü */}
+                        <div className="mt-4 pt-4 border-t border-stone-100/70 space-y-2.5">
+                          {test.adminReply && (
+                            <div className="bg-stone-50 border-l-2 border-[#C5A059] p-3 rounded-r-xl text-xs space-y-1">
+                              <span className="font-bold text-[#C5A059] block text-[10px] uppercase tracking-wider">Cevabınız:</span>
+                              <p className="text-slate-600 leading-relaxed italic">"{test.adminReply}"</p>
+                            </div>
+                          )}
+
+                          <div className="flex gap-2">
+                            <input 
+                              type="text"
+                              value={replyInputs[test.id] || ''}
+                              onChange={(e) => setReplyInputs(prev => ({ ...prev, [test.id]: e.target.value }))}
+                              placeholder={test.adminReply ? "Cevabı güncelleyin..." : "Gamze Hanım olarak cevap yazın..."}
+                              className="flex-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:border-[#C5A059] focus:outline-none transition-all placeholder:text-stone-400"
+                            />
+                            <button
+                              onClick={() => handleReplyComment(test.id, replyInputs[test.id] || '')}
+                              disabled={!(replyInputs[test.id] || '').trim()}
+                              className="px-4 py-2 bg-slate-900 hover:bg-[#C5A059] disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shrink-0 cursor-pointer"
+                            >
+                              Cevapla
                             </button>
                           </div>
                         </div>

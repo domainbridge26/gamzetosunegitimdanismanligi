@@ -17,6 +17,9 @@ export interface Testimonial {
   comment: string;
   avatarUrl?: string;
   approved?: boolean;
+  createdAt?: string;
+  adminReply?: string;
+  replyDate?: string;
 }
 
 export interface ContactSubmission {

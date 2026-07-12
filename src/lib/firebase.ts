@@ -210,7 +210,10 @@ export async function dbGetTestimonials(): Promise<Testimonial[]> {
         achievement: data.achievement || '',
         comment: data.comment || '',
         avatarUrl: data.avatarUrl || '',
-        approved: data.approved !== undefined ? data.approved : true
+        approved: data.approved !== undefined ? data.approved : true,
+        createdAt: data.createdAt || new Date(2026, 0, 1).toISOString(),
+        adminReply: data.adminReply || '',
+        replyDate: data.replyDate || ''
       });
     });
 
@@ -218,8 +221,10 @@ export async function dbGetTestimonials(): Promise<Testimonial[]> {
       // If Firestore is empty, seed it with initial TESTIMONIALS_DATA so the site looks gorgeous
       console.log('Testimonials is empty in Firestore, seeding default data...');
       const batch = writeBatch(db);
-      TESTIMONIALS_DATA.forEach((item) => {
+      // We will seed them with a staggered createdAt date so they maintain original order at the bottom
+      TESTIMONIALS_DATA.forEach((item, index) => {
         const docRef = doc(collection(db, 'testimonials'));
+        const createdAtDate = new Date(2026, 0, 1, 0, 0, 100 - index).toISOString();
         batch.set(docRef, {
           name: item.name,
           role: item.role,
@@ -227,28 +232,63 @@ export async function dbGetTestimonials(): Promise<Testimonial[]> {
           achievement: item.achievement,
           comment: item.comment,
           avatarUrl: item.avatarUrl || '',
-          approved: true
+          approved: true,
+          createdAt: createdAtDate,
+          adminReply: '',
+          replyDate: ''
         });
-        result.push({ ...item, id: docRef.id, approved: true });
+        result.push({ 
+          ...item, 
+          id: docRef.id, 
+          approved: true, 
+          createdAt: createdAtDate,
+          adminReply: '',
+          replyDate: ''
+        });
       });
       await batch.commit();
     }
     
+    // Sort testimonials descending by createdAt (newest at the top)
+    result.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+
     return result;
   } catch (error) {
     console.error('Failed to fetch testimonials from Firestore, falling back to local:', error);
     const raw = localStorage.getItem('gamze_testimonials');
-    return raw ? JSON.parse(raw) : TESTIMONIALS_DATA;
+    const localList: Testimonial[] = raw ? JSON.parse(raw) : TESTIMONIALS_DATA;
+    // Sort local copy too just in case
+    localList.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+    return localList;
   }
 }
 
 export async function dbAddTestimonial(testimonial: Omit<Testimonial, 'id'>): Promise<Testimonial> {
+  const nowStr = new Date().toISOString();
   try {
     const docRef = await addDoc(collection(db, 'testimonials'), {
       ...testimonial,
-      approved: testimonial.approved !== undefined ? testimonial.approved : false
+      approved: testimonial.approved !== undefined ? testimonial.approved : false,
+      createdAt: testimonial.createdAt || nowStr,
+      adminReply: testimonial.adminReply || '',
+      replyDate: testimonial.replyDate || ''
     });
-    const newTest = { ...testimonial, id: docRef.id, approved: testimonial.approved !== undefined ? testimonial.approved : false };
+    const newTest: Testimonial = { 
+      ...testimonial, 
+      id: docRef.id, 
+      approved: testimonial.approved !== undefined ? testimonial.approved : false,
+      createdAt: testimonial.createdAt || nowStr,
+      adminReply: testimonial.adminReply || '',
+      replyDate: testimonial.replyDate || ''
+    };
     
     // Update local storage
     try {
@@ -264,7 +304,14 @@ export async function dbAddTestimonial(testimonial: Omit<Testimonial, 'id'>): Pr
   } catch (error) {
     console.error('Failed to add testimonial to Firestore, saving to local:', error);
     const id = Math.random().toString(36).substring(2, 9);
-    const newTest = { ...testimonial, id, approved: false };
+    const newTest: Testimonial = { 
+      ...testimonial, 
+      id, 
+      approved: false, 
+      createdAt: testimonial.createdAt || nowStr,
+      adminReply: testimonial.adminReply || '',
+      replyDate: testimonial.replyDate || ''
+    };
     const raw = localStorage.getItem('gamze_testimonials');
     const local: Testimonial[] = raw ? JSON.parse(raw) : TESTIMONIALS_DATA;
     local.unshift(newTest);
@@ -286,6 +333,29 @@ export async function dbApproveTestimonial(id: string): Promise<void> {
     const raw = localStorage.getItem('gamze_testimonials');
     const local: Testimonial[] = raw ? JSON.parse(raw) : TESTIMONIALS_DATA;
     const updated = local.map(item => item.id === id ? { ...item, approved: true } : item);
+    localStorage.setItem('gamze_testimonials', JSON.stringify(updated));
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export async function dbReplyToTestimonial(id: string, replyText: string): Promise<void> {
+  const replyDate = new Date().toISOString();
+  try {
+    const ref = doc(db, 'testimonials', id);
+    await updateDoc(ref, { 
+      adminReply: replyText,
+      replyDate: replyDate
+    });
+  } catch (error) {
+    console.error(`Failed to reply to testimonial ${id} in Firestore:`, error);
+  }
+
+  // Update local storage
+  try {
+    const raw = localStorage.getItem('gamze_testimonials');
+    const local: Testimonial[] = raw ? JSON.parse(raw) : TESTIMONIALS_DATA;
+    const updated = local.map(item => item.id === id ? { ...item, adminReply: replyText, replyDate: replyDate } : item);
     localStorage.setItem('gamze_testimonials', JSON.stringify(updated));
   } catch (e) {
     console.error(e);
@@ -323,8 +393,9 @@ export async function dbResetTestimonials(): Promise<Testimonial[]> {
 
     const batchSeed = writeBatch(db);
     const seededList: Testimonial[] = [];
-    TESTIMONIALS_DATA.forEach((item) => {
+    TESTIMONIALS_DATA.forEach((item, index) => {
       const docRef = doc(collection(db, 'testimonials'));
+      const createdAtDate = new Date(2026, 0, 1, 0, 0, 100 - index).toISOString();
       batchSeed.set(docRef, {
         name: item.name,
         role: item.role,
@@ -332,9 +403,19 @@ export async function dbResetTestimonials(): Promise<Testimonial[]> {
         achievement: item.achievement,
         comment: item.comment,
         avatarUrl: item.avatarUrl || '',
-        approved: true
+        approved: true,
+        createdAt: createdAtDate,
+        adminReply: '',
+        replyDate: ''
       });
-      seededList.push({ ...item, id: docRef.id, approved: true });
+      seededList.push({ 
+        ...item, 
+        id: docRef.id, 
+        approved: true, 
+        createdAt: createdAtDate,
+        adminReply: '',
+        replyDate: ''
+      });
     });
     await batchSeed.commit();
 
