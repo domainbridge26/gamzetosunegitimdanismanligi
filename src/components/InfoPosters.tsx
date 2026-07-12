@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import tercihImg from '../assets/images/tercih_danismanligi_1783782315075.jpg';
 import koclukImg from '../assets/images/ogrenci_koclugu_1783782332463.jpg';
-import portraitImg from '../assets/images/gamze_tosun_new_portrait_1783783600184.jpg';
+import logoImg from '../assets/images/gamze_tosun_main_logo_1783784317486.jpg';
 
 export default function InfoPosters() {
   const [activeTab, setActiveTab] = useState<'tercih' | 'kocluk' | 'faydalar'>('tercih');
@@ -291,9 +291,9 @@ export default function InfoPosters() {
               >
                 {/* Visual / Image Side */}
                 <div className="lg:col-span-5 space-y-6">
-                  <div className="relative group overflow-hidden border border-[#2D2D2D]/10 bg-[#0E0E10] h-[400px] flex items-center justify-center">
+                  <div className="relative group overflow-hidden border border-[#2D2D2D]/10 bg-white h-[400px] flex items-center justify-center p-8">
                     <img 
-                      src={portraitImg} 
+                      src={logoImg} 
                       alt="Gamze Tosun Koçluk Felsefesi" 
                       referrerPolicy="no-referrer"
                       className="h-full aspect-square object-contain transition-transform duration-700 group-hover:scale-105"

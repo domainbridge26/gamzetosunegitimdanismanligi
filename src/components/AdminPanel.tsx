@@ -580,126 +580,247 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
           {/* Leads Table or List */}
           <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden flex-1 flex flex-col">
             {filteredInquiries.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-stone-50/80 border-b border-stone-200 text-slate-500 font-bold text-xs uppercase tracking-wider">
-                      <th className="px-5 py-4">Aday Detayı / Tarih</th>
-                      <th className="px-5 py-4">Sınav Grubu & Hizmet</th>
-                      <th className="px-5 py-4">Mesaj ve Hedefler</th>
-                      <th className="px-5 py-4 text-center">Durum</th>
-                      <th className="px-5 py-4 text-right">İşlemler</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-stone-100">
-                    {filteredInquiries.map((inq) => (
-                      <tr key={inq.id} className="hover:bg-stone-50/50 transition-colors">
-                        
-                        {/* Candidate info */}
-                        <td className="px-5 py-4 shrink-0">
-                          <div className="flex flex-col space-y-1">
-                            <span className="font-display font-black text-slate-900 text-sm leading-none">
-                              {inq.fullName}
-                            </span>
-                            <span className="text-[11px] font-mono text-slate-500">
-                              ID: #{inq.id}
-                            </span>
-                            <div className="flex flex-col gap-1 pt-1">
-                              <a href={`tel:${inq.phone}`} className="flex items-center gap-1 text-xs text-emerald-800 font-semibold hover:underline">
-                                <Phone className="w-3 h-3" />
-                                <span>{inq.phone}</span>
-                              </a>
-                              {inq.email && (
-                                <a href={`mailto:${inq.email}`} className="flex items-center gap-1 text-[11px] text-slate-400 hover:underline">
-                                  <Mail className="w-3 h-3" />
-                                  <span>{inq.email}</span>
+              <>
+                {/* Desktop View (Table) */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-stone-50/80 border-b border-stone-200 text-slate-500 font-bold text-xs uppercase tracking-wider">
+                        <th className="px-5 py-4">Aday Detayı / Tarih</th>
+                        <th className="px-5 py-4">Sınav Grubu & Hizmet</th>
+                        <th className="px-5 py-4">Mesaj ve Hedefler</th>
+                        <th className="px-5 py-4 text-center">Durum</th>
+                        <th className="px-5 py-4 text-right">İşlemler</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100">
+                      {filteredInquiries.map((inq) => (
+                        <tr key={inq.id} className="hover:bg-stone-50/50 transition-colors">
+                          
+                          {/* Candidate info */}
+                          <td className="px-5 py-4 shrink-0">
+                            <div className="flex flex-col space-y-1">
+                              <span className="font-display font-black text-slate-900 text-sm leading-none">
+                                {inq.fullName}
+                              </span>
+                              <span className="text-[11px] font-mono text-slate-500">
+                                ID: #{inq.id}
+                              </span>
+                              <div className="flex flex-col gap-1 pt-1">
+                                <a href={`tel:${inq.phone}`} className="flex items-center gap-1 text-xs text-emerald-800 font-semibold hover:underline">
+                                  <Phone className="w-3 h-3" />
+                                  <span>{inq.phone}</span>
                                 </a>
-                              )}
+                                {inq.email && (
+                                  <a href={`mailto:${inq.email}`} className="flex items-center gap-1 text-[11px] text-slate-400 hover:underline">
+                                    <Mail className="w-3 h-3" />
+                                    <span>{inq.email}</span>
+                                  </a>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1 mt-1.5">
+                                <Calendar className="w-3 h-3" />
+                                {inq.createdAt}
+                              </span>
                             </div>
-                            <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1 mt-1.5">
-                              <Calendar className="w-3 h-3" />
-                              {inq.createdAt}
-                            </span>
-                          </div>
-                        </td>
+                          </td>
 
-                        {/* Education Details */}
-                        <td className="px-5 py-4">
-                          <div className="flex flex-col gap-1 items-start">
-                            <span className="text-xs font-bold text-slate-700 bg-stone-100 px-2 py-0.5 rounded">
-                              {inq.studentClass}
-                            </span>
-                            <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-                              {inq.selectedService}
-                            </span>
-                          </div>
-                        </td>
+                          {/* Education Details */}
+                          <td className="px-5 py-4">
+                            <div className="flex flex-col gap-1 items-start">
+                              <span className="text-xs font-bold text-slate-700 bg-stone-100 px-2 py-0.5 rounded">
+                                {inq.studentClass}
+                              </span>
+                              <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                                {inq.selectedService}
+                              </span>
+                            </div>
+                          </td>
 
-                        {/* Message */}
-                        <td className="px-5 py-4 max-w-sm">
-                          <p className="text-xs text-slate-600 leading-relaxed max-h-[85px] overflow-y-auto scrollbar-thin">
+                          {/* Message */}
+                          <td className="px-5 py-4 max-w-sm">
+                            <p className="text-xs text-slate-600 leading-relaxed max-h-[85px] overflow-y-auto scrollbar-thin">
+                              {inq.message}
+                            </p>
+                          </td>
+
+                          {/* Status badge */}
+                          <td className="px-5 py-4 text-center">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                              inq.status === 'Yeni'
+                                ? 'bg-rose-100 text-rose-800 border border-rose-200 animate-pulse'
+                                : inq.status === 'Görüşüldü'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                : 'bg-stone-200 text-stone-700 border border-stone-300'
+                            }`}>
+                              {inq.status}
+                            </span>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-5 py-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {inq.status !== 'Görüşüldü' && (
+                                <button
+                                  onClick={() => updateStatus(inq.id, 'Görüşüldü')}
+                                  className="p-1 text-emerald-700 hover:bg-emerald-50 rounded-md border border-emerald-200/50 cursor-pointer"
+                                  title="Görüşüldü olarak işaretle"
+                                >
+                                  <Check className="w-4 h-4" />
+                                </button>
+                              )}
+                              {inq.status !== 'Arşivlendi' && (
+                                <button
+                                  onClick={() => updateStatus(inq.id, 'Arşivlendi')}
+                                  className="p-1 text-slate-500 hover:bg-stone-100 rounded-md border border-stone-200 cursor-pointer"
+                                  title="Arşive Gönder"
+                                >
+                                  <Archive className="w-4 h-4" />
+                                </button>
+                              )}
+                              {inq.status === 'Arşivlendi' && (
+                                <button
+                                  onClick={() => updateStatus(inq.id, 'Yeni')}
+                                  className="p-1 text-amber-700 hover:bg-amber-50 rounded-md border border-amber-200 cursor-pointer"
+                                  title="Yeni statüsüne geri taşı"
+                                >
+                                  <PlusCircle className="w-4 h-4" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDelete(inq.id)}
+                                className="p-1 text-red-600 hover:bg-red-50 rounded-md border border-red-200/60 cursor-pointer"
+                                title="Sil"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile View (Cards for easier touch access) */}
+                <div className="md:hidden block p-4 space-y-4 overflow-y-auto max-h-[60vh] text-left">
+                  {filteredInquiries.map((inq) => (
+                    <div key={inq.id} className="bg-stone-50/50 border border-stone-200 rounded-2xl p-4 shadow-sm space-y-3.5">
+                      
+                      {/* Name, ID, and Status */}
+                      <div className="flex justify-between items-start gap-2 border-b border-stone-200/60 pb-2">
+                        <div className="flex flex-col">
+                          <span className="font-serif font-bold text-slate-900 text-sm leading-tight">
+                            {inq.fullName}
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400 mt-0.5">
+                            ID: #{inq.id}
+                          </span>
+                        </div>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                          inq.status === 'Yeni'
+                            ? 'bg-rose-100 text-rose-800 border border-rose-200 animate-pulse'
+                            : inq.status === 'Görüşüldü'
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-stone-200 text-stone-700 border border-stone-300'
+                        }`}>
+                          {inq.status}
+                        </span>
+                      </div>
+
+                      {/* Service & Class Badges */}
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="text-[10px] font-bold text-slate-600 bg-stone-100 px-2.5 py-1">
+                          {inq.studentClass}
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 border border-emerald-100">
+                          {inq.selectedService}
+                        </span>
+                      </div>
+
+                      {/* Tappable Contact Links */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <a 
+                          href={`tel:${inq.phone}`}
+                          className="flex items-center justify-center gap-1.5 py-2.5 bg-emerald-600 active:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                          <span>Adayı Ara</span>
+                        </a>
+                        {inq.email ? (
+                          <a 
+                            href={`mailto:${inq.email}`}
+                            className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 active:bg-slate-900 text-white rounded-lg text-xs font-bold transition-colors"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            <span>E-Posta Gönder</span>
+                          </a>
+                        ) : (
+                          <div className="flex items-center justify-center gap-1.5 py-2.5 bg-stone-100 text-stone-400 border border-stone-200 rounded-lg text-xs font-medium">
+                            <span>E-Posta Yok</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Message Box */}
+                      {inq.message && (
+                        <div className="bg-white rounded-xl p-3 border border-stone-200/50">
+                          <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Aday Mesajı</span>
+                          <p className="text-xs text-slate-600 leading-relaxed break-words">
                             {inq.message}
                           </p>
-                        </td>
+                        </div>
+                      )}
 
-                        {/* Status badge */}
-                        <td className="px-5 py-4 text-center">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                            inq.status === 'Yeni'
-                              ? 'bg-rose-100 text-rose-800 border border-rose-200 animate-pulse'
-                              : inq.status === 'Görüşüldü'
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                              : 'bg-stone-200 text-stone-700 border border-stone-300'
-                          }`}>
-                            {inq.status}
-                          </span>
-                        </td>
+                      {/* Creation Date */}
+                      <div className="text-[10px] text-slate-400 font-medium flex items-center gap-1.5">
+                        <Calendar className="w-3 h-3" />
+                        <span>Kayıt Tarihi: {inq.createdAt}</span>
+                      </div>
 
-                        {/* Actions */}
-                        <td className="px-5 py-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {inq.status !== 'Görüşüldü' && (
-                              <button
-                                onClick={() => updateStatus(inq.id, 'Görüşüldü')}
-                                className="p-1 text-emerald-700 hover:bg-emerald-50 rounded-md border border-emerald-200/50"
-                                title="Görüşüldü olarak işaretle"
-                              >
-                                <Check className="w-4 h-4" />
-                              </button>
-                            )}
-                            {inq.status !== 'Arşivlendi' && (
-                              <button
-                                onClick={() => updateStatus(inq.id, 'Arşivlendi')}
-                                className="p-1 text-slate-500 hover:bg-stone-100 rounded-md border border-stone-200"
-                                title="Arşive Gönder"
-                              >
-                                <Archive className="w-4 h-4" />
-                              </button>
-                            )}
-                            {inq.status === 'Arşivlendi' && (
-                              <button
-                                onClick={() => updateStatus(inq.id, 'Yeni')}
-                                className="p-1 text-amber-700 hover:bg-amber-50 rounded-md border border-amber-200"
-                                title="Yeni statüsüne geri taşı"
-                              >
-                                <PlusCircle className="w-4 h-4" />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDelete(inq.id)}
-                              className="p-1 text-red-600 hover:bg-red-50 rounded-md border border-red-200/60"
-                              title="Sil"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
+                      {/* Tappable Action Buttons (44px min height) */}
+                      <div className="flex gap-2 pt-2.5 border-t border-stone-200/60">
+                        {inq.status !== 'Görüşüldü' && (
+                          <button
+                            onClick={() => updateStatus(inq.id, 'Görüşüldü')}
+                            className="flex-1 py-2.5 bg-emerald-50 active:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold uppercase tracking-wider rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                          >
+                            <Check className="w-4 h-4" />
+                            <span>Görüşüldü</span>
+                          </button>
+                        )}
+                        {inq.status !== 'Arşivlendi' && (
+                          <button
+                            onClick={() => updateStatus(inq.id, 'Arşivlendi')}
+                            className="flex-1 py-2.5 bg-stone-100 active:bg-stone-200 text-slate-700 border border-stone-200 text-xs font-bold uppercase tracking-wider rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                          >
+                            <Archive className="w-4 h-4" />
+                            <span>Arşivle</span>
+                          </button>
+                        )}
+                        {inq.status === 'Arşivlendi' && (
+                          <button
+                            onClick={() => updateStatus(inq.id, 'Yeni')}
+                            className="flex-1 py-2.5 bg-amber-50 active:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold uppercase tracking-wider rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                          >
+                            <PlusCircle className="w-4 h-4" />
+                            <span>Geri Al</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(inq.id)}
+                          className="py-2.5 px-3 bg-rose-50 active:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg flex items-center justify-center cursor-pointer transition-colors"
+                          title="Sil"
+                        >
+                          <Trash2 className="w-4.5 h-4.5" />
+                        </button>
+                      </div>
 
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-center py-24 space-y-4">
                 <FileSpreadsheet className="w-16 h-16 text-stone-300 stroke-1" />
