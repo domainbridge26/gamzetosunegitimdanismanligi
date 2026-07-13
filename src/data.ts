@@ -22,6 +22,26 @@ export const SERVICES_DATA: Service[] = [
     ]
   },
   {
+    id: 'ogrenci-koclugu-egitmenligi',
+    title: 'Öğrenci Koçluğu Eğitmenliği',
+    shortDesc: 'Geleceğin koçlarını yetiştiren, teorik ve pratik uygulamalı profesyonel eğitmenlik sertifika programı.',
+    longDesc: 'Öğrenci Koçluğu Eğitmenliği programı; öğretmenler, psikolojik danışmanlar, veliler veya bu alanda profesyonel kariyer yapmak isteyen bireyler için özel olarak tasarlanmıştır. Program kapsamında, öğrenci psikolojisi, hedef belirleme teknikleri, sınav sistemleri, aile iletişimi ve koçluk araçlarının etkin kullanımı profesyonel düzeyde aktarılır. Bu eğitimi tamamlayarak yetkin ve sertifikalı bir öğrenci koçu eğitiyor ve yönlendiriyor olursunuz.',
+    iconName: 'Award',
+    features: [
+      'Uluslararası standartlarda koçluk metodolojisi ve etik kuralları',
+      'Öğrenci psikolojisi, gelişim dönemleri ve motivasyon teknikleri',
+      'Haftalık program hazırlama ve deneme analizi profesyonel araçları',
+      'Sınav sistemleri (LGS, YKS, DGS) ve tercih danışmanlığı eğitimi',
+      'Veli iletişimi, kriz yönetimi ve seans yapılandırma pratikleri'
+    ],
+    benefits: [
+      'Profesyonel Öğrenci Koçu Eğitmeni unvanı ve yeni bir kariyer kapısı elde edersiniz.',
+      'Öğrencilerle ve kendi çocuklarınızla çok daha sağlıklı iletişim kurarsınız.',
+      'Hazır şablonlar, dijital araçlar ve zengin materyal arşivine sahip olursunuz.',
+      'Eğitim sektöründe fark yaratan, yüksek kazanç potansiyelli bir uzmanlık kazanırsınız.'
+    ]
+  },
+  {
     id: 'egitim-danismanligi',
     title: 'Eğitim Danışmanlığı',
     shortDesc: 'Veli, öğrenci ve okul üçgeninde akademik süreçlerin profesyonel koordinasyonu ve okul başarısı takibi.',

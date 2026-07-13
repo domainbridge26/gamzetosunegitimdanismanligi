@@ -241,6 +241,7 @@ export default function ContactForm() {
                         >
                           <option value="Öğrenci Koçluğu">Öğrenci Koçluğu</option>
                           <option value="Eğitim Danışmanlığı">Eğitim Danışmanlığı</option>
+                          <option value="Öğrenci Koçluğu Belgesi">Öğrenci Koçluğu Belgesi Başvurusu</option>
                           <option value="Tercih Danışmanlığı">YKS & LGS Tercih Danışmanlığı</option>
                           <option value="Hızlı Okuma">Hızlı Okuma Teknikleri</option>
                           <option value="Genel Analiz / Paket">Tümünü Kapsayan Bütünsel Paket</option>

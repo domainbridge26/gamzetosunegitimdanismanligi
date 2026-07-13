@@ -108,6 +108,135 @@ export default function SchedulePlanner() {
   const [editingSlot, setEditingSlot] = useState<{ day: string; index: number; slot: ScheduleItem } | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Modal auxiliary states for enhanced control
+  const [modalStartHour, setModalStartHour] = useState('17:00');
+  const [modalEndHour, setModalEndHour] = useState('18:30');
+  const [modalSelectedGroup, setModalSelectedGroup] = useState('YKS Sayısal');
+  const [modalSelectedSubject, setModalSelectedSubject] = useState('');
+  const [modalSelectedUnit, setModalSelectedUnit] = useState('');
+
+  // Handle updates to editingSlot properties cleanly
+  useEffect(() => {
+    if (editingSlot) {
+      // 1. Parse time
+      const parts = editingSlot.slot.time.split(' - ');
+      if (parts.length === 2) {
+        setModalStartHour(parts[0]);
+        setModalEndHour(parts[1]);
+      } else {
+        setModalStartHour('17:00');
+        setModalEndHour('18:30');
+      }
+
+      // 2. Set group based on current examGroup (or default to YKS Sayısal if not in EXAM_SUBJECTS keys)
+      const currentGroup = EXAM_SUBJECTS[examGroup] ? examGroup : 'YKS Sayısal';
+      setModalSelectedGroup(currentGroup);
+
+      // 3. Find if subject matches any in the selected examGroup
+      const currentSubjects = EXAM_SUBJECTS[currentGroup] || [];
+      const matchedSubj = currentSubjects.find(s => s.name.toLowerCase() === editingSlot.slot.subject.toLowerCase());
+      
+      if (matchedSubj) {
+        setModalSelectedSubject(matchedSubj.name);
+        
+        // Check if focus contains any unit name
+        const matchedTopic = matchedSubj.focusTopics.find(topic => 
+          editingSlot.slot.focus.toLowerCase().includes(topic.toLowerCase())
+        );
+        if (matchedTopic) {
+          setModalSelectedUnit(matchedTopic);
+        } else {
+          setModalSelectedUnit('custom');
+        }
+      } else {
+        setModalSelectedSubject('custom');
+        setModalSelectedUnit('custom');
+      }
+    }
+  }, [editingSlot]);
+
+  const handleModalTimeChange = (start: string, end: string) => {
+    setModalStartHour(start);
+    setModalEndHour(end);
+    if (editingSlot) {
+      setEditingSlot({
+        ...editingSlot,
+        slot: { ...editingSlot.slot, time: `${start} - ${end}` }
+      });
+    }
+  };
+
+  const handleModalGroupChange = (groupName: string) => {
+    setModalSelectedGroup(groupName);
+    const currentSubjects = EXAM_SUBJECTS[groupName] || [];
+    if (currentSubjects.length > 0) {
+      handleModalSubjectChange(groupName, currentSubjects[0].name);
+    } else {
+      handleModalSubjectChange(groupName, 'custom');
+    }
+  };
+
+  const handleModalSubjectChange = (groupName: string, subjectName: string) => {
+    setModalSelectedSubject(subjectName);
+    if (editingSlot) {
+      const isCustom = subjectName === 'custom';
+      const finalSubject = isCustom ? '' : subjectName;
+      
+      let finalFocus = editingSlot.slot.focus;
+      let finalAdvice = editingSlot.slot.advice;
+      let finalColor = editingSlot.slot.color;
+
+      if (!isCustom) {
+        const subjectsList = EXAM_SUBJECTS[groupName] || [];
+        const subjObj = subjectsList.find(s => s.name === subjectName);
+        if (subjObj) {
+          finalColor = subjObj.color;
+          if (subjObj.focusTopics.length > 0) {
+            setModalSelectedUnit(subjObj.focusTopics[0]);
+            finalFocus = `${subjObj.focusTopics[0]} Konu Anlatımı ve Soru Çözümü`;
+          } else {
+            setModalSelectedUnit('custom');
+          }
+          
+          if (weakSubjects.includes(subjectName)) {
+            finalAdvice = `Gamze Hoca'nın Notu: Bu senin gelişim dersin! Anlamadığın her formülü defterine yaz, pes etmek yok.`;
+          } else {
+            finalAdvice = COACH_ADVICES[Math.floor(Math.random() * COACH_ADVICES.length)];
+          }
+        }
+      } else {
+        setModalSelectedUnit('custom');
+      }
+
+      setEditingSlot({
+        ...editingSlot,
+        slot: { 
+          ...editingSlot.slot, 
+          subject: finalSubject,
+          focus: finalFocus,
+          advice: finalAdvice,
+          color: finalColor
+        }
+      });
+    }
+  };
+
+  const handleModalUnitChange = (unitName: string) => {
+    setModalSelectedUnit(unitName);
+    if (editingSlot) {
+      const isCustom = unitName === 'custom';
+      const finalFocus = isCustom ? editingSlot.slot.focus : `${unitName} Konu Anlatımı ve Soru Çözümü`;
+      
+      setEditingSlot({
+        ...editingSlot,
+        slot: { 
+          ...editingSlot.slot, 
+          focus: finalFocus 
+        }
+      });
+    }
+  };
+
   // Load Saved Schedules from local storage
   useEffect(() => {
     const saved = localStorage.getItem('gamze_tosun_saved_schedules');
@@ -343,10 +472,13 @@ export default function SchedulePlanner() {
       color: 'bg-stone-50 border-stone-200 text-stone-700'
     };
 
+    const updatedSlots = [...daySlots, newSlot];
     setSchedule({
       ...schedule,
-      [day]: [...daySlots, newSlot]
+      [day]: updatedSlots
     });
+
+    handleOpenEditSlot(day, updatedSlots.length - 1, newSlot);
   };
 
   // Delete specific slot from day
@@ -928,10 +1060,10 @@ export default function SchedulePlanner() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl w-full max-w-md overflow-hidden border border-stone-200 shadow-2xl text-left flex flex-col"
+              className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-stone-200 shadow-2xl text-left flex flex-col"
             >
               {/* Header */}
-              <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between">
+              <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between sticky top-0 z-10">
                 <h4 className="font-serif font-bold text-sm">Zaman Dilimi Düzenle ({editingSlot.day})</h4>
                 <button 
                   onClick={() => { setIsEditModalOpen(false); setEditingSlot(null); }}
@@ -944,41 +1076,114 @@ export default function SchedulePlanner() {
               {/* Form */}
               <form onSubmit={handleSaveEditedSlot} className="p-5 space-y-4">
                 
-                {/* Time range */}
-                <div className="space-y-1">
+                {/* 1. Saat Seçimi (Manual & Automatic) */}
+                <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Çalışma Saat Aralığı</label>
-                  <input 
-                    type="text"
-                    required
-                    value={editingSlot.slot.time}
-                    onChange={(e) => setEditingSlot({
-                      ...editingSlot,
-                      slot: { ...editingSlot.slot, time: e.target.value }
-                    })}
-                    placeholder="Örn: 17:00 - 18:30"
-                    className="w-full px-3 py-2 bg-[#FAF9F6] border border-stone-200 rounded-xl text-xs focus:border-[#C5A059] focus:outline-none transition-colors"
-                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-[9px] text-slate-400 font-medium block mb-1">Başlangıç Saati</span>
+                      <input 
+                        type="time"
+                        value={modalStartHour}
+                        onChange={(e) => handleModalTimeChange(e.target.value, modalEndHour)}
+                        className="w-full px-3 py-2 bg-[#FAF9F6] border border-stone-200 rounded-xl text-xs focus:border-[#C5A059] focus:outline-none transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 font-medium block mb-1">Bitiş Saati</span>
+                      <input 
+                        type="time"
+                        value={modalEndHour}
+                        onChange={(e) => handleModalTimeChange(modalStartHour, e.target.value)}
+                        className="w-full px-3 py-2 bg-[#FAF9F6] border border-stone-200 rounded-xl text-xs focus:border-[#C5A059] focus:outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <span className="text-[9px] text-slate-400 font-medium block mb-1">Serbest Saat Girişi (Alternatif)</span>
+                    <input 
+                      type="text"
+                      required
+                      value={editingSlot.slot.time}
+                      onChange={(e) => setEditingSlot({
+                        ...editingSlot,
+                        slot: { ...editingSlot.slot, time: e.target.value }
+                      })}
+                      placeholder="Örn: 17:00 - 18:30"
+                      className="w-full px-3 py-2 bg-[#FAF9F6] border border-stone-200 rounded-xl text-xs focus:border-[#C5A059] focus:outline-none transition-colors"
+                    />
+                  </div>
                 </div>
 
-                {/* Subject Name */}
+                {/* 2. Sınıf Seviyesi Seçimi */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Ders Adı</label>
-                  <input 
-                    type="text"
-                    required
-                    value={editingSlot.slot.subject}
-                    onChange={(e) => setEditingSlot({
-                      ...editingSlot,
-                      slot: { ...editingSlot.slot, subject: e.target.value }
-                    })}
-                    placeholder="Örn: Matematik (AYT)"
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Sınıf Seviyesi / Sınav Grubu</label>
+                  <select
+                    value={modalSelectedGroup}
+                    onChange={(e) => handleModalGroupChange(e.target.value)}
                     className="w-full px-3 py-2 bg-[#FAF9F6] border border-stone-200 rounded-xl text-xs focus:border-[#C5A059] focus:outline-none transition-colors"
-                  />
+                  >
+                    {Object.keys(EXAM_SUBJECTS).map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* Focus / Topics */}
+                {/* 3. Ders Seçimi */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Konu Odak Noktası</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Ders Seçimi</label>
+                  <select
+                    value={modalSelectedSubject}
+                    onChange={(e) => handleModalSubjectChange(modalSelectedGroup, e.target.value)}
+                    className="w-full px-3 py-2 bg-[#FAF9F6] border border-stone-200 rounded-xl text-xs focus:border-[#C5A059] focus:outline-none transition-colors"
+                  >
+                    {EXAM_SUBJECTS[modalSelectedGroup]?.map((s) => (
+                      <option key={s.name} value={s.name}>{s.name}</option>
+                    ))}
+                    <option value="custom">-- Özel Ders Yazacağım --</option>
+                  </select>
+
+                  {/* Manual input if custom */}
+                  {modalSelectedSubject === 'custom' && (
+                    <div className="pt-2">
+                      <input 
+                        type="text"
+                        required
+                        value={editingSlot.slot.subject}
+                        onChange={(e) => setEditingSlot({
+                          ...editingSlot,
+                          slot: { ...editingSlot.slot, subject: e.target.value }
+                        })}
+                        placeholder="Örn: Paragraf Hızlı Okuma"
+                        className="w-full px-3 py-2 bg-[#FAF9F6] border border-[#C5A059] rounded-xl text-xs focus:outline-none transition-colors"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Ünite / Konu Seçimi */}
+                {modalSelectedSubject !== 'custom' && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Müfredat Ünite / Konu Başlığı</label>
+                    <select
+                      value={modalSelectedUnit}
+                      onChange={(e) => handleModalUnitChange(e.target.value)}
+                      className="w-full px-3 py-2 bg-[#FAF9F6] border border-stone-200 rounded-xl text-xs focus:border-[#C5A059] focus:outline-none transition-colors"
+                    >
+                      {EXAM_SUBJECTS[modalSelectedGroup]
+                        ?.find((s) => s.name === modalSelectedSubject)
+                        ?.focusTopics.map((topic) => (
+                          <option key={topic} value={topic}>{topic}</option>
+                        ))}
+                      <option value="custom">-- Özel Konu Yazacağım --</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* 5. Konu Odak Noktası */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Konu Odak Noktası (Detaylar)</label>
                   <textarea 
                     required
                     rows={2}
@@ -992,7 +1197,7 @@ export default function SchedulePlanner() {
                   />
                 </div>
 
-                {/* Advice / Tip */}
+                {/* 6. Öğretmen Tavsiyesi */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Öğretmen Tavsiyesi / Notu</label>
                   <textarea 
@@ -1008,7 +1213,7 @@ export default function SchedulePlanner() {
                 </div>
 
                 {/* Submit */}
-                <div className="flex items-center gap-2 pt-2">
+                <div className="flex items-center gap-2 pt-2 pb-1">
                   <button
                     type="button"
                     onClick={() => { setIsEditModalOpen(false); setEditingSlot(null); }}
