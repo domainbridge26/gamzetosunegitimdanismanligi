@@ -304,7 +304,7 @@ export default function InteractiveTools() {
         </div>
 
         {/* Active Tab Panel */}
-        <div className="bg-[#FAF9F6] border border-[#2D2D2D]/10 rounded-none shadow-none overflow-hidden max-w-5xl mx-auto">
+        <div className="bg-white border border-[#2D2D2D]/10 rounded-none shadow-none overflow-hidden max-w-5xl mx-auto">
           
           {/* TAB 1: READING SPEED TEST */}
           {activeTab === 'reading' && (

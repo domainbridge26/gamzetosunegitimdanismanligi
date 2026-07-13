@@ -44,7 +44,7 @@ export default function Services() {
           {/* Navigation Sidebar (Left) */}
           <div className="lg:col-span-4 space-y-3">
             <span className="text-[10px] font-bold text-[#2D2D2D]/50 uppercase tracking-widest block mb-1 px-1">Hizmet Seçimi:</span>
-            <div className="flex lg:flex-col overflow-x-auto lg:overflow-x-visible pb-3 lg:pb-0 gap-2 no-scrollbar">
+            <div className="flex flex-col gap-2 w-full">
               {SERVICES_DATA.map((service) => {
                 const IconComponent = iconMap[service.iconName] || GraduationCap;
                 const isSelected = service.id === selectedId;
@@ -52,7 +52,7 @@ export default function Services() {
                   <button
                     key={service.id}
                     onClick={() => setSelectedId(service.id)}
-                    className={`flex items-center gap-3.5 px-4 py-3.5 text-left border transition-all duration-300 whitespace-nowrap lg:whitespace-normal w-full shrink-0 lg:shrink cursor-pointer rounded-none ${
+                    className={`flex items-center gap-3.5 px-4 py-3.5 text-left border transition-all duration-300 w-full cursor-pointer rounded-none ${
                       isSelected
                         ? 'border-l-2 border-l-[#C5A059] bg-white text-[#2D2D2D] border-y border-r border-[#2D2D2D]/10 scale-[1.01]'
                         : 'border-l-2 border-l-[#2D2D2D]/10 bg-white/40 text-[#2D2D2D]/80 border-y border-r border-[#2D2D2D]/10 hover:bg-white hover:text-[#2D2D2D]'
@@ -88,7 +88,7 @@ export default function Services() {
                   const el = document.getElementById('contact');
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="w-full py-3 bg-[#2D2D2D] hover:bg-[#C5A059] text-[#FAF9F6] font-bold text-[10px] uppercase tracking-widest rounded-none transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-3 bg-[#2D2D2D] hover:bg-[#C5A059] text-[#FAF9F6] font-bold text-[10px] uppercase tracking-widest rounded-none transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
               >
                 <span>Ücretsiz Analiz Alın</span>
                 <ArrowRight className="w-3.5 h-3.5" />

@@ -109,7 +109,7 @@ export default function Testimonials() {
         </div>
 
         {/* Filter Buttons */}
-        <div className="flex justify-center gap-2 mb-12">
+        <div className="flex flex-wrap justify-center gap-2 mb-12">
           {(['Tümü', 'Öğrenci', 'Veli', 'Öğretmen'] as const).map((roleVal) => (
             <button
               key={roleVal}

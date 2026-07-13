@@ -157,21 +157,21 @@ export default function App() {
             
             {/* Branding Column (5 cols) */}
             <div className="lg:col-span-5 space-y-4">
-              <div className="flex items-center gap-2.5">
-                <div className="flex items-center justify-center w-12 h-12 bg-white border border-[#2D2D2D]/10 rounded shadow-sm overflow-hidden p-0.5">
+              <div className="flex items-center gap-3.5">
+                <div className="flex items-center justify-center w-14 h-14 bg-white border-2 border-[#C5A059] rounded-none shadow-md overflow-hidden p-0.5">
                   <img 
                     src={logoImg} 
-                    alt="Gamze Tosun Logo" 
+                    alt="GAMZE TOSUN Logo" 
                     referrerPolicy="no-referrer"
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain p-0.5"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-serif font-normal italic text-xl text-white tracking-tight leading-none uppercase">
-                    Gamze Tosun
+                  <span className="font-serif font-black text-xl text-white tracking-tight leading-none uppercase">
+                    GAMZE TOSUN
                   </span>
-                  <span className="text-[10px] font-bold text-[#C5A059] tracking-widest uppercase mt-0.5">
-                    Eğitim Danışmanlığı & Öğrenci Koçluğu
+                  <span className="text-[10px] font-extrabold text-[#C5A059] tracking-widest uppercase mt-1.5 leading-none">
+                    EĞİTİM DANIŞMANLIĞI & ÖĞRENCİ KOÇLUĞU
                   </span>
                 </div>
               </div>

@@ -78,23 +78,23 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, n
           {/* Logo */}
           <div 
             id="nav-logo"
-            className="flex items-center gap-3.5 cursor-pointer group"
+            className="flex items-center gap-4 cursor-pointer group"
             onClick={() => handleNavClick('hero')}
           >
-            <div className="flex items-center justify-center w-14 h-14 bg-white border border-[#2D2D2D]/10 rounded shadow-sm overflow-hidden group-hover:border-[#C5A059] transition-colors duration-300">
+            <div className="flex items-center justify-center w-16 h-16 bg-white border-2 border-[#C5A059] rounded-none shadow-md overflow-hidden group-hover:border-[#2D2D2D] transition-all duration-300 transform group-hover:scale-105">
               <img 
                 src={logoImg} 
-                alt="Gamze Tosun Logo" 
+                alt="GAMZE TOSUN Logo" 
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain p-1"
               />
             </div>
-            <div className="flex flex-col">
-              <h1 className="font-serif text-2xl sm:text-3xl font-black italic uppercase tracking-tight text-[#2D2D2D] leading-none">
-                Gamze Tosun
+            <div className="flex flex-col justify-center">
+              <h1 className="font-serif text-2xl sm:text-3xl font-black uppercase tracking-tight text-[#2D2D2D] leading-none">
+                GAMZE TOSUN
               </h1>
-              <span className="text-[10px] font-extrabold text-[#C5A059] tracking-[0.2em] uppercase mt-1">
-                Eğitim Danışmanlığı & Öğrenci Koçluğu
+              <span className="text-[9px] sm:text-[10px] font-extrabold text-[#C5A059] tracking-[0.15em] sm:tracking-[0.2em] uppercase mt-1.5 leading-none">
+                EĞİTİM DANIŞMANLIĞI & ÖĞRENCİ KOÇLUĞU
               </span>
             </div>
           </div>

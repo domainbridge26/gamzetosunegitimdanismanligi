@@ -1,6 +1,5 @@
 import React from 'react';
 import { CheckCircle2, Award, Heart, ShieldCheck, UserCheck } from 'lucide-react';
-import { motion } from 'motion/react';
 import logoImg from '../assets/images/gamze_tosun_main_logo_1783784317486.jpg';
 
 export default function About() {
@@ -78,7 +77,7 @@ export default function About() {
                 </p>
               </div>
               <p className="text-stone-600 text-sm sm:text-base leading-relaxed">
-                Her sene binlerce öğrenci YKS ve LGS maratonuna giriyor; ancak sadece çok ders çalışanlar değil, <strong>doğru ve stratejik çalışanlar</strong> hak ettikleri okulları kazanıyor. Eğitim danışmanlığı ve öğrenci koçluğu süreçlerimizde, öğrencilerimize ders planı hazırlamanın çok ötesinde, hayat boyu kullanabilecekleri <strong>öğrenmeyi öğrenme</strong> yeteneğini ve zaman yönetimini kazandırıyoruz.
+                Her sene binlerce student YKS ve LGS maratonuna giriyor; ancak sadece çok ders çalışanlar değil, <strong>doğru ve stratejik çalışanlar</strong> hak ettikleri okulları kazanıyor. Eğitim danışmanlığı ve öğrenci koçluğu süreçlerimizde, öğrencilerimize ders planı hazırlamanın çok ötesinde, hayat boyu kullanabilecekleri <strong>öğrenmeyi öğrenme</strong> yeteneğini ve zaman yönetimini kazandırıyoruz.
               </p>
             </div>
 
