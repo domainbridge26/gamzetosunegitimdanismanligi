@@ -78,10 +78,10 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, n
           {/* Logo */}
           <div 
             id="nav-logo"
-            className="flex items-center gap-3 cursor-pointer group"
+            className="flex items-center gap-3.5 cursor-pointer group"
             onClick={() => handleNavClick('hero')}
           >
-            <div className="flex items-center justify-center w-11 h-11 bg-white border border-[#2D2D2D]/10 rounded shadow-sm overflow-hidden group-hover:border-[#C5A059] transition-colors duration-300">
+            <div className="flex items-center justify-center w-14 h-14 bg-white border border-[#2D2D2D]/10 rounded shadow-sm overflow-hidden group-hover:border-[#C5A059] transition-colors duration-300">
               <img 
                 src={logoImg} 
                 alt="Gamze Tosun Logo" 
@@ -90,10 +90,10 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, n
               />
             </div>
             <div className="flex flex-col">
-              <h1 className="font-serif text-xl sm:text-2xl font-normal italic uppercase tracking-tight text-[#2D2D2D] leading-none">
+              <h1 className="font-serif text-2xl sm:text-3xl font-black italic uppercase tracking-tight text-[#2D2D2D] leading-none">
                 Gamze Tosun
               </h1>
-              <span className="text-[9px] font-bold text-[#C5A059] tracking-[0.2em] uppercase mt-1">
+              <span className="text-[10px] font-extrabold text-[#C5A059] tracking-[0.2em] uppercase mt-1">
                 Eğitim Danışmanlığı & Öğrenci Koçluğu
               </span>
             </div>

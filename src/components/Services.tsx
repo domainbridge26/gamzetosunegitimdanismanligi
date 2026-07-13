@@ -25,7 +25,7 @@ export default function Services() {
           <span className="text-[12px] font-bold tracking-[0.3em] uppercase text-[#C5A059] block">
             Neler Yapıyoruz?
           </span>
-          <h2 className="text-3xl sm:text-4xl font-serif text-[#2D2D2D] tracking-tight">
+          <h2 className="text-4xl sm:text-5xl font-serif font-black text-[#2D2D2D] tracking-tight">
             Uzmanlık Alanlarımız ve Profesyonel Hizmetler
           </h2>
           <div className="inline-block border-y border-[#C5A059]/30 py-2.5 px-6 my-2">

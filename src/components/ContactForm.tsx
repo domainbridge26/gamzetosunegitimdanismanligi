@@ -69,7 +69,7 @@ export default function ContactForm() {
               <span className="text-xs font-bold text-emerald-700 tracking-widest uppercase bg-emerald-100/60 px-3 py-1 rounded-full">
                 Bize Ulaşın
               </span>
-              <h2 className="text-3xl sm:text-4xl font-display font-black text-slate-900 tracking-tight">
+              <h2 className="text-4xl sm:text-5xl font-display font-black text-slate-900 tracking-tight">
                 Ücretsiz Ön Görüşme ve Analiz İçin Formu Doldurun
               </h2>
               <p className="text-slate-600 text-sm leading-relaxed">

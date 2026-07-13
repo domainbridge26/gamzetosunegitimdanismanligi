@@ -57,7 +57,42 @@ export default function InteractiveTools() {
 
   // --- Score Estimator State ---
   const [calcExam, setCalcExam] = useState<'yks' | 'lgs'>('yks');
-  const [yksNets, setYksNets] = useState({ turkce: 30, sosyal: 12, matematik: 28, fen: 10, obp: 85, track: 'sayisal' });
+  const [yksNets, setYksNets] = useState({
+    // TYT
+    tytTurkce: 30,
+    tytMatematik: 28,
+    // TYT Sosyal breakdown
+    tytTarih: 4,
+    tytCografya: 4,
+    tytFelsefe: 3,
+    tytDin: 4,
+    // TYT Fen breakdown
+    tytFizik: 3,
+    tytKimya: 4,
+    tytBiyoloji: 3,
+    
+    // AYT
+    aytMatematik: 25,
+    // AYT Fen breakdown
+    aytFizik: 9,
+    aytKimya: 8,
+    aytBiyoloji: 9,
+    // AYT Edebiyat-Sos 1 breakdown
+    aytEdebiyat: 18,
+    aytTarih1: 7,
+    aytCografya1: 4,
+    // AYT Sosyal 2 breakdown
+    aytTarih2: 8,
+    aytCografya2: 8,
+    aytFelsefe: 9,
+    aytDin: 4,
+
+    // AYT Dil (YDT)
+    aytYdt: 65,
+
+    obp: 85,
+    track: 'sayisal'
+  });
   const [lgsNets, setLgsNets] = useState({ turkce: 16, matematik: 12, fen: 15, inkilap: 9, din: 9, yabanci: 8 });
   const [estimatedScore, setEstimatedScore] = useState<number | null>(null);
   const [estimatedPercentile, setEstimatedPercentile] = useState<string | null>(null);
@@ -65,25 +100,44 @@ export default function InteractiveTools() {
 
   const calculateScore = () => {
     if (calcExam === 'yks') {
-      // Basic estimated scoring simulation (TYT score + OBP contribution)
-      const tytNet = yksNets.turkce + yksNets.sosyal + yksNets.matematik + yksNets.fen;
-      // Let's estimate a mock score mapping
-      const baseScore = 150;
-      const netScoreContribution = tytNet * 3.1;
+      // 1. Calculate TYT Nets
+      const tytSosyal = yksNets.tytTarih + yksNets.tytCografya + yksNets.tytFelsefe + yksNets.tytDin;
+      const tytFen = yksNets.tytFizik + yksNets.tytKimya + yksNets.tytBiyoloji;
+      const tytTotalNet = yksNets.tytTurkce + yksNets.tytMatematik + tytSosyal + tytFen;
+
+      // 2. Calculate AYT Nets based on track
+      let aytTotalNet = 0;
+      if (yksNets.track === 'sayisal') {
+        aytTotalNet = yksNets.aytMatematik + yksNets.aytFizik + yksNets.aytKimya + yksNets.aytBiyoloji;
+      } else if (yksNets.track === 'esit-agirlik') {
+        aytTotalNet = yksNets.aytMatematik + yksNets.aytEdebiyat + yksNets.aytTarih1 + yksNets.aytCografya1;
+      } else if (yksNets.track === 'sozel') {
+        const aytSos1 = yksNets.aytEdebiyat + yksNets.aytTarih1 + yksNets.aytCografya1;
+        const aytSos2 = yksNets.aytTarih2 + yksNets.aytCografya2 + yksNets.aytFelsefe + yksNets.aytDin;
+        aytTotalNet = aytSos1 + aytSos2;
+      } else if (yksNets.track === 'dil') {
+        aytTotalNet = yksNets.aytYdt;
+      }
+
+      // 3. Score calculation
+      const examScore = 100 + (tytTotalNet * 1.33) + (aytTotalNet * 3.0);
       const obpContribution = yksNets.obp * 0.6;
-      const score = Math.round(Math.min(baseScore + netScoreContribution + obpContribution, 500));
+      const score = Math.round(Math.min(examScore + obpContribution, 560));
       setEstimatedScore(score);
 
       // Advisory & Percentiles
-      if (score >= 430) {
-        setEstimatedPercentile('%0.5 - %2.5');
-        setCalcAdvice('Mükemmel bir başarı! Boğaziçi, ODTÜ, İTÜ, Hacettepe gibi seçkin üniversitelerin mühendislik veya tıp bölümleri için çok güçlü bir adaysınız. Tercih dönemini riske atmamak için Gamze Tosun ile stratejik lise/üniversite tercih danışmanlığı almanızı şiddetle tavsiye ederiz.');
+      if (score >= 500) {
+        setEstimatedPercentile('%0.1 - %1.2');
+        setCalcAdvice(`Gamze Hoca'nın Yorumu: İnanılmaz bir derece performansı! ${yksNets.track === 'sayisal' ? 'Cerrahpaşa Tıp, Koç, Bilkent veya ODTÜ Bilgisayar Mühendisliği' : yksNets.track === 'esit-agirlik' ? 'Galatasaray Hukuk, Koç İşletme veya Bilkent İktisat' : yksNets.track === 'sozel' ? 'Boğaziçi Tarih, Koç Medya ve Görsel Sanatlar veya ODTÜ Psikoloji' : 'Boğaziçi Çeviribilim / Mütercim Tercümanlık'} gibi Türkiye'nin en seçkin programlarında zirvedesiniz. Tercih sürecinizi hatasız tamamlamak için birebir Tercih Danışmanlığı almanızı tavsiye ederiz.`);
+      } else if (score >= 430) {
+        setEstimatedPercentile('%1.5 - %4.5');
+        setCalcAdvice(`Gamze Hoca'nın Yorumu: Harika bir sonuç! Ülkenin en köklü devlet üniversitelerinin ve vakıf üniversitelerinin tam burslu popüler bölümlerine yerleşebilecek çok güçlü bir puanınız var. Yerleştirme şansınızı maksimize etmek için Gamze Tosun liderliğindeki tercih ekibimizle iletişime geçebilirsiniz.`);
       } else if (score >= 350) {
-        setEstimatedPercentile('%3.0 - %8.5');
-        setCalcAdvice('Çok iyi bir performans! Devlet üniversitelerinin popüler bölümlerine yerleşme olasılığınız oldukça yüksek. Doğru yerleştirme stratejisiyle hedefinize ulaşabilirsiniz. İletişim formundan ücretsiz ön görüşme talep edebilirsiniz.');
+        setEstimatedPercentile('%5.0 - %12.5');
+        setCalcAdvice("Gamze Hoca'nın Yorumu: Çok temiz ve dengeli netler! Hem devlet üniversitelerinin iyi kampüslerinde hem de kaliteli vakıf üniversitelerinde geniş bir tercih yelpazesine sahipsiniz. İlgi duyduğunuz alanları belirleyip akılcı bir sıralama yapmalıyız.");
       } else {
-        setEstimatedPercentile('%10.0 - %25.0');
-        setCalcAdvice('İyi bir temeliniz var. Önümüzdeki aylarda netlerinizi artırmak için öğrenci koçluğu desteğiyle ders programınızı revize edebilir, eksiklerinizi hızla kapatabilirsiniz.');
+        setEstimatedPercentile('%15.0 - %35.0');
+        setCalcAdvice("Gamze Hoca'nın Yorumu: İyi bir yerdesiniz ancak gelişim alanlarınız bulunuyor. Özellikle zayıf olduğunuz üniteleri analiz edip net artışına odaklanarak bu puanı 50-60 puan daha yukarı çekebiliriz. Pes etmek yok, koçluk desteğimizle yanınızdayız.");
       }
     } else {
       // LGS simulated scoring: MEB weights (Turkish: 4, Math: 4, Science: 4, others: 1)
@@ -93,13 +147,13 @@ export default function InteractiveTools() {
 
       if (score >= 460) {
         setEstimatedPercentile('%0.1 - %1.5');
-        setCalcAdvice('Muazzam LGS performansı! Kabataş Erkek Lisesi, İstanbul Erkek Lisesi, Galatasaray Lisesi veya Ankara Fen Lisesi gibi en üst düzey okullar için yarıştasınız. Doğru tercih listesi hayatınızı belirleyecek, bizden mutlaka profesyonel destek alın.');
+        setCalcAdvice("Gamze Hoca'nın Yorumu: Muazzam LGS performansı! Kabataş Erkek Lisesi, İstanbul Erkek Lisesi, Galatasaray Lisesi veya Ankara Fen Lisesi gibi en üst düzey okullar için yarıştasınız. Doğru tercih listesi hayatınızı belirleyecek, bizden mutlaka profesyonel destek alın.");
       } else if (score >= 380) {
         setEstimatedPercentile('%2.0 - %7.5');
-        setCalcAdvice('Çok güçlü bir lise adayı. Nitelikli proje okulları ve Anadolu liseleri için harika bir yerdesiniz. Tercih dönemindeki kaymaları analiz etmek için hazırız.');
+        setCalcAdvice("Gamze Hoca'nın Yorumu: Çok güçlü bir lise adayı. Nitelikli proje okulları ve Anadolu liseleri için harika bir yerdesiniz. Tercih dönemindeki kaymaları analiz etmek için hazırız.");
       } else {
         setEstimatedPercentile('%8.0 - %20.0');
-        setCalcAdvice('İyi bir sonuç. Sınav maratonunu tamamladınız. Adrese dayalı veya yerel yerleştirme ile en nitelikli okulları seçmek için rehberlik alabilirsiniz.');
+        setCalcAdvice("Gamze Hoca'nın Yorumu: İyi bir sonuç. Sınav maratonunu tamamladınız. Adrese dayalı veya yerel yerleştirme ile en nitelikli okulları seçmek için rehberlik alabilirsiniz.");
       }
     }
   };
@@ -213,7 +267,7 @@ export default function InteractiveTools() {
           <span className="text-[12px] font-bold tracking-[0.3em] uppercase text-[#C5A059] block">
             Keşfet ve Ölç
           </span>
-          <h2 className="text-3xl sm:text-4xl font-serif text-[#2D2D2D] tracking-tight">
+          <h2 className="text-4xl sm:text-5xl font-serif font-black text-[#2D2D2D] tracking-tight">
             Akıllı İnteraktif Eğitim Araçlarımız
           </h2>
           <p className="text-[#2D2D2D]/80 text-sm sm:text-base leading-relaxed">
@@ -550,66 +604,453 @@ export default function InteractiveTools() {
                   <h4 className="font-display font-bold text-slate-900 text-sm uppercase tracking-wider mb-2">Net Girişleri</h4>
                   
                   {calcExam === 'yks' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 flex justify-between">
-                          <span>Türkçe Net (0-40):</span>
-                          <span className="font-mono text-emerald-800 font-bold">{yksNets.turkce}</span>
-                        </label>
-                        <input 
-                          type="range" min="0" max="40" step="1"
-                          value={yksNets.turkce}
-                          onChange={(e) => setYksNets({ ...yksNets, turkce: Number(e.target.value) })}
-                          className="w-full accent-emerald-600 h-1.5 bg-stone-200 rounded-lg appearance-none"
-                        />
+                    <div className="space-y-6">
+                      {/* Track / Alan Selection */}
+                      <div className="space-y-2 bg-white border border-[#2D2D2D]/10 p-4">
+                        <label className="text-[10px] font-bold text-[#C5A059] uppercase tracking-widest block">Hedef Alan / Puan Türü Seçimi</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {[
+                            { id: 'sayisal', name: 'Sayısal (SAY)' },
+                            { id: 'esit-agirlik', name: 'Eşit Ağırlık (EA)' },
+                            { id: 'sozel', name: 'Sözel (SÖZ)' },
+                            { id: 'dil', name: 'Yabancı Dil (DİL)' }
+                          ].map((track) => (
+                            <button
+                              key={track.id}
+                              type="button"
+                              onClick={() => setYksNets({ ...yksNets, track: track.id })}
+                              className={`px-3 py-2 text-[10px] font-bold uppercase tracking-wider border rounded-none transition-all cursor-pointer ${
+                                yksNets.track === track.id
+                                  ? 'bg-[#2D2D2D] text-[#FAF9F6] border-[#2D2D2D]'
+                                  : 'bg-[#FAF9F6] border-[#2D2D2D]/15 text-[#2D2D2D]/70 hover:bg-[#2D2D2D]/5'
+                              }`}
+                            >
+                              {track.name}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 flex justify-between">
-                          <span>Matematik Net (0-40):</span>
-                          <span className="font-mono text-emerald-800 font-bold">{yksNets.matematik}</span>
-                        </label>
-                        <input 
-                          type="range" min="0" max="40" step="1"
-                          value={yksNets.matematik}
-                          onChange={(e) => setYksNets({ ...yksNets, matematik: Number(e.target.value) })}
-                          className="w-full accent-emerald-600 h-1.5 bg-stone-200 rounded-lg appearance-none"
-                        />
+
+                      {/* 1. TYT Netleri */}
+                      <div className="space-y-4 border border-[#2D2D2D]/10 p-4 bg-white/45">
+                        <div className="border-b border-[#2D2D2D]/15 pb-2">
+                          <h5 className="font-serif italic text-sm text-[#2D2D2D] font-bold">1. TYT (Temel Yeterlilik Testi) Netleri (Max 120)</h5>
+                          <p className="text-[10px] text-[#2D2D2D]/50">9. ve 10. sınıf müfredatını kapsayan ortak sınav bileşenleri</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-600 flex justify-between">
+                              <span>Türkçe Net (0-40):</span>
+                              <span className="font-mono text-[#C5A059] font-bold">{yksNets.tytTurkce} Net</span>
+                            </label>
+                            <input 
+                              type="range" min="0" max="40" step="0.25"
+                              value={yksNets.tytTurkce}
+                              onChange={(e) => setYksNets({ ...yksNets, tytTurkce: Number(e.target.value) })}
+                              className="w-full accent-[#C5A059] h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-600 flex justify-between">
+                              <span>Temel Matematik Net (0-40):</span>
+                              <span className="font-mono text-[#C5A059] font-bold">{yksNets.tytMatematik} Net</span>
+                            </label>
+                            <input 
+                              type="range" min="0" max="40" step="0.25"
+                              value={yksNets.tytMatematik}
+                              onChange={(e) => setYksNets({ ...yksNets, tytMatematik: Number(e.target.value) })}
+                              className="w-full accent-[#C5A059] h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer"
+                            />
+                          </div>
+                        </div>
+
+                        {/* TYT Sosyal breakdown */}
+                        <div className="bg-white border border-[#2D2D2D]/10 p-3 space-y-3">
+                          <div className="flex justify-between items-center border-b border-[#2D2D2D]/5 pb-1.5">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sosyal Bilimler Alt Dersleri</span>
+                            <span className="text-xs font-mono font-bold text-[#C5A059] bg-[#C5A059]/10 px-2 py-0.5 rounded">
+                              {(yksNets.tytTarih + yksNets.tytCografya + yksNets.tytFelsefe + yksNets.tytDin).toFixed(2)} / 20 Net
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-[11px] text-slate-500 flex justify-between">
+                                <span>Tarih (0-5):</span>
+                                <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.tytTarih}</span>
+                              </label>
+                              <input 
+                                type="range" min="0" max="5" step="0.25"
+                                value={yksNets.tytTarih}
+                                onChange={(e) => setYksNets({ ...yksNets, tytTarih: Number(e.target.value) })}
+                                className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[11px] text-slate-500 flex justify-between">
+                                <span>Coğrafya (0-5):</span>
+                                <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.tytCografya}</span>
+                              </label>
+                              <input 
+                                type="range" min="0" max="5" step="0.25"
+                                value={yksNets.tytCografya}
+                                onChange={(e) => setYksNets({ ...yksNets, tytCografya: Number(e.target.value) })}
+                                className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[11px] text-slate-500 flex justify-between">
+                                <span>Felsefe (0-5):</span>
+                                <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.tytFelsefe}</span>
+                              </label>
+                              <input 
+                                type="range" min="0" max="5" step="0.25"
+                                value={yksNets.tytFelsefe}
+                                onChange={(e) => setYksNets({ ...yksNets, tytFelsefe: Number(e.target.value) })}
+                                className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[11px] text-slate-500 flex justify-between">
+                                <span>Din Kültürü (0-5):</span>
+                                <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.tytDin}</span>
+                              </label>
+                              <input 
+                                type="range" min="0" max="5" step="0.25"
+                                value={yksNets.tytDin}
+                                onChange={(e) => setYksNets({ ...yksNets, tytDin: Number(e.target.value) })}
+                                className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* TYT Fen breakdown */}
+                        <div className="bg-white border border-[#2D2D2D]/10 p-3 space-y-3">
+                          <div className="flex justify-between items-center border-b border-[#2D2D2D]/5 pb-1.5">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Fen Bilimleri Alt Dersleri</span>
+                            <span className="text-xs font-mono font-bold text-[#C5A059] bg-[#C5A059]/10 px-2 py-0.5 rounded">
+                              {(yksNets.tytFizik + yksNets.tytKimya + yksNets.tytBiyoloji).toFixed(2)} / 20 Net
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-[11px] text-slate-500 flex justify-between">
+                                <span>Fizik (0-7):</span>
+                                <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.tytFizik}</span>
+                              </label>
+                              <input 
+                                type="range" min="0" max="7" step="0.25"
+                                value={yksNets.tytFizik}
+                                onChange={(e) => setYksNets({ ...yksNets, tytFizik: Number(e.target.value) })}
+                                className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[11px] text-slate-500 flex justify-between">
+                                <span>Kimya (0-7):</span>
+                                <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.tytKimya}</span>
+                              </label>
+                              <input 
+                                type="range" min="0" max="7" step="0.25"
+                                value={yksNets.tytKimya}
+                                onChange={(e) => setYksNets({ ...yksNets, tytKimya: Number(e.target.value) })}
+                                className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[11px] text-slate-500 flex justify-between">
+                                <span>Biyoloji (0-6):</span>
+                                <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.tytBiyoloji}</span>
+                              </label>
+                              <input 
+                                type="range" min="0" max="6" step="0.25"
+                                value={yksNets.tytBiyoloji}
+                                onChange={(e) => setYksNets({ ...yksNets, tytBiyoloji: Number(e.target.value) })}
+                                className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 flex justify-between">
-                          <span>Fen Bilimleri Net (0-20):</span>
-                          <span className="font-mono text-emerald-800 font-bold">{yksNets.fen}</span>
-                        </label>
-                        <input 
-                          type="range" min="0" max="20" step="1"
-                          value={yksNets.fen}
-                          onChange={(e) => setYksNets({ ...yksNets, fen: Number(e.target.value) })}
-                          className="w-full accent-emerald-600 h-1.5 bg-stone-200 rounded-lg appearance-none"
-                        />
+
+                      {/* 2. AYT Netleri */}
+                      <div className="space-y-4 border border-[#2D2D2D]/10 p-4 bg-white/45">
+                        <div className="border-b border-[#2D2D2D]/15 pb-2">
+                          <h5 className="font-serif italic text-sm text-[#2D2D2D] font-bold">2. AYT (Alan Yeterlilik Testi) Netleri</h5>
+                          <p className="text-[10px] text-[#2D2D2D]/50">11. ve 12. sınıf müfredatını kapsayan, alanınıza özel uzmanlık sınavı</p>
+                        </div>
+
+                        {yksNets.track === 'sayisal' && (
+                          <div className="space-y-4">
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600 flex justify-between">
+                                <span>AYT Matematik Net (0-40):</span>
+                                <span className="font-mono text-[#C5A059] font-bold">{yksNets.aytMatematik} Net</span>
+                              </label>
+                              <input 
+                                type="range" min="0" max="40" step="0.25"
+                                value={yksNets.aytMatematik}
+                                onChange={(e) => setYksNets({ ...yksNets, aytMatematik: Number(e.target.value) })}
+                                className="w-full accent-[#C5A059] h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer"
+                              />
+                            </div>
+
+                            <div className="bg-white border border-[#2D2D2D]/10 p-3 space-y-3">
+                              <div className="flex justify-between items-center border-b border-[#2D2D2D]/5 pb-1.5">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Fen Bilimleri Alt Dersleri</span>
+                                <span className="text-xs font-mono font-bold text-[#C5A059] bg-[#C5A059]/10 px-2 py-0.5 rounded">
+                                  {(yksNets.aytFizik + yksNets.aytKimya + yksNets.aytBiyoloji).toFixed(2)} / 40 Net
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div className="space-y-1">
+                                  <label className="text-[11px] text-slate-500 flex justify-between">
+                                    <span>Fizik (0-14):</span>
+                                    <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.aytFizik}</span>
+                                  </label>
+                                  <input 
+                                    type="range" min="0" max="14" step="0.25"
+                                    value={yksNets.aytFizik}
+                                    onChange={(e) => setYksNets({ ...yksNets, aytFizik: Number(e.target.value) })}
+                                    className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] text-slate-500 flex justify-between">
+                                    <span>Kimya (0-13):</span>
+                                    <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.aytKimya}</span>
+                                  </label>
+                                  <input 
+                                    type="range" min="0" max="13" step="0.25"
+                                    value={yksNets.aytKimya}
+                                    onChange={(e) => setYksNets({ ...yksNets, aytKimya: Number(e.target.value) })}
+                                    className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] text-slate-500 flex justify-between">
+                                    <span>Biyoloji (0-13):</span>
+                                    <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.aytBiyoloji}</span>
+                                  </label>
+                                  <input 
+                                    type="range" min="0" max="13" step="0.25"
+                                    value={yksNets.aytBiyoloji}
+                                    onChange={(e) => setYksNets({ ...yksNets, aytBiyoloji: Number(e.target.value) })}
+                                    className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {yksNets.track === 'esit-agirlik' && (
+                          <div className="space-y-4">
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600 flex justify-between">
+                                <span>AYT Matematik Net (0-40):</span>
+                                <span className="font-mono text-[#C5A059] font-bold">{yksNets.aytMatematik} Net</span>
+                              </label>
+                              <input 
+                                type="range" min="0" max="40" step="0.25"
+                                value={yksNets.aytMatematik}
+                                onChange={(e) => setYksNets({ ...yksNets, aytMatematik: Number(e.target.value) })}
+                                className="w-full accent-[#C5A059] h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer"
+                              />
+                            </div>
+
+                            <div className="bg-white border border-[#2D2D2D]/10 p-3 space-y-3">
+                              <div className="flex justify-between items-center border-b border-[#2D2D2D]/5 pb-1.5">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Edebiyat - Sosyal Bilimler 1</span>
+                                <span className="text-xs font-mono font-bold text-[#C5A059] bg-[#C5A059]/10 px-2 py-0.5 rounded">
+                                  {(yksNets.aytEdebiyat + yksNets.aytTarih1 + yksNets.aytCografya1).toFixed(2)} / 40 Net
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div className="space-y-1">
+                                  <label className="text-[11px] text-slate-500 flex justify-between">
+                                    <span>Edebiyat (0-24):</span>
+                                    <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.aytEdebiyat}</span>
+                                  </label>
+                                  <input 
+                                    type="range" min="0" max="24" step="0.25"
+                                    value={yksNets.aytEdebiyat}
+                                    onChange={(e) => setYksNets({ ...yksNets, aytEdebiyat: Number(e.target.value) })}
+                                    className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] text-slate-500 flex justify-between">
+                                    <span>Tarih-1 (0-10):</span>
+                                    <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.aytTarih1}</span>
+                                  </label>
+                                  <input 
+                                    type="range" min="0" max="10" step="0.25"
+                                    value={yksNets.aytTarih1}
+                                    onChange={(e) => setYksNets({ ...yksNets, aytTarih1: Number(e.target.value) })}
+                                    className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] text-slate-500 flex justify-between">
+                                    <span>Coğrafya-1 (0-6):</span>
+                                    <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.aytCografya1}</span>
+                                  </label>
+                                  <input 
+                                    type="range" min="0" max="6" step="0.25"
+                                    value={yksNets.aytCografya1}
+                                    onChange={(e) => setYksNets({ ...yksNets, aytCografya1: Number(e.target.value) })}
+                                    className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {yksNets.track === 'sozel' && (
+                          <div className="space-y-4">
+                            <div className="bg-white border border-[#2D2D2D]/10 p-3 space-y-3">
+                              <div className="flex justify-between items-center border-b border-[#2D2D2D]/5 pb-1.5">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Edebiyat - Sosyal 1 (Max 40)</span>
+                                <span className="text-xs font-mono font-bold text-[#C5A059] bg-[#C5A059]/10 px-2 py-0.5 rounded">
+                                  {(yksNets.aytEdebiyat + yksNets.aytTarih1 + yksNets.aytCografya1).toFixed(2)} Net
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div className="space-y-1">
+                                  <label className="text-[11px] text-slate-500 flex justify-between">
+                                    <span>Edebiyat (0-24):</span>
+                                    <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.aytEdebiyat}</span>
+                                  </label>
+                                  <input 
+                                    type="range" min="0" max="24" step="0.25"
+                                    value={yksNets.aytEdebiyat}
+                                    onChange={(e) => setYksNets({ ...yksNets, aytEdebiyat: Number(e.target.value) })}
+                                    className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] text-slate-500 flex justify-between">
+                                    <span>Tarih-1 (0-10):</span>
+                                    <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.aytTarih1}</span>
+                                  </label>
+                                  <input 
+                                    type="range" min="0" max="10" step="0.25"
+                                    value={yksNets.aytTarih1}
+                                    onChange={(e) => setYksNets({ ...yksNets, aytTarih1: Number(e.target.value) })}
+                                    className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] text-slate-500 flex justify-between">
+                                    <span>Coğrafya-1 (0-6):</span>
+                                    <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.aytCografya1}</span>
+                                  </label>
+                                  <input 
+                                    type="range" min="0" max="6" step="0.25"
+                                    value={yksNets.aytCografya1}
+                                    onChange={(e) => setYksNets({ ...yksNets, aytCografya1: Number(e.target.value) })}
+                                    className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="bg-white border border-[#2D2D2D]/10 p-3 space-y-3">
+                              <div className="flex justify-between items-center border-b border-[#2D2D2D]/5 pb-1.5">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sosyal Bilimler 2 (Max 40)</span>
+                                <span className="text-xs font-mono font-bold text-[#C5A059] bg-[#C5A059]/10 px-2 py-0.5 rounded">
+                                  {(yksNets.aytTarih2 + yksNets.aytCografya2 + yksNets.aytFelsefe + yksNets.aytDin).toFixed(2)} Net
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                  <label className="text-[11px] text-slate-500 flex justify-between">
+                                    <span>Tarih-2 (0-11):</span>
+                                    <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.aytTarih2}</span>
+                                  </label>
+                                  <input 
+                                    type="range" min="0" max="11" step="0.25"
+                                    value={yksNets.aytTarih2}
+                                    onChange={(e) => setYksNets({ ...yksNets, aytTarih2: Number(e.target.value) })}
+                                    className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] text-slate-500 flex justify-between">
+                                    <span>Coğrafya-2 (0-11):</span>
+                                    <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.aytCografya2}</span>
+                                  </label>
+                                  <input 
+                                    type="range" min="0" max="11" step="0.25"
+                                    value={yksNets.aytCografya2}
+                                    onChange={(e) => setYksNets({ ...yksNets, aytCografya2: Number(e.target.value) })}
+                                    className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] text-slate-500 flex justify-between">
+                                    <span>Felsefe Grubu (0-12):</span>
+                                    <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.aytFelsefe}</span>
+                                  </label>
+                                  <input 
+                                    type="range" min="0" max="12" step="0.25"
+                                    value={yksNets.aytFelsefe}
+                                    onChange={(e) => setYksNets({ ...yksNets, aytFelsefe: Number(e.target.value) })}
+                                    className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] text-slate-500 flex justify-between">
+                                    <span>Din Kültürü (0-6):</span>
+                                    <span className="font-mono font-bold text-[#2D2D2D]">{yksNets.aytDin}</span>
+                                  </label>
+                                  <input 
+                                    type="range" min="0" max="6" step="0.25"
+                                    value={yksNets.aytDin}
+                                    onChange={(e) => setYksNets({ ...yksNets, aytDin: Number(e.target.value) })}
+                                    className="w-full accent-[#C5A059] h-1 bg-stone-200 appearance-none cursor-pointer"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {yksNets.track === 'dil' && (
+                          <div className="space-y-4">
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600 flex justify-between">
+                                <span>YDT Yabancı Dil Net (0-80):</span>
+                                <span className="font-mono text-[#C5A059] font-bold">{yksNets.aytYdt} Net</span>
+                              </label>
+                              <input 
+                                type="range" min="0" max="80" step="1"
+                                value={yksNets.aytYdt}
+                                onChange={(e) => setYksNets({ ...yksNets, aytYdt: Number(e.target.value) })}
+                                className="w-full accent-[#C5A059] h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 flex justify-between">
-                          <span>Sosyal Bilimler Net (0-20):</span>
-                          <span className="font-mono text-emerald-800 font-bold">{yksNets.sosyal}</span>
-                        </label>
-                        <input 
-                          type="range" min="0" max="20" step="1"
-                          value={yksNets.sosyal}
-                          onChange={(e) => setYksNets({ ...yksNets, sosyal: Number(e.target.value) })}
-                          className="w-full accent-emerald-600 h-1.5 bg-stone-200 rounded-lg appearance-none"
-                        />
-                      </div>
-                      <div className="sm:col-span-2 space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 flex justify-between">
+
+                      {/* 3. OBP Seçimi */}
+                      <div className="space-y-2 border border-[#2D2D2D]/10 p-4 bg-white/45">
+                        <label className="text-xs font-semibold text-slate-600 flex justify-between">
                           <span>Ortaöğretim Başarı Puanı (OBP - 50-100):</span>
-                          <span className="font-mono text-emerald-800 font-bold">{yksNets.obp}</span>
+                          <span className="font-mono text-[#C5A059] font-bold">{yksNets.obp} Puan</span>
                         </label>
                         <input 
-                          type="range" min="50" max="100" step="1"
+                          type="range" min="50" max="100" step="0.5"
                           value={yksNets.obp}
                           onChange={(e) => setYksNets({ ...yksNets, obp: Number(e.target.value) })}
-                          className="w-full accent-emerald-600 h-1.5 bg-stone-200 rounded-lg appearance-none"
+                          className="w-full accent-[#C5A059] h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer"
                         />
+                        <span className="text-[9px] text-[#2D2D2D]/50 block">Sınav yerleştirme puanınıza (OBP × 0.6) oranında katkı sağlanır.</span>
                       </div>
                     </div>
                   ) : (
@@ -707,18 +1148,86 @@ export default function InteractiveTools() {
                       animate={{ opacity: 1, scale: 1 }}
                       className="space-y-6 text-center md:text-left"
                     >
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold text-[#2D2D2D]/40 uppercase tracking-widest block">Simüle Edilen Sınav Puanı</span>
-                        <div className="font-serif text-5xl text-[#2D2D2D]">{estimatedScore} <span className="text-sm font-sans font-normal text-[#2D2D2D]/40">/ 500</span></div>
-                      </div>
+                      {calcExam === 'yks' ? (
+                        <div className="space-y-4 text-left">
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-[#2D2D2D]/40 uppercase tracking-widest block">YERLEŞTİRME PUANI (OBP DAHİL)</span>
+                            <div className="font-serif text-5xl text-[#2D2D2D]">{estimatedScore} <span className="text-sm font-sans font-normal text-[#2D2D2D]/40">/ 560</span></div>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-[#2D2D2D]/40 uppercase tracking-widest block">HAM SINAV PUANI (OBP HARİÇ)</span>
+                            <div className="font-serif text-2xl text-[#2D2D2D]">{Math.round(estimatedScore - yksNets.obp * 0.6)} <span className="text-xs font-sans font-normal text-[#2D2D2D]/40">/ 500</span></div>
+                          </div>
 
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold text-[#2D2D2D]/40 uppercase tracking-widest block">Tahmini Yüzdelik Dilim</span>
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#C5A059]/10 text-[#C5A059] font-bold rounded-none text-xs">
-                          <Sparkles className="w-3.5 h-3.5 text-[#C5A059]" />
-                          <span>{estimatedPercentile}</span>
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-[#2D2D2D]/40 uppercase tracking-widest block">Tahmini Yüzdelik Dilim</span>
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#C5A059]/10 text-[#C5A059] font-bold rounded-none text-xs">
+                              <Sparkles className="w-3.5 h-3.5 text-[#C5A059]" />
+                              <span>{estimatedPercentile}</span>
+                            </div>
+                          </div>
+
+                          <div className="border border-[#2D2D2D]/10 bg-white p-3.5 space-y-2 text-xs">
+                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-[#2D2D2D]/5 pb-1 mb-1">Simülasyon Detayları</div>
+                            <div className="flex justify-between">
+                              <span className="text-[#2D2D2D]/70">Toplam TYT Neti:</span>
+                              <span className="font-mono font-bold">{(yksNets.tytTurkce + yksNets.tytMatematik + (yksNets.tytTarih + yksNets.tytCografya + yksNets.tytFelsefe + yksNets.tytDin) + (yksNets.tytFizik + yksNets.tytKimya + yksNets.tytBiyoloji)).toFixed(2)} / 120</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-[#2D2D2D]/70">Toplam AYT Neti:</span>
+                              <span className="font-mono font-bold">
+                                {yksNets.track === 'sayisal' && (yksNets.aytMatematik + yksNets.aytFizik + yksNets.aytKimya + yksNets.aytBiyoloji).toFixed(2)}
+                                {yksNets.track === 'esit-agirlik' && (yksNets.aytMatematik + yksNets.aytEdebiyat + yksNets.aytTarih1 + yksNets.aytCografya1).toFixed(2)}
+                                {yksNets.track === 'sozel' && (yksNets.aytEdebiyat + yksNets.aytTarih1 + yksNets.aytCografya1 + yksNets.aytTarih2 + yksNets.aytCografya2 + yksNets.aytFelsefe + yksNets.aytDin).toFixed(2)}
+                                {yksNets.track === 'dil' && yksNets.aytYdt.toFixed(2)}
+                                {' / 80'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-[#2D2D2D]/70">OBP Katkısı (+0.6):</span>
+                              <span className="font-mono font-bold text-[#C5A059]">+{(yksNets.obp * 0.6).toFixed(1)} Puan</span>
+                            </div>
+                            <div className="flex justify-between border-t border-dashed border-[#2D2D2D]/10 pt-1.5 mt-1 font-semibold">
+                              <span>Puan Türü:</span>
+                              <span className="uppercase text-[#C5A059]">
+                                {yksNets.track === 'sayisal' ? 'Sayısal (SAY)' : yksNets.track === 'esit-agirlik' ? 'Eşit Ağırlık (EA)' : yksNets.track === 'sozel' ? 'Sözel (SÖZ)' : 'Yabancı Dil (DİL)'}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="space-y-4 text-left">
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-[#2D2D2D]/40 uppercase tracking-widest block">Simüle Edilen Sınav Puanı</span>
+                            <div className="font-serif text-5xl text-[#2D2D2D]">{estimatedScore} <span className="text-sm font-sans font-normal text-[#2D2D2D]/40">/ 500</span></div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-[#2D2D2D]/40 uppercase tracking-widest block">Tahmini Yüzdelik Dilim</span>
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#C5A059]/10 text-[#C5A059] font-bold rounded-none text-xs">
+                              <Sparkles className="w-3.5 h-3.5 text-[#C5A059]" />
+                              <span>{estimatedPercentile}</span>
+                            </div>
+                          </div>
+
+                          <div className="border border-[#2D2D2D]/10 bg-white p-3.5 space-y-2 text-xs">
+                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-[#2D2D2D]/5 pb-1 mb-1">LGS Simülasyon Detayları</div>
+                            <div className="flex justify-between">
+                              <span className="text-[#2D2D2D]/70">Sözel Net Toplamı:</span>
+                              <span className="font-mono font-bold">{(lgsNets.turkce + lgsNets.inkilap + lgsNets.din + lgsNets.yabanci)} / 50</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-[#2D2D2D]/70">Sayısal Net Toplamı:</span>
+                              <span className="font-mono font-bold">{(lgsNets.matematik + lgsNets.fen)} / 40</span>
+                            </div>
+                            <div className="flex justify-between border-t border-dashed border-[#2D2D2D]/10 pt-1.5 mt-1 font-semibold">
+                              <span>Toplam Net:</span>
+                              <span className="font-mono text-[#C5A059]">{(lgsNets.turkce + lgsNets.inkilap + lgsNets.din + lgsNets.yabanci + lgsNets.matematik + lgsNets.fen)} / 90</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="bg-white/45 border border-[#2D2D2D]/10 p-4 rounded-none text-left space-y-2">
                         <h5 className="font-serif italic text-sm text-[#2D2D2D] flex items-center gap-1">

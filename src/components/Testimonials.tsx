@@ -100,7 +100,7 @@ export default function Testimonials() {
           <span className="text-[12px] font-bold tracking-[0.3em] uppercase text-[#C5A059] block">
             Sizden Gelenler
           </span>
-          <h2 className="text-3xl sm:text-4xl font-serif text-[#2D2D2D] tracking-tight">
+          <h2 className="text-4xl sm:text-5xl font-serif font-black text-[#2D2D2D] tracking-tight">
             Başarı Hikayeleri ve Veli Yorumları
           </h2>
           <p className="text-[#2D2D2D]/80 text-sm sm:text-base leading-relaxed">

@@ -69,7 +69,7 @@ export default function About() {
               <span className="text-xs font-bold text-emerald-700 tracking-widest uppercase bg-emerald-100/60 px-3 py-1 rounded-full">
                 Hakkımda ve Değerlerim
               </span>
-              <h2 className="text-3xl sm:text-4xl font-serif font-bold text-[#2D2D2D] tracking-tight">
+              <h2 className="text-4xl sm:text-5xl font-serif font-black text-[#2D2D2D] tracking-tight">
                 Geleceğe Güvenle Yürüyen Nesiller Yetiştiriyoruz
               </h2>
               <div className="border-l-2 border-[#C5A059] pl-4 py-1">

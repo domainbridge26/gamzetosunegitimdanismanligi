@@ -1178,6 +1178,29 @@ export default function SchedulePlanner() {
                         ))}
                       <option value="custom">-- Özel Konu Yazacağım --</option>
                     </select>
+
+                    {/* Manual input if custom unit */}
+                    {modalSelectedUnit === 'custom' && (
+                      <div className="pt-2 animate-fadeIn">
+                        <input 
+                          type="text"
+                          required
+                          value={editingSlot.slot.focus.endsWith(' Konu Anlatımı ve Soru Çözümü') ? editingSlot.slot.focus.replace(' Konu Anlatımı ve Soru Çözümü', '') : editingSlot.slot.focus}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEditingSlot({
+                              ...editingSlot,
+                              slot: { 
+                                ...editingSlot.slot, 
+                                focus: val ? `${val} Konu Anlatımı ve Soru Çözümü` : '' 
+                              }
+                            });
+                          }}
+                          placeholder="Örn: Limit ve Süreklilik"
+                          className="w-full px-3 py-2 bg-[#FAF9F6] border border-[#C5A059] rounded-xl text-xs focus:outline-none transition-colors"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 

@@ -43,7 +43,7 @@ export default function Hero({ onExploreServices, onTryTools }: HeroProps) {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-5xl sm:text-6xl lg:text-7xl font-serif leading-[0.95] tracking-tighter mb-8 text-[#2D2D2D] text-left"
+              className="text-6xl sm:text-7xl lg:text-8xl font-serif font-black leading-[0.95] tracking-tighter mb-8 text-[#2D2D2D] text-left"
             >
               Potansiyelini <br />
               <span className="italic font-normal">Geleceğe</span> Dönüştür.
