@@ -88,6 +88,33 @@ interface SavedSchedule {
   schedule: Record<string, ScheduleItem[]>;
 }
 
+// Helper to parse start time in minutes from a string like "17:00 - 18:30" or "09:30"
+const parseStartTimeInMinutes = (timeStr: string): number => {
+  if (!timeStr) return 99999;
+  const match = timeStr.match(/(\d{1,2})[:.](\d{2})/);
+  if (match) {
+    const hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    return hours * 60 + minutes;
+  }
+  const singleHourMatch = timeStr.match(/(\d{1,2})/);
+  if (singleHourMatch) {
+    const hours = parseInt(singleHourMatch[1], 10);
+    return hours * 60;
+  }
+  return 99999;
+};
+
+// Sort schedule items chronologically by their start time
+const sortScheduleSlots = (slots: ScheduleItem[]): ScheduleItem[] => {
+  if (!slots || !Array.isArray(slots)) return [];
+  return [...slots].sort((a, b) => {
+    const timeA = parseStartTimeInMinutes(a.time);
+    const timeB = parseStartTimeInMinutes(b.time);
+    return timeA - timeB;
+  });
+};
+
 export default function SchedulePlanner() {
   // Wizard Input States
   const [studentName, setStudentName] = useState('');
@@ -375,7 +402,7 @@ export default function SchedulePlanner() {
         });
       });
 
-      generated[day] = items;
+      generated[day] = sortScheduleSlots(items);
     });
 
     setSchedule(generated);
@@ -407,7 +434,14 @@ export default function SchedulePlanner() {
     setStudentName(saved.studentName);
     setExamGroup(saved.examGroup);
     setTargetGoal(saved.targetGoal);
-    setSchedule(saved.schedule);
+    
+    const sorted: Record<string, ScheduleItem[]> = {};
+    if (saved.schedule) {
+      Object.keys(saved.schedule).forEach(day => {
+        sorted[day] = sortScheduleSlots(saved.schedule[day] || []);
+      });
+    }
+    setSchedule(sorted);
     setIsGenerated(true);
     setSelectedDay('Pazartesi');
   };
@@ -433,12 +467,22 @@ export default function SchedulePlanner() {
     if (!editingSlot) return;
 
     const { day, index, slot } = editingSlot;
-    const updatedDaySlots = [...schedule[day]];
-    updatedDaySlots[index] = slot;
+    const currentSlots = schedule[day] || [];
+    let updatedDaySlots = [...currentSlots];
+    
+    // Check if slot exists by ID or index
+    const foundIdx = currentSlots.findIndex(s => s.id === slot.id);
+    if (foundIdx !== -1) {
+      updatedDaySlots[foundIdx] = slot;
+    } else if (index >= 0 && index < updatedDaySlots.length) {
+      updatedDaySlots[index] = slot;
+    } else {
+      updatedDaySlots.push(slot);
+    }
 
     setSchedule({
       ...schedule,
-      [day]: updatedDaySlots
+      [day]: sortScheduleSlots(updatedDaySlots)
     });
     setIsEditModalOpen(false);
     setEditingSlot(null);
@@ -472,21 +516,26 @@ export default function SchedulePlanner() {
       color: 'bg-stone-50 border-stone-200 text-stone-700'
     };
 
-    const updatedSlots = [...daySlots, newSlot];
+    const updatedSlots = sortScheduleSlots([...daySlots, newSlot]);
     setSchedule({
       ...schedule,
       [day]: updatedSlots
     });
 
-    handleOpenEditSlot(day, updatedSlots.length - 1, newSlot);
+    const newIndex = updatedSlots.findIndex(s => s.id === newSlot.id);
+    handleOpenEditSlot(day, newIndex !== -1 ? newIndex : updatedSlots.length - 1, newSlot);
   };
 
   // Delete specific slot from day
-  const handleDeleteSlot = (day: string, index: number) => {
-    const updated = (schedule[day] || []).filter((_, i) => i !== index);
+  const handleDeleteSlot = (day: string, slotIdOrIndex: string | number) => {
+    const daySlots = schedule[day] || [];
+    const updated = typeof slotIdOrIndex === 'string'
+      ? daySlots.filter((s) => s.id !== slotIdOrIndex)
+      : daySlots.filter((_, i) => i !== slotIdOrIndex);
+
     setSchedule({
       ...schedule,
-      [day]: updated
+      [day]: sortScheduleSlots(updated)
     });
   };
 
