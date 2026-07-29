@@ -502,7 +502,130 @@ export function dbSubscribeToPageViews(callback: (views: PageViews) => void): ()
 // STUDENT ACCOUNTS MANAGEMENT SERVICES
 // ==========================================
 
-import { StudentAccount } from '../types';
+import { StudentAccount, StudentExerciseLog } from '../types';
+
+export const DEFAULT_STUDENT_LOGS: StudentExerciseLog[] = [
+  {
+    id: 'log-1',
+    studentUsername: 'lgs_ogrenci',
+    studentFullName: 'Ahmet Yılmaz',
+    exerciseId: 'o-om-1',
+    exerciseTitle: 'LGS Paragraf Odak & Hız Metni',
+    categoryLabel: 'Okuma Metni',
+    level: 'Ortaokul',
+    date: '28.07.2026 15:40:12',
+    durationSeconds: 180,
+    wpm: 280,
+    accuracy: 90,
+    score: 88,
+    effectiveWpm: 252
+  },
+  {
+    id: 'log-2',
+    studentUsername: 'lgs_ogrenci',
+    studentFullName: 'Ahmet Yılmaz',
+    exerciseId: 'o-sc-1',
+    exerciseTitle: 'Schulte Tablosu 4x4 (1-16)',
+    categoryLabel: 'Sayı Çalışması',
+    level: 'Ortaokul',
+    date: '28.07.2026 15:45:00',
+    durationSeconds: 42,
+    wpm: 290,
+    accuracy: 100,
+    score: 95,
+    effectiveWpm: 290
+  },
+  {
+    id: 'log-3',
+    studentUsername: 'lgs_ogrenci',
+    studentFullName: 'Ahmet Yılmaz',
+    exerciseId: 'o-gt-1',
+    exerciseTitle: 'LGS Zikzak Göz Sıçraması',
+    categoryLabel: 'Göz Takip',
+    level: 'Ortaokul',
+    date: '29.07.2026 10:15:30',
+    durationSeconds: 120,
+    wpm: 310,
+    accuracy: 95,
+    score: 92,
+    effectiveWpm: 294
+  },
+  {
+    id: 'log-4',
+    studentUsername: 'yks_ogrenci',
+    studentFullName: 'Zeynep Kaya',
+    exerciseId: 'l-bm-1',
+    exerciseTitle: 'YKS Edebiyat & Felsefe Anagramı',
+    categoryLabel: 'Bulmaca',
+    level: 'Lise',
+    date: '27.07.2026 18:20:00',
+    durationSeconds: 240,
+    wpm: 350,
+    accuracy: 95,
+    score: 94,
+    effectiveWpm: 332
+  },
+  {
+    id: 'log-5',
+    studentUsername: 'yks_ogrenci',
+    studentFullName: 'Zeynep Kaya',
+    exerciseId: 'l-om-1',
+    exerciseTitle: 'YKS Paragraf & Akademik Odak Metni',
+    categoryLabel: 'Okuma Metni',
+    level: 'Lise',
+    date: '28.07.2026 19:10:15',
+    durationSeconds: 300,
+    wpm: 380,
+    accuracy: 92,
+    score: 91,
+    effectiveWpm: 350
+  },
+  {
+    id: 'log-6',
+    studentUsername: 'yks_ogrenci',
+    studentFullName: 'Zeynep Kaya',
+    exerciseId: 'l-st-1',
+    exerciseTitle: 'YKS Blok Sütun Takip (Dikey Çift)',
+    categoryLabel: 'Sütun Takip',
+    level: 'Lise',
+    date: '29.07.2026 11:30:00',
+    durationSeconds: 150,
+    wpm: 410,
+    accuracy: 98,
+    score: 96,
+    effectiveWpm: 401
+  },
+  {
+    id: 'log-7',
+    studentUsername: 'ilkokul_ogrenci',
+    studentFullName: 'Caner Demir',
+    exerciseId: 'i-hc-1',
+    exerciseTitle: 'İlkokul Ritmik Hece Flaşör Çalışması',
+    categoryLabel: 'Hece Çalışması',
+    level: 'İlkokul',
+    date: '28.07.2026 14:10:00',
+    durationSeconds: 90,
+    wpm: 160,
+    accuracy: 100,
+    score: 90,
+    effectiveWpm: 160
+  },
+  {
+    id: 'log-8',
+    studentUsername: 'ilkokul_ogrenci',
+    studentFullName: 'Caner Demir',
+    exerciseId: 'i-sc-2',
+    exerciseTitle: 'Schulte Tablosu 3x3 (1-9 Sayı Avı)',
+    categoryLabel: 'Sayı Çalışması',
+    level: 'İlkokul',
+    date: '29.07.2026 09:50:00',
+    durationSeconds: 35,
+    wpm: 180,
+    accuracy: 100,
+    score: 92,
+    effectiveWpm: 180
+  }
+];
 
 export const DEFAULT_STUDENTS: StudentAccount[] = [
   {
@@ -630,6 +753,173 @@ export async function dbDeleteStudent(id: string): Promise<void> {
       const local: StudentAccount[] = JSON.parse(raw);
       const updated = local.filter(st => st.id !== id);
       localStorage.setItem('gamze_students', JSON.stringify(updated));
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// ==========================================
+// STUDENT EXERCISE LOGS & PROGRESS SERVICES
+// ==========================================
+
+export async function dbGetStudentLogs(targetUsername?: string): Promise<StudentExerciseLog[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'student_logs'));
+    let result: StudentExerciseLog[] = [];
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      result.push({
+        id: docSnap.id,
+        studentId: data.studentId || '',
+        studentUsername: data.studentUsername || '',
+        studentFullName: data.studentFullName || '',
+        exerciseId: data.exerciseId || '',
+        exerciseTitle: data.exerciseTitle || '',
+        categoryLabel: data.categoryLabel || 'Genel Egzersiz',
+        level: data.level || 'Ortaokul',
+        date: data.date || new Date().toLocaleString('tr-TR'),
+        durationSeconds: data.durationSeconds !== undefined ? Number(data.durationSeconds) : 60,
+        wpm: data.wpm !== undefined ? Number(data.wpm) : 200,
+        accuracy: data.accuracy !== undefined ? Number(data.accuracy) : 95,
+        score: data.score !== undefined ? Number(data.score) : 90,
+        effectiveWpm: data.effectiveWpm !== undefined ? Number(data.effectiveWpm) : undefined
+      });
+    });
+
+    if (result.length === 0) {
+      // Seed default logs to Firestore
+      const batch = writeBatch(db);
+      DEFAULT_STUDENT_LOGS.forEach((log) => {
+        const docRef = doc(db, 'student_logs', log.id);
+        batch.set(docRef, log);
+      });
+      await batch.commit();
+      localStorage.setItem('gamze_student_logs', JSON.stringify(DEFAULT_STUDENT_LOGS));
+      result = DEFAULT_STUDENT_LOGS;
+    } else {
+      localStorage.setItem('gamze_student_logs', JSON.stringify(result));
+    }
+
+    if (targetUsername) {
+      result = result.filter(log => log.studentUsername.toLowerCase() === targetUsername.toLowerCase());
+    }
+
+    // Sort descending by date (newest first)
+    result.sort((a, b) => {
+      const timeA = parseTurkishDateTime(a.date);
+      const timeB = parseTurkishDateTime(b.date);
+      return timeB - timeA;
+    });
+
+    return result;
+  } catch (error) {
+    console.error('Failed to fetch student logs from Firestore, using local storage:', error);
+    const raw = localStorage.getItem('gamze_student_logs');
+    let local: StudentExerciseLog[] = raw ? JSON.parse(raw) : DEFAULT_STUDENT_LOGS;
+    if (targetUsername) {
+      local = local.filter(log => log.studentUsername.toLowerCase() === targetUsername.toLowerCase());
+    }
+    local.sort((a, b) => {
+      const timeA = parseTurkishDateTime(a.date);
+      const timeB = parseTurkishDateTime(b.date);
+      return timeB - timeA;
+    });
+    return local;
+  }
+}
+
+export async function dbAddStudentLog(logData: Omit<StudentExerciseLog, 'id'>): Promise<StudentExerciseLog> {
+  const fullLog = {
+    ...logData,
+    date: logData.date || new Date().toLocaleString('tr-TR')
+  };
+  try {
+    const docRef = await addDoc(collection(db, 'student_logs'), fullLog);
+    const created: StudentExerciseLog = { ...fullLog, id: docRef.id };
+    
+    // Update local cache
+    try {
+      const raw = localStorage.getItem('gamze_student_logs');
+      const local: StudentExerciseLog[] = raw ? JSON.parse(raw) : DEFAULT_STUDENT_LOGS;
+      local.unshift(created);
+      localStorage.setItem('gamze_student_logs', JSON.stringify(local));
+    } catch(e) {}
+
+    return created;
+  } catch (error) {
+    console.error('Failed to add student log to Firestore, saving to local storage:', error);
+    const id = 'log-' + Math.random().toString(36).substring(2, 8);
+    const created: StudentExerciseLog = { ...fullLog, id };
+    const raw = localStorage.getItem('gamze_student_logs');
+    const local: StudentExerciseLog[] = raw ? JSON.parse(raw) : DEFAULT_STUDENT_LOGS;
+    local.unshift(created);
+    localStorage.setItem('gamze_student_logs', JSON.stringify(local));
+    return created;
+  }
+}
+
+export async function dbUpdateStudentLog(id: string, updates: Partial<StudentExerciseLog>): Promise<void> {
+  try {
+    const ref = doc(db, 'student_logs', id);
+    await updateDoc(ref, updates);
+  } catch (error) {
+    console.error(`Failed to update student log ${id} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_student_logs');
+    if (raw) {
+      const local: StudentExerciseLog[] = JSON.parse(raw);
+      const updated = local.map(item => item.id === id ? { ...item, ...updates } : item);
+      localStorage.setItem('gamze_student_logs', JSON.stringify(updated));
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export async function dbDeleteStudentLog(id: string): Promise<void> {
+  try {
+    const ref = doc(db, 'student_logs', id);
+    await deleteDoc(ref);
+  } catch (error) {
+    console.error(`Failed to delete student log ${id} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_student_logs');
+    if (raw) {
+      const local: StudentExerciseLog[] = JSON.parse(raw);
+      const updated = local.filter(item => item.id !== id);
+      localStorage.setItem('gamze_student_logs', JSON.stringify(updated));
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export async function dbClearStudentLogs(studentUsername: string): Promise<void> {
+  try {
+    const q = query(collection(db, 'student_logs'));
+    const querySnapshot = await getDocs(q);
+    const batch = writeBatch(db);
+    querySnapshot.forEach((docSnap) => {
+      if (docSnap.data().studentUsername?.toLowerCase() === studentUsername.toLowerCase()) {
+        batch.delete(docSnap.ref);
+      }
+    });
+    await batch.commit();
+  } catch (error) {
+    console.error(`Failed to clear logs for ${studentUsername} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_student_logs');
+    if (raw) {
+      const local: StudentExerciseLog[] = JSON.parse(raw);
+      const updated = local.filter(item => item.studentUsername.toLowerCase() !== studentUsername.toLowerCase());
+      localStorage.setItem('gamze_student_logs', JSON.stringify(updated));
     }
   } catch (e) {
     console.error(e);

@@ -5,11 +5,14 @@ import {
   Grid, Palette, Search, HelpCircle, Puzzle, Repeat, Edit3, Shield,
   CheckCircle2, ArrowRight, Award, Trophy, Sliders, ChevronRight, Lock, LogOut,
   Volume2, VolumeX, User, UserPlus, Trash2, Key, GraduationCap, Star, Check, RefreshCw,
-  Target, Brain, Timer
+  Target, Brain, Timer, BarChart2, Calendar, FileText, Edit, Plus, ChevronDown, Filter
 } from 'lucide-react';
 import { SPEED_READING_EXERCISES, SpeedExercise } from '../data/speedReadingData';
-import { StudentAccount, ExerciseResult } from '../types';
-import { dbGetStudents, dbAddStudent, dbDeleteStudent, dbUpdateStudent, DEFAULT_STUDENTS } from '../lib/firebase';
+import { StudentAccount, StudentExerciseLog, ExerciseResult } from '../types';
+import { 
+  dbGetStudents, dbAddStudent, dbDeleteStudent, dbUpdateStudent, DEFAULT_STUDENTS,
+  dbGetStudentLogs, dbAddStudentLog, dbUpdateStudentLog, dbDeleteStudentLog, dbClearStudentLogs
+} from '../lib/firebase';
 
 // =========================================================================
 // RICH TURKISH SPEED READING & ACCELERATED VOCABULARY POOL
@@ -192,6 +195,102 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
   const [newStudentPassword, setNewStudentPassword] = useState('');
   const [newStudentClass, setNewStudentClass] = useState('4. Sınıf (İlkokul)');
   const [studentActionMsg, setStudentActionMsg] = useState('');
+
+  // Selected Student for Progress / Exercise Log Report (Trainer View)
+  const [selectedStudentForReport, setSelectedStudentForReport] = useState<StudentAccount | null>(null);
+  const [studentLogs, setStudentLogs] = useState<StudentExerciseLog[]>([]);
+  const [logFilterCategory, setLogFilterCategory] = useState<string>('all');
+  const [logSearchQuery, setLogSearchQuery] = useState<string>('');
+  const [isLogsLoading, setIsLogsLoading] = useState(false);
+
+  // Edit Student Account Modal State
+  const [editingStudent, setEditingStudent] = useState<StudentAccount | null>(null);
+
+  // Edit Student Exercise Log Modal State
+  const [editingLog, setEditingLog] = useState<StudentExerciseLog | null>(null);
+
+  // Add Manual Exercise Log Modal State
+  const [isAddLogOpen, setIsAddLogOpen] = useState(false);
+  const [newLogExerciseTitle, setNewLogExerciseTitle] = useState('Paragraf & Odak Egzersizi');
+  const [newLogLevel, setNewLogLevel] = useState('Ortaokul');
+  const [newLogCategory, setNewLogCategory] = useState('Okuma Metni');
+  const [newLogDurationSec, setNewLogDurationSec] = useState('120');
+  const [newLogWpm, setNewLogWpm] = useState('320');
+  const [newLogAccuracy, setNewLogAccuracy] = useState('95');
+  const [newLogScore, setNewLogScore] = useState('90');
+
+  const handleOpenStudentReport = async (st: StudentAccount) => {
+    setSelectedStudentForReport(st);
+    setIsLogsLoading(true);
+    try {
+      const logs = await dbGetStudentLogs(st.username);
+      setStudentLogs(logs);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLogsLoading(false);
+    }
+  };
+
+  const handleDeleteLog = async (logId: string) => {
+    if (!window.confirm('Bu egzersiz performans kaydını silmek istediğinize emin misiniz?')) return;
+    await dbDeleteStudentLog(logId);
+    setStudentLogs(prev => prev.filter(l => l.id !== logId));
+  };
+
+  const handleClearAllLogs = async () => {
+    if (!selectedStudentForReport) return;
+    if (!window.confirm(`${selectedStudentForReport.fullName} adlı öğrencinin TÜM çalışma kayıtları silinecek. Emin misiniz?`)) return;
+    await dbClearStudentLogs(selectedStudentForReport.username);
+    setStudentLogs([]);
+  };
+
+  const handleSaveEditLog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLog) return;
+    await dbUpdateStudentLog(editingLog.id, editingLog);
+    setStudentLogs(prev => prev.map(l => l.id === editingLog.id ? editingLog : l));
+    setEditingLog(null);
+  };
+
+  const handleSaveEditStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+    await dbUpdateStudent(editingStudent.id, editingStudent);
+    const updated = await dbGetStudents();
+    setStudents(updated);
+    if (selectedStudentForReport?.id === editingStudent.id) {
+      setSelectedStudentForReport(editingStudent);
+    }
+    setEditingStudent(null);
+  };
+
+  const handleCreateManualLog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStudentForReport) return;
+    const durSec = Number(newLogDurationSec) || 60;
+    const wpmVal = Number(newLogWpm) || 200;
+    const accVal = Number(newLogAccuracy) || 90;
+    const scoreVal = Number(newLogScore) || 85;
+
+    const created = await dbAddStudentLog({
+      studentUsername: selectedStudentForReport.username,
+      studentFullName: selectedStudentForReport.fullName,
+      exerciseId: 'manual-' + Date.now(),
+      exerciseTitle: newLogExerciseTitle || 'Manuel Egzersiz Kaydı',
+      categoryLabel: newLogCategory,
+      level: newLogLevel,
+      date: new Date().toLocaleString('tr-TR'),
+      durationSeconds: durSec,
+      wpm: wpmVal,
+      accuracy: accVal,
+      score: scoreVal,
+      effectiveWpm: Math.round(wpmVal * (accVal / 100))
+    });
+
+    setStudentLogs(prev => [created, ...prev]);
+    setIsAddLogOpen(false);
+  };
 
   // Global Audio Enable state
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
@@ -740,6 +839,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                 exercise={activeExercise} 
                 onBack={() => setActiveExercise(null)} 
                 isSoundEnabled={isSoundEnabled}
+                currentUser={currentUser}
               />
             ) : (
               /* Exercises Library / Grid View */
@@ -831,147 +931,822 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
         </div>
       )}
 
-      {/* Student Accounts Management Modal for Trainer (Gamze Hanım) */}
+      {/* Student Accounts Management & Performance Analytics Modal for Trainer (Gamze Hanım) */}
       {isStudentModalOpen && currentUser?.role === 'trainer' && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-3xl max-h-[90vh] border border-[#2D2D2D]/20 shadow-2xl flex flex-col overflow-hidden">
-            <div className="bg-[#2D2D2D] text-white p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-[#C5A059]" />
-                <h3 className="font-serif font-bold text-base text-white">Öğrenci Hesap Yönetimi (Eğitmen Paneli)</h3>
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[1000] flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-white w-full max-w-5xl max-h-[92vh] border border-[#2D2D2D]/20 shadow-2xl flex flex-col overflow-hidden">
+            
+            {/* Modal Top Header */}
+            <div className="bg-[#2D2D2D] text-white p-4 flex items-center justify-between border-b border-[#C5A059]/40">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#C5A059]/20 text-[#C5A059] border border-[#C5A059]/40">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-base text-white flex items-center gap-2">
+                    <span>Öğrenci Yönetim ve Takip Paneli</span>
+                    <span className="text-[10px] font-sans font-bold bg-[#C5A059] text-white px-2 py-0.5 uppercase">
+                      Eğitmen: Gamze Hoca
+                    </span>
+                  </h3>
+                  <p className="text-xs text-stone-300">
+                    Öğrenci hesaplarını tanımlayın, çalışma sürelerini, puanlarını ve detaylı performans geçmişlerini takip edin.
+                  </p>
+                </div>
               </div>
-              <button 
-                onClick={() => setIsStudentModalOpen(false)}
-                className="text-stone-400 hover:text-white p-1"
-              >
+
+              <div className="flex items-center gap-2">
+                {selectedStudentForReport && (
+                  <button
+                    onClick={() => setSelectedStudentForReport(null)}
+                    className="px-3 py-1.5 bg-stone-700 hover:bg-stone-600 text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    ← Öğrenci Listesine Dön
+                  </button>
+                )}
+                <button 
+                  onClick={() => {
+                    setIsStudentModalOpen(false);
+                    setSelectedStudentForReport(null);
+                  }}
+                  className="text-stone-400 hover:text-white p-1.5 hover:bg-stone-800 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 bg-stone-50/50">
+
+              {/* VIEW 1: SELECTED STUDENT PERFORMANCE REPORT & ANALYTICS DASHBOARD */}
+              {selectedStudentForReport ? (
+                <div className="space-y-6">
+                  
+                  {/* Student Summary Profile Banner */}
+                  <div className="bg-white p-5 border border-[#2D2D2D]/15 shadow-sm flex flex-wrap items-center justify-between gap-4 border-l-4 border-l-[#C5A059]">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-[#2D2D2D] text-[#C5A059] flex items-center justify-center font-bold font-serif text-xl border border-[#C5A059]/40">
+                        {selectedStudentForReport.fullName.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-serif font-bold text-lg text-[#2D2D2D]">
+                            {selectedStudentForReport.fullName}
+                          </h3>
+                          <span className="px-2 py-0.5 bg-[#C5A059]/10 text-[#C5A059] border border-[#C5A059]/30 font-bold text-[10px] uppercase">
+                            {selectedStudentForReport.studentClass}
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-500 font-mono mt-0.5">
+                          Kullanıcı Adı: <span className="font-bold text-stone-700">{selectedStudentForReport.username}</span> | Şifre: <span className="font-bold text-stone-700">{selectedStudentForReport.password}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => setEditingStudent(selectedStudentForReport)}
+                        className="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition-colors border border-stone-300 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Edit className="w-3.5 h-3.5 text-stone-600" />
+                        <span>Hesabı Düzenle</span>
+                      </button>
+
+                      <button
+                        onClick={() => setIsAddLogOpen(true)}
+                        className="px-3.5 py-2 bg-[#C5A059] hover:bg-[#b08d4b] text-white text-xs font-bold transition-colors shadow flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Manuel Performans Kaydı Ekle</span>
+                      </button>
+
+                      <button
+                        onClick={handleClearAllLogs}
+                        className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+                        title="Öğrencinin tüm geçmişini temizle"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Geçmişi Temizle</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 4 Summary Stat Cards */}
+                  {(() => {
+                    const totalSec = studentLogs.reduce((acc, curr) => acc + (curr.durationSeconds || 0), 0);
+                    const count = studentLogs.length;
+                    const avgWpm = count > 0 ? Math.round(studentLogs.reduce((acc, curr) => acc + (curr.wpm || 0), 0) / count) : 0;
+                    const avgScore = count > 0 ? Math.round(studentLogs.reduce((acc, curr) => acc + (curr.score || 0), 0) / count) : 0;
+                    
+                    const formatDurationText = (seconds: number) => {
+                      if (!seconds) return '0 sn';
+                      const hrs = Math.floor(seconds / 3600);
+                      const mins = Math.floor((seconds % 3600) / 60);
+                      const secs = Math.round(seconds % 60);
+                      if (hrs > 0) return `${hrs} Sa ${mins} Dk`;
+                      if (mins > 0) return `${mins} Dk ${secs} Sn`;
+                      return `${secs} Sn`;
+                    };
+
+                    return (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-white p-4 border border-stone-200 shadow-sm space-y-1">
+                          <div className="flex items-center justify-between text-stone-400">
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Toplam Çalışma</span>
+                            <Clock className="w-4 h-4 text-[#C5A059]" />
+                          </div>
+                          <div className="text-xl font-bold font-mono text-[#2D2D2D]">
+                            {formatDurationText(totalSec)}
+                          </div>
+                          <div className="text-[11px] text-stone-500 font-medium">
+                            Toplam egzersiz süresi
+                          </div>
+                        </div>
+
+                        <div className="bg-white p-4 border border-stone-200 shadow-sm space-y-1">
+                          <div className="flex items-center justify-between text-stone-400">
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Tamamlanan Egzersiz</span>
+                            <Trophy className="w-4 h-4 text-emerald-600" />
+                          </div>
+                          <div className="text-xl font-bold font-mono text-emerald-700">
+                            {count} Egzersiz
+                          </div>
+                          <div className="text-[11px] text-stone-500 font-medium">
+                            Kayıtlı oturum sayısı
+                          </div>
+                        </div>
+
+                        <div className="bg-white p-4 border border-stone-200 shadow-sm space-y-1">
+                          <div className="flex items-center justify-between text-stone-400">
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Ortalama Hız</span>
+                            <Zap className="w-4 h-4 text-amber-500" />
+                          </div>
+                          <div className="text-xl font-bold font-mono text-amber-700">
+                            {avgWpm} WPM
+                          </div>
+                          <div className="text-[11px] text-stone-500 font-medium">
+                            Kelime / dakika okuma hızı
+                          </div>
+                        </div>
+
+                        <div className="bg-white p-4 border border-stone-200 shadow-sm space-y-1">
+                          <div className="flex items-center justify-between text-stone-400">
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Ortalama Puan</span>
+                            <Award className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div className="text-xl font-bold font-mono text-blue-700">
+                            {avgScore} / 100
+                          </div>
+                          <div className="text-[11px] text-stone-500 font-medium">
+                            {avgScore >= 90 ? '🌟 Mükemmel' : avgScore >= 75 ? '👍 Çok İyi' : avgScore >= 60 ? '📈 Gelişiyor' : '⏳ Başlangıç'}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Filter & Search Bar for Logs */}
+                  <div className="bg-white p-4 border border-stone-200 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 flex-1 min-w-[240px]">
+                      <Search className="w-4 h-4 text-stone-400" />
+                      <input 
+                        type="text"
+                        value={logSearchQuery}
+                        onChange={(e) => setLogSearchQuery(e.target.value)}
+                        placeholder="Egzersiz adı veya tarih ile ara..."
+                        className="w-full bg-transparent text-xs text-stone-800 placeholder-stone-400 focus:outline-none"
+                      />
+                      {logSearchQuery && (
+                        <button onClick={() => setLogSearchQuery('')} className="text-stone-400 hover:text-stone-600 text-xs font-bold">
+                          Temizle
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-bold uppercase text-stone-400">Filtre:</span>
+                      {[
+                        { id: 'all', label: 'Tümü' },
+                        { id: 'Okuma Metni', label: 'Metin Okuma' },
+                        { id: 'Göz Takip', label: 'Göz Takip' },
+                        { id: 'Sayı Çalışması', label: 'Sayı' },
+                        { id: 'Hece Çalışması', label: 'Hece' },
+                        { id: 'Bulmaca', label: 'Bulmaca' }
+                      ].map(cat => (
+                        <button
+                          key={cat.id}
+                          onClick={() => setLogFilterCategory(cat.id)}
+                          className={`px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer border ${
+                            logFilterCategory === cat.id 
+                              ? 'bg-[#2D2D2D] text-white border-[#2D2D2D]'
+                              : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
+                          }`}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Detailed Exercise History Table */}
+                  <div className="bg-white border border-stone-200 overflow-hidden shadow-sm">
+                    <div className="p-4 bg-stone-100/70 border-b border-stone-200 flex items-center justify-between">
+                      <h4 className="font-serif font-bold text-sm text-[#2D2D2D] flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-[#C5A059]" />
+                        <span>Detaylı Egzersiz Performans Geçmişi ({studentLogs.length})</span>
+                      </h4>
+                      <span className="text-[11px] text-stone-500">Güncel tarihe göre sıralı veriler</span>
+                    </div>
+
+                    {isLogsLoading ? (
+                      <div className="p-8 text-center text-stone-500 font-medium text-xs">
+                        Performans verileri yükleniyor...
+                      </div>
+                    ) : studentLogs.length === 0 ? (
+                      <div className="p-8 text-center space-y-2">
+                        <p className="text-stone-500 text-xs font-medium">Bu öğrenciye ait henüz bir egzersiz kaydı bulunmuyor.</p>
+                        <button
+                          onClick={() => setIsAddLogOpen(true)}
+                          className="px-4 py-2 bg-[#C5A059] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#b08d4b] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>İlk Egzersiz Kaydını Ekle</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="bg-stone-100 text-stone-600 font-bold border-b border-stone-200 uppercase text-[10px] tracking-wider">
+                              <th className="p-3">Tarih & Saat</th>
+                              <th className="p-3">Egzersiz Adı</th>
+                              <th className="p-3">Seviye / Kategori</th>
+                              <th className="p-3">Çalışma Süresi</th>
+                              <th className="p-3">Hız (WPM)</th>
+                              <th className="p-3">Doğruluk (%)</th>
+                              <th className="p-3">Puan</th>
+                              <th className="p-3 text-right">İşlemler</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-stone-100">
+                            {studentLogs
+                              .filter(log => {
+                                const catMatch = logFilterCategory === 'all' || (log.categoryLabel || '').toLowerCase().includes(logFilterCategory.toLowerCase());
+                                const searchMatch = !logSearchQuery || (log.exerciseTitle || '').toLowerCase().includes(logSearchQuery.toLowerCase()) || (log.date || '').includes(logSearchQuery);
+                                return catMatch && searchMatch;
+                              })
+                              .map((log) => (
+                                <tr key={log.id} className="hover:bg-stone-50/80 font-medium transition-colors">
+                                  <td className="p-3 font-mono text-stone-600 whitespace-nowrap">
+                                    <div className="flex items-center gap-1.5">
+                                      <Calendar className="w-3.5 h-3.5 text-stone-400" />
+                                      <span>{log.date}</span>
+                                    </div>
+                                  </td>
+
+                                  <td className="p-3 font-bold text-[#2D2D2D]">
+                                    {log.exerciseTitle}
+                                  </td>
+
+                                  <td className="p-3">
+                                    <span className="px-2 py-0.5 bg-stone-100 text-[#2D2D2D] border border-stone-200 text-[10px] font-bold">
+                                      {log.level || 'Genel'} • {log.categoryLabel || 'Egzersiz'}
+                                    </span>
+                                  </td>
+
+                                  <td className="p-3 font-mono font-bold text-stone-700">
+                                    {log.durationSeconds ? `${log.durationSeconds} sn (${(log.durationSeconds / 60).toFixed(1)} dk)` : '45 sn'}
+                                  </td>
+
+                                  <td className="p-3 font-mono font-bold text-amber-700">
+                                    {log.wpm} WPM
+                                  </td>
+
+                                  <td className="p-3 font-mono font-bold text-emerald-700">
+                                    %{log.accuracy}
+                                  </td>
+
+                                  <td className="p-3">
+                                    <span className={`px-2 py-1 text-[11px] font-bold font-mono border ${
+                                      log.score >= 85 ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
+                                      log.score >= 70 ? 'bg-amber-50 text-amber-800 border-amber-300' :
+                                      'bg-rose-50 text-rose-800 border-rose-300'
+                                    }`}>
+                                      {log.score} / 100
+                                    </span>
+                                  </td>
+
+                                  <td className="p-3 text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                      <button
+                                        onClick={() => setEditingLog(log)}
+                                        className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors rounded cursor-pointer"
+                                        title="Kayıt Detayını Düzenle"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteLog(log.id)}
+                                        className="p-1.5 text-rose-600 hover:text-rose-900 hover:bg-rose-50 transition-colors rounded cursor-pointer"
+                                        title="Performans Kaydını Sil"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              ) : (
+                /* VIEW 2: REGISTERED STUDENTS LIST & NEW STUDENT CREATION */
+                <div className="space-y-6">
+                  
+                  {/* Form to Create New Student */}
+                  <form onSubmit={handleCreateStudent} className="bg-white p-5 border border-stone-200 shadow-sm space-y-4 border-t-4 border-t-[#C5A059]">
+                    <h4 className="font-serif font-bold text-sm text-[#2D2D2D] flex items-center justify-between border-b pb-2">
+                      <span className="flex items-center gap-2">
+                        <UserPlus className="w-4 h-4 text-[#C5A059]" />
+                        <span>Yeni Öğrenci Hesabı Oluştur</span>
+                      </span>
+                      <span className="text-[10px] text-stone-400 font-sans font-normal uppercase tracking-wider">Eğitmen Girişli Kayıt</span>
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-stone-500 uppercase">Öğrenci Adı Soyadı</label>
+                        <input 
+                          type="text"
+                          required
+                          value={newStudentName}
+                          onChange={(e) => setNewStudentName(e.target.value)}
+                          placeholder="Örn: Ayşe Yılmaz"
+                          className="w-full px-3 py-2 bg-white border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-stone-500 uppercase">Sınıf / Seviye</label>
+                        <select
+                          value={newStudentClass}
+                          onChange={(e) => setNewStudentClass(e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none"
+                        >
+                          <option value="4. Sınıf (İlkokul)">4. Sınıf (İlkokul)</option>
+                          <option value="8. Sınıf (LGS)">8. Sınıf (LGS)</option>
+                          <option value="12. Sınıf (YKS)">12. Sınıf (YKS)</option>
+                          <option value="Ortaokul">Ortaokul Genel</option>
+                          <option value="Lise">Lise Genel</option>
+                          <option value="Mezun">Mezun</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-stone-500 uppercase">Kullanıcı Adı</label>
+                        <input 
+                          type="text"
+                          required
+                          value={newStudentUsername}
+                          onChange={(e) => setNewStudentUsername(e.target.value)}
+                          placeholder="Örn: ayse"
+                          className="w-full px-3 py-2 bg-white border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none font-mono"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-stone-500 uppercase">Şifre</label>
+                        <input 
+                          type="text"
+                          required
+                          value={newStudentPassword}
+                          onChange={(e) => setNewStudentPassword(e.target.value)}
+                          placeholder="Örn: 123456"
+                          className="w-full px-3 py-2 bg-white border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    {studentActionMsg && (
+                      <p className="text-xs p-2.5 font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                        {studentActionMsg}
+                      </p>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="px-5 py-2.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-2 shadow"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Öğrenci Hesabını Kaydet ve Tanımla</span>
+                    </button>
+                  </form>
+
+                  {/* Registered Students Table */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-serif font-bold text-sm text-[#2D2D2D] flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-[#C5A059]" />
+                        <span>Kayıtlı Öğrenci Listesi ({students.length})</span>
+                      </h4>
+                      <span className="text-[11px] text-stone-500">
+                        Performans ve sürelerini incelemek için öğrenci adına tıklayın
+                      </span>
+                    </div>
+
+                    <div className="border border-stone-200 overflow-x-auto bg-white shadow-sm">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-stone-100 text-stone-600 font-bold border-b border-stone-200 uppercase text-[10px] tracking-wider">
+                            <th className="p-3">Adı Soyadı</th>
+                            <th className="p-3">Sınıf</th>
+                            <th className="p-3">Kullanıcı Adı</th>
+                            <th className="p-3">Şifre</th>
+                            <th className="p-3 text-right">Performans & İşlemler</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-stone-100">
+                          {students.map((st) => (
+                            <tr key={st.id} className="hover:bg-stone-50 font-medium transition-colors">
+                              <td className="p-3 font-bold text-[#2D2D2D]">
+                                <button
+                                  onClick={() => handleOpenStudentReport(st)}
+                                  className="text-left font-bold text-[#2D2D2D] hover:text-[#C5A059] transition-colors cursor-pointer flex items-center gap-2 group"
+                                >
+                                  <span>{st.fullName}</span>
+                                  <ChevronRight className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#C5A059] transition-all group-hover:translate-x-0.5" />
+                                </button>
+                              </td>
+
+                              <td className="p-3">
+                                <span className="px-2.5 py-1 bg-stone-100 border text-[10px] font-bold text-stone-700">
+                                  {st.studentClass}
+                                </span>
+                              </td>
+
+                              <td className="p-3 font-mono font-bold text-[#C5A059]">{st.username}</td>
+
+                              <td className="p-3 font-mono text-stone-600">{st.password}</td>
+
+                              <td className="p-3 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    onClick={() => handleOpenStudentReport(st)}
+                                    className="px-3 py-1.5 bg-[#C5A059]/10 hover:bg-[#C5A059] text-[#C5A059] hover:text-white border border-[#C5A059]/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                                  >
+                                    <BarChart2 className="w-3.5 h-3.5" />
+                                    <span>Performans & Rapor Gör</span>
+                                  </button>
+
+                                  <button
+                                    onClick={() => setEditingStudent(st)}
+                                    className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors rounded cursor-pointer"
+                                    title="Düzenle"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+
+                                  <button
+                                    onClick={() => handleDeleteStudent(st.id, st.fullName)}
+                                    className="p-1.5 text-rose-600 hover:text-rose-900 hover:bg-rose-50 transition-colors rounded cursor-pointer"
+                                    title="Hesabı Sil"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 1: EDIT STUDENT ACCOUNT CREDENTIALS */}
+      {editingStudent && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1100] flex items-center justify-center p-4">
+          <div className="bg-white max-w-md w-full p-6 border border-stone-300 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h4 className="font-serif font-bold text-base text-[#2D2D2D] flex items-center gap-2">
+                <Edit className="w-4 h-4 text-[#C5A059]" />
+                <span>Öğrenci Hesabını Düzenle</span>
+              </h4>
+              <button onClick={() => setEditingStudent(null)} className="text-stone-400 hover:text-stone-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-6 flex-1">
-              
-              {/* Form to Create New Student */}
-              <form onSubmit={handleCreateStudent} className="bg-[#FAF9F6] p-5 border border-stone-200 space-y-4">
-                <h4 className="font-serif font-bold text-sm text-[#2D2D2D] flex items-center gap-2 border-b pb-2">
-                  <UserPlus className="w-4 h-4 text-[#C5A059]" />
-                  <span>Yeni Öğrenci Hesabı Oluştur</span>
-                </h4>
+            <form onSubmit={handleSaveEditStudent} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-stone-500">Adı Soyadı</label>
+                <input 
+                  type="text"
+                  required
+                  value={editingStudent.fullName}
+                  onChange={(e) => setEditingStudent({ ...editingStudent, fullName: e.target.value })}
+                  className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none"
+                />
+              </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-stone-500 uppercase">Öğrenci Adı Soyadı</label>
-                    <input 
-                      type="text"
-                      required
-                      value={newStudentName}
-                      onChange={(e) => setNewStudentName(e.target.value)}
-                      placeholder="Örn: Mehmet Demir"
-                      className="w-full px-3 py-2 bg-white border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none"
-                    />
-                  </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-stone-500">Sınıf / Seviye</label>
+                <select
+                  value={editingStudent.studentClass}
+                  onChange={(e) => setEditingStudent({ ...editingStudent, studentClass: e.target.value })}
+                  className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none"
+                >
+                  <option value="4. Sınıf (İlkokul)">4. Sınıf (İlkokul)</option>
+                  <option value="8. Sınıf (LGS)">8. Sınıf (LGS)</option>
+                  <option value="12. Sınıf (YKS)">12. Sınıf (YKS)</option>
+                  <option value="Ortaokul">Ortaokul Genel</option>
+                  <option value="Lise">Lise Genel</option>
+                  <option value="Mezun">Mezun</option>
+                </select>
+              </div>
 
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-stone-500 uppercase">Sınıf / Seviye</label>
-                    <select
-                      value={newStudentClass}
-                      onChange={(e) => setNewStudentClass(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none"
-                    >
-                      <option value="4. Sınıf (İlkokul)">4. Sınıf (İlkokul)</option>
-                      <option value="8. Sınıf (LGS)">8. Sınıf (LGS)</option>
-                      <option value="12. Sınıf (YKS)">12. Sınıf (YKS)</option>
-                      <option value="Ortaokul">Ortaokul Genel</option>
-                      <option value="Lise">Lise Genel</option>
-                      <option value="Mezun">Mezun</option>
-                    </select>
-                  </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-stone-500">Kullanıcı Adı</label>
+                <input 
+                  type="text"
+                  required
+                  value={editingStudent.username}
+                  onChange={(e) => setEditingStudent({ ...editingStudent, username: e.target.value })}
+                  className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-mono focus:border-[#C5A059] focus:outline-none"
+                />
+              </div>
 
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-stone-500 uppercase">Kullanıcı Adı</label>
-                    <input 
-                      type="text"
-                      required
-                      value={newStudentUsername}
-                      onChange={(e) => setNewStudentUsername(e.target.value)}
-                      placeholder="Örn: mehmet"
-                      className="w-full px-3 py-2 bg-white border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none font-mono"
-                    />
-                  </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-stone-500">Şifre</label>
+                <input 
+                  type="text"
+                  required
+                  value={editingStudent.password}
+                  onChange={(e) => setEditingStudent({ ...editingStudent, password: e.target.value })}
+                  className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-mono focus:border-[#C5A059] focus:outline-none"
+                />
+              </div>
 
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-stone-500 uppercase">Şifre</label>
-                    <input 
-                      type="text"
-                      required
-                      value={newStudentPassword}
-                      onChange={(e) => setNewStudentPassword(e.target.value)}
-                      placeholder="Örn: 123456"
-                      className="w-full px-3 py-2 bg-white border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none font-mono"
-                    />
-                  </div>
-                </div>
-
-                {studentActionMsg && (
-                  <p className="text-xs p-2.5 font-bold bg-amber-50 text-amber-900 border border-amber-200">
-                    {studentActionMsg}
-                  </p>
-                )}
-
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingStudent(null)}
+                  className="px-4 py-2 border border-stone-300 text-stone-700 text-xs font-bold hover:bg-stone-100 cursor-pointer"
+                >
+                  İptal
+                </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-2"
+                  className="px-5 py-2 bg-[#C5A059] text-white text-xs font-bold uppercase hover:bg-[#b08d4b] cursor-pointer"
                 >
-                  <Check className="w-4 h-4" />
-                  <span>Öğrenci Hesabını Kaydet ve Tanımla</span>
+                  Değişiklikleri Kaydet
                 </button>
-              </form>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-              {/* Registered Students Table */}
-              <div className="space-y-3">
-                <h4 className="font-serif font-bold text-sm text-[#2D2D2D] flex items-center justify-between">
-                  <span>Kayıtlı Öğrenci Listesi ({students.length})</span>
-                  <span className="text-[10px] text-stone-400 font-sans font-normal">Bu şifreler ile öğrenciler panele giriş yapabilir</span>
-                </h4>
+      {/* MODAL 2: EDIT EXERCISE LOG RECORD */}
+      {editingLog && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1100] flex items-center justify-center p-4">
+          <div className="bg-white max-w-lg w-full p-6 border border-stone-300 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h4 className="font-serif font-bold text-base text-[#2D2D2D] flex items-center gap-2">
+                <Edit className="w-4 h-4 text-[#C5A059]" />
+                <span>Egzersiz Kaydını Düzenle</span>
+              </h4>
+              <button onClick={() => setEditingLog(null)} className="text-stone-400 hover:text-stone-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-                <div className="border border-stone-200 overflow-x-auto bg-white">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-stone-100 text-stone-600 font-bold border-b border-stone-200 uppercase text-[10px] tracking-wider">
-                        <th className="p-3">Adı Soyadı</th>
-                        <th className="p-3">Sınıf</th>
-                        <th className="p-3">Kullanıcı Adı</th>
-                        <th className="p-3">Şifre</th>
-                        <th className="p-3 text-right">İşlem</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100">
-                      {students.map((st) => (
-                        <tr key={st.id} className="hover:bg-stone-50 font-medium">
-                          <td className="p-3 font-bold text-[#2D2D2D]">{st.fullName}</td>
-                          <td className="p-3">
-                            <span className="px-2 py-0.5 bg-stone-100 border text-[10px]">
-                              {st.studentClass}
-                            </span>
-                          </td>
-                          <td className="p-3 font-mono font-bold text-[#C5A059]">{st.username}</td>
-                          <td className="p-3 font-mono text-stone-600">{st.password}</td>
-                          <td className="p-3 text-right">
-                            <button
-                              onClick={() => handleDeleteStudent(st.id, st.fullName)}
-                              className="p-1.5 text-rose-600 hover:bg-rose-50 transition-colors rounded cursor-pointer"
-                              title="Sil"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            <form onSubmit={handleSaveEditLog} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-stone-500">Egzersiz Adı</label>
+                <input 
+                  type="text"
+                  required
+                  value={editingLog.exerciseTitle}
+                  onChange={(e) => setEditingLog({ ...editingLog, exerciseTitle: e.target.value })}
+                  className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-stone-500">Tarih & Saat</label>
+                  <input 
+                    type="text"
+                    required
+                    value={editingLog.date}
+                    onChange={(e) => setEditingLog({ ...editingLog, date: e.target.value })}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-mono focus:border-[#C5A059] focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-stone-500">Çalışma Süresi (Saniye)</label>
+                  <input 
+                    type="number"
+                    required
+                    value={editingLog.durationSeconds}
+                    onChange={(e) => setEditingLog({ ...editingLog, durationSeconds: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-mono focus:border-[#C5A059] focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-stone-500">Okuma Hızı (WPM)</label>
+                  <input 
+                    type="number"
+                    required
+                    value={editingLog.wpm}
+                    onChange={(e) => setEditingLog({ ...editingLog, wpm: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-mono focus:border-[#C5A059] focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-stone-500">Doğruluk Oranı (%)</label>
+                  <input 
+                    type="number"
+                    required
+                    min={0}
+                    max={100}
+                    value={editingLog.accuracy}
+                    onChange={(e) => setEditingLog({ ...editingLog, accuracy: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-mono focus:border-[#C5A059] focus:outline-none"
+                  />
                 </div>
               </div>
 
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-stone-500">Performans Puanı (0-100)</label>
+                <input 
+                  type="number"
+                  required
+                  min={0}
+                  max={100}
+                  value={editingLog.score}
+                  onChange={(e) => setEditingLog({ ...editingLog, score: Number(e.target.value) })}
+                  className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-mono focus:border-[#C5A059] focus:outline-none font-bold text-emerald-800"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingLog(null)}
+                  className="px-4 py-2 border border-stone-300 text-stone-700 text-xs font-bold hover:bg-stone-100 cursor-pointer"
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#C5A059] text-white text-xs font-bold uppercase hover:bg-[#b08d4b] cursor-pointer"
+                >
+                  Performans Kaydını Güncelle
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: ADD MANUAL EXERCISE PERFORMANCE LOG */}
+      {isAddLogOpen && selectedStudentForReport && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1100] flex items-center justify-center p-4">
+          <div className="bg-white max-w-lg w-full p-6 border border-stone-300 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h4 className="font-serif font-bold text-base text-[#2D2D2D] flex items-center gap-2">
+                <Plus className="w-4 h-4 text-[#C5A059]" />
+                <span>Manuel Egzersiz Kaydı Ekle ({selectedStudentForReport.fullName})</span>
+              </h4>
+              <button onClick={() => setIsAddLogOpen(false)} className="text-stone-400 hover:text-stone-700">
+                <X className="w-5 h-5" />
+              </button>
             </div>
+
+            <form onSubmit={handleCreateManualLog} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-stone-500">Egzersiz Başlığı</label>
+                <input 
+                  type="text"
+                  required
+                  value={newLogExerciseTitle}
+                  onChange={(e) => setNewLogExerciseTitle(e.target.value)}
+                  placeholder="Örn: LGS Paragraf Hızlı Okuma Metni"
+                  className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-stone-500">Egzersiz Kategori</label>
+                  <select
+                    value={newLogCategory}
+                    onChange={(e) => setNewLogCategory(e.target.value)}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none"
+                  >
+                    <option value="Okuma Metni">Okuma Metni</option>
+                    <option value="Göz Takip">Göz Takip</option>
+                    <option value="Sütun Takip">Sütun Takip</option>
+                    <option value="Hece Çalışması">Hece Çalışması</option>
+                    <option value="Sayı Çalışması">Sayı Çalışması</option>
+                    <option value="Bulmaca">Bulmaca & Anagram</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-stone-500">Seviye</label>
+                  <select
+                    value={newLogLevel}
+                    onChange={(e) => setNewLogLevel(e.target.value)}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none"
+                  >
+                    <option value="İlkokul">İlkokul</option>
+                    <option value="Ortaokul">Ortaokul</option>
+                    <option value="Lise">Lise</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-stone-500">Süre (Saniye)</label>
+                  <input 
+                    type="number"
+                    required
+                    value={newLogDurationSec}
+                    onChange={(e) => setNewLogDurationSec(e.target.value)}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-mono focus:border-[#C5A059] focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-stone-500">Okuma Hızı (WPM)</label>
+                  <input 
+                    type="number"
+                    required
+                    value={newLogWpm}
+                    onChange={(e) => setNewLogWpm(e.target.value)}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-mono focus:border-[#C5A059] focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-stone-500">Doğruluk (%)</label>
+                  <input 
+                    type="number"
+                    required
+                    min={0}
+                    max={100}
+                    value={newLogAccuracy}
+                    onChange={(e) => setNewLogAccuracy(e.target.value)}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-mono focus:border-[#C5A059] focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-stone-500">Puan (0-100)</label>
+                  <input 
+                    type="number"
+                    required
+                    min={0}
+                    max={100}
+                    value={newLogScore}
+                    onChange={(e) => setNewLogScore(e.target.value)}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-mono focus:border-[#C5A059] focus:outline-none font-bold text-emerald-800"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddLogOpen(false)}
+                  className="px-4 py-2 border border-stone-300 text-stone-700 text-xs font-bold hover:bg-stone-100 cursor-pointer"
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#C5A059] text-white text-xs font-bold uppercase hover:bg-[#b08d4b] cursor-pointer"
+                >
+                  Performans Kaydını Ekle
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -983,7 +1758,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
 // =========================================================================
 // ACTIVE EXERCISE RUNNER COMPONENT WITH RESULT & COMPREHENSION SCORING
 // =========================================================================
-function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedExercise; onBack: () => void; isSoundEnabled: boolean }) {
+function ExerciseRunner({ exercise, onBack, isSoundEnabled, currentUser }: { exercise: SpeedExercise; onBack: () => void; isSoundEnabled: boolean; currentUser?: any }) {
   // Auto-start playback and timer when exercise opens
   const [isPlaying, setIsPlaying] = useState(true);
   const [speedBpm, setSpeedBpm] = useState(exercise.data?.defaultSpeedBpm || 140);
@@ -1048,6 +1823,24 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedE
       score: finalScore,
       timeSec: Math.round(finalTime)
     });
+
+    // Auto save exercise log to Firestore + local storage
+    if (currentUser) {
+      dbAddStudentLog({
+        studentUsername: currentUser.username || 'ogrenci',
+        studentFullName: currentUser.fullName || 'Öğrenci',
+        exerciseId: exercise.id,
+        exerciseTitle: exercise.title,
+        categoryLabel: exercise.categoryLabel,
+        level: exercise.level,
+        date: new Date().toLocaleString('tr-TR'),
+        durationSeconds: Math.round(finalTime),
+        wpm: finalWpm,
+        accuracy: finalAccuracy,
+        score: finalScore,
+        effectiveWpm: finalEffectiveWpm
+      }).catch(err => console.error('Failed to auto-save exercise log:', err));
+    }
 
     playExerciseSuccessSound(isSoundEnabled);
   };

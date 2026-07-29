@@ -77,6 +77,23 @@ export interface StudentAccount {
   lastLogin?: string;
 }
 
+export interface StudentExerciseLog {
+  id: string;
+  studentId?: string;
+  studentUsername: string;
+  studentFullName?: string;
+  exerciseId: string;
+  exerciseTitle: string;
+  categoryLabel?: string;
+  level?: string;
+  date: string; // Turkish formatted date-time e.g. "29.07.2026 14:30:15"
+  durationSeconds: number; // e.g. 45
+  wpm: number; // Reading speed / WPM achieved
+  accuracy: number; // Accuracy percentage (0-100)
+  score: number; // Overall performance score (0-100)
+  effectiveWpm?: number;
+}
+
 export interface ExerciseResult {
   exerciseId: string;
   exerciseTitle: string;
