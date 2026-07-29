@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   X, Play, Pause, RotateCcw, Eye, ArrowDown, Activity, RotateCw, 
-  Columns2, Columns3, Maximize2, BookOpen, Clock, Sparkles, Zap, 
+  Columns2, Columns3, Maximize2, Minimize2, ArrowLeft, Sun, Moon, BookOpen, Clock, Sparkles, Zap, 
   Grid, Palette, Search, HelpCircle, Puzzle, Repeat, Edit3, Shield,
   CheckCircle2, ArrowRight, Award, Trophy, Sliders, ChevronRight, Lock, LogOut,
   Volume2, VolumeX, User, UserPlus, Trash2, Key, GraduationCap, Star, Check, RefreshCw,
   Target, Brain, Timer, BarChart2, Calendar, FileText, Edit, Plus, ChevronDown, Filter
 } from 'lucide-react';
-import { SPEED_READING_EXERCISES, SpeedExercise } from '../data/speedReadingData';
+import { SPEED_READING_EXERCISES, SpeedExercise, generateFreshExerciseData } from '../data/speedReadingData';
 import { StudentAccount, StudentExerciseLog, ExerciseResult } from '../types';
 import { 
   dbGetStudents, dbAddStudent, dbDeleteStudent, dbUpdateStudent, DEFAULT_STUDENTS,
@@ -41,7 +41,7 @@ function getRandomWords(count: number, exclude?: string[]): string[] {
 }
 
 // =========================================================================
-// WEB AUDIO SYNTHESIZER FOR EXERCISES
+// WEB AUDIO SYNTHESIZER FOR EXERCISES (WITH BOOSTED VOLUME CONTROL)
 // =========================================================================
 let audioCtx: AudioContext | null = null;
 
@@ -58,8 +58,8 @@ const getAudioContext = () => {
   return audioCtx;
 };
 
-export const playExerciseTickSound = (isSoundEnabled: boolean = true) => {
-  if (!isSoundEnabled) return;
+export const playExerciseTickSound = (isSoundEnabled: boolean = true, soundVolume: number = 1.0) => {
+  if (!isSoundEnabled || soundVolume <= 0) return;
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
@@ -70,7 +70,8 @@ export const playExerciseTickSound = (isSoundEnabled: boolean = true) => {
     osc.frequency.setValueAtTime(650, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(350, ctx.currentTime + 0.04);
     
-    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    // Boosted baseline volume (0.22 * soundVolume)
+    gain.gain.setValueAtTime(Math.min(1.0, 0.22 * soundVolume), ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
     
     osc.connect(gain);
@@ -81,8 +82,8 @@ export const playExerciseTickSound = (isSoundEnabled: boolean = true) => {
   } catch (e) {}
 };
 
-export const playExerciseStartSound = (isSoundEnabled: boolean = true) => {
-  if (!isSoundEnabled) return;
+export const playExerciseStartSound = (isSoundEnabled: boolean = true, soundVolume: number = 1.0) => {
+  if (!isSoundEnabled || soundVolume <= 0) return;
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
@@ -91,7 +92,7 @@ export const playExerciseStartSound = (isSoundEnabled: boolean = true) => {
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.frequency.setValueAtTime(523.25, now);
-    gain1.gain.setValueAtTime(0.1, now);
+    gain1.gain.setValueAtTime(Math.min(1.0, 0.25 * soundVolume), now);
     gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
     osc1.connect(gain1);
     gain1.connect(ctx.destination);
@@ -101,7 +102,7 @@ export const playExerciseStartSound = (isSoundEnabled: boolean = true) => {
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.frequency.setValueAtTime(659.25, now + 0.08);
-    gain2.gain.setValueAtTime(0.12, now + 0.08);
+    gain2.gain.setValueAtTime(Math.min(1.0, 0.3 * soundVolume), now + 0.08);
     gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
     osc2.connect(gain2);
     gain2.connect(ctx.destination);
@@ -110,8 +111,8 @@ export const playExerciseStartSound = (isSoundEnabled: boolean = true) => {
   } catch (e) {}
 };
 
-export const playExerciseSuccessSound = (isSoundEnabled: boolean = true) => {
-  if (!isSoundEnabled) return;
+export const playExerciseSuccessSound = (isSoundEnabled: boolean = true, soundVolume: number = 1.0) => {
+  if (!isSoundEnabled || soundVolume <= 0) return;
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
@@ -121,7 +122,7 @@ export const playExerciseSuccessSound = (isSoundEnabled: boolean = true) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.frequency.setValueAtTime(freq, now + idx * 0.08);
-      gain.gain.setValueAtTime(0.12, now + idx * 0.08);
+      gain.gain.setValueAtTime(Math.min(1.0, 0.3 * soundVolume), now + idx * 0.08);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.18);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -131,8 +132,8 @@ export const playExerciseSuccessSound = (isSoundEnabled: boolean = true) => {
   } catch (e) {}
 };
 
-export const playExerciseClickSound = (isSoundEnabled: boolean = true) => {
-  if (!isSoundEnabled) return;
+export const playExerciseClickSound = (isSoundEnabled: boolean = true, soundVolume: number = 1.0) => {
+  if (!isSoundEnabled || soundVolume <= 0) return;
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
@@ -140,7 +141,7 @@ export const playExerciseClickSound = (isSoundEnabled: boolean = true) => {
     const gain = ctx.createGain();
     osc.type = 'triangle';
     osc.frequency.setValueAtTime(440, ctx.currentTime);
-    gain.gain.setValueAtTime(0.07, ctx.currentTime);
+    gain.gain.setValueAtTime(Math.min(1.0, 0.18 * soundVolume), ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
     osc.connect(gain);
     gain.connect(ctx.destination);
@@ -292,8 +293,15 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
     setIsAddLogOpen(false);
   };
 
-  // Global Audio Enable state
+  // Global Audio Enable state & Volume control (default 1.5 multiplier for boosted sound)
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
+  const [soundVolume, setSoundVolume] = useState<number>(() => {
+    const saved = localStorage.getItem('gamze_sound_volume');
+    return saved ? parseFloat(saved) : 1.5;
+  });
+
+  // Loop notification toast
+  const [loopToastMessage, setLoopToastMessage] = useState<string>('');
 
   // Filtering state
   const [selectedLevel, setSelectedLevel] = useState<'İlkokul' | 'Ortaokul' | 'Lise'>('İlkokul');
@@ -301,6 +309,35 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
 
   // Active Runner State
   const [activeExercise, setActiveExercise] = useState<SpeedExercise | null>(null);
+
+  // Sequential & Looping exercise progression handler with dynamic fresh words
+  const handleNextExercise = () => {
+    const listForLevel = SPEED_READING_EXERCISES.filter(ex => ex.level === selectedLevel);
+    const pool = selectedCategory === 'all' 
+      ? listForLevel 
+      : listForLevel.filter(ex => ex.category === selectedCategory);
+    
+    const activeList = pool.length > 0 ? pool : (listForLevel.length > 0 ? listForLevel : SPEED_READING_EXERCISES);
+    const currentIdx = activeList.findIndex(ex => ex.id === activeExercise?.id);
+    let nextIdx = currentIdx + 1;
+    let isLooping = false;
+
+    if (nextIdx >= activeList.length || nextIdx < 0) {
+      nextIdx = 0;
+      isLooping = true;
+    }
+
+    const nextRawExercise = activeList[nextIdx];
+    // Generate fresh dynamic exercise data (shuffled/randomized words & syllables)
+    const freshExercise = generateFreshExerciseData(nextRawExercise);
+
+    if (isLooping) {
+      setLoopToastMessage(`🎉 Bu gruptaki tüm egzersizler başarıyla tamamlandı! Yenilenmiş yeni kelimeler ile 1. egzersizden (${freshExercise.title}) tekrar başlatılıyor.`);
+      setTimeout(() => setLoopToastMessage(''), 7000);
+    }
+
+    setActiveExercise(freshExercise);
+  };
 
   // Load student credentials from Firestore / localStorage
   useEffect(() => {
@@ -352,7 +389,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
           localStorage.removeItem('gamze_speedreading_user');
         }
       } else {
-        setLoginError('Eğitmen kullanıcı adı veya şifre hatalı! (Demo: Gamze / Gamze!Speed2026#Ex)');
+        setLoginError('Eğitmen kullanıcı adı veya şifre hatalı!');
       }
     } else if (loginRoleTab === 'ilkokul_student') {
       // İlkokul Student Login Check
@@ -377,7 +414,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
           localStorage.removeItem('gamze_speedreading_user');
         }
       } else {
-        setLoginError('İlkokul Öğrenci kullanıcı adı veya şifre hatalı! (Demo: ilkokul_ogrenci / Ilkokul!Ogrenci#2026)');
+        setLoginError('İlkokul Öğrenci kullanıcı adı veya şifre hatalı!');
       }
     } else if (loginRoleTab === 'lgs_student') {
       // LGS Student Login Check
@@ -402,7 +439,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
           localStorage.removeItem('gamze_speedreading_user');
         }
       } else {
-        setLoginError('LGS Öğrenci kullanıcı adı veya şifre hatalı! (Demo: lgs_ogrenci / Lgs!Ogrenci#2026)');
+        setLoginError('LGS Öğrenci kullanıcı adı veya şifre hatalı!');
       }
     } else {
       // YKS & Mezun Student Login Check
@@ -427,7 +464,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
           localStorage.removeItem('gamze_speedreading_user');
         }
       } else {
-        setLoginError('YKS & Mezun Öğrenci kullanıcı adı veya şifre hatalı! (Demo: yks_ogrenci / Yks!Ogrenci#2026)');
+        setLoginError('YKS & Mezun Öğrenci kullanıcı adı veya şifre hatalı!');
       }
     }
   };
@@ -701,22 +738,42 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              {/* Sound Toggle */}
-              <button
-                onClick={() => {
-                  setIsSoundEnabled(!isSoundEnabled);
-                  playExerciseClickSound(!isSoundEnabled);
-                }}
-                className={`p-2 border text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  isSoundEnabled 
-                    ? 'border-[#C5A059]/50 text-[#C5A059] bg-[#C5A059]/10 hover:bg-[#C5A059]/20' 
-                    : 'border-stone-600 text-stone-400 bg-stone-800 hover:bg-stone-700'
-                }`}
-                title={isSoundEnabled ? 'Egzersiz sesleri açık (Sesi kapat)' : 'Egzersiz sesleri kapalı (Sesi aç)'}
-              >
-                {isSoundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                <span className="hidden sm:inline">{isSoundEnabled ? 'Ses Açık' : 'Ses Kapalı'}</span>
-              </button>
+              {/* Sound Toggle & Adjustable Volume Control */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-stone-800 border border-stone-700 text-xs shadow-inner">
+                <button
+                  onClick={() => {
+                    const nextState = !isSoundEnabled;
+                    setIsSoundEnabled(nextState);
+                    playExerciseClickSound(nextState, soundVolume);
+                  }}
+                  className={`p-1 transition-colors cursor-pointer flex items-center gap-1 ${
+                    isSoundEnabled ? 'text-[#C5A059]' : 'text-stone-500'
+                  }`}
+                  title={isSoundEnabled ? 'Egzersiz sesleri açık (Sesi kapat)' : 'Egzersiz sesleri kapalı (Sesi aç)'}
+                >
+                  {isSoundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                  <span className="hidden lg:inline text-[11px] font-bold">
+                    {isSoundEnabled ? 'Ses' : 'Sessiz'}
+                  </span>
+                </button>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="2.5"
+                  step="0.1"
+                  value={soundVolume}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setSoundVolume(val);
+                    localStorage.setItem('gamze_sound_volume', val.toString());
+                  }}
+                  className="w-14 sm:w-20 accent-[#C5A059] cursor-pointer"
+                  title={`Ses Düzeyi Ayarı: %${Math.round(soundVolume * 100)}`}
+                />
+                <span className="text-[10px] font-mono font-bold text-amber-300 w-9 text-right">
+                  %{Math.round(soundVolume * 100)}
+                </span>
+              </div>
 
               {/* User Identity Info */}
               <div className="px-3 py-1.5 bg-stone-800 border border-stone-700 text-xs flex items-center gap-2">
@@ -838,7 +895,9 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
               <ExerciseRunner 
                 exercise={activeExercise} 
                 onBack={() => setActiveExercise(null)} 
+                onNextExercise={handleNextExercise}
                 isSoundEnabled={isSoundEnabled}
+                soundVolume={soundVolume}
                 currentUser={currentUser}
               />
             ) : (
@@ -1758,14 +1817,93 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
 // =========================================================================
 // ACTIVE EXERCISE RUNNER COMPONENT WITH RESULT & COMPREHENSION SCORING
 // =========================================================================
-function ExerciseRunner({ exercise, onBack, isSoundEnabled, currentUser }: { exercise: SpeedExercise; onBack: () => void; isSoundEnabled: boolean; currentUser?: any }) {
+function ExerciseRunner({ 
+  exercise, 
+  onBack, 
+  onNextExercise,
+  isSoundEnabled, 
+  soundVolume = 1.0, 
+  currentUser 
+}: { 
+  exercise: SpeedExercise; 
+  onBack: () => void; 
+  onNextExercise: () => void;
+  isSoundEnabled: boolean; 
+  soundVolume?: number;
+  currentUser?: any 
+}) {
   // Auto-start playback and timer when exercise opens
   const [isPlaying, setIsPlaying] = useState(true);
   const [speedBpm, setSpeedBpm] = useState(exercise.data?.defaultSpeedBpm || 140);
   
+  // Theme state for full-screen runner canvas ('dark' | 'sepia' | 'light')
+  const [themeMode, setThemeMode] = useState<'dark' | 'sepia' | 'light'>('dark');
+  const [isBrowserFullScreen, setIsBrowserFullScreen] = useState(false);
+
   // Active Timer state
   const [elapsedSec, setElapsedSec] = useState(0);
   const [timerActive, setTimerActive] = useState(true);
+
+  // Browser Fullscreen toggle handler
+  const toggleBrowserFullScreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        setIsBrowserFullScreen(true);
+      }).catch(err => console.log('Fullscreen error:', err));
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().then(() => {
+          setIsBrowserFullScreen(false);
+        }).catch(err => console.log('Exit fullscreen error:', err));
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsBrowserFullScreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  // Keyboard shortcut handlers
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        toggleTimer();
+      } else if (e.code === 'ArrowUp') {
+        e.preventDefault();
+        setSpeedBpm(prev => Math.min(600, prev + 10));
+      } else if (e.code === 'ArrowDown') {
+        e.preventDefault();
+        setSpeedBpm(prev => Math.max(40, prev - 10));
+      } else if (e.code === 'Escape') {
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        } else {
+          setIsPlaying(false);
+          setTimerActive(false);
+          onBack();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [timerActive, isPlaying]);
+
+  // Reset internal states whenever active exercise changes
+  useEffect(() => {
+    setResultModal(null);
+    setElapsedSec(0);
+    setIsPlaying(true);
+    setTimerActive(true);
+    setSpeedBpm(exercise.data?.defaultSpeedBpm || 140);
+    playExerciseStartSound(isSoundEnabled, soundVolume);
+  }, [exercise.id, exercise]);
 
   // Sync timerActive state with isPlaying state
   useEffect(() => {
@@ -1786,11 +1924,11 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled, currentUser }: { exe
     if (!timerActive) {
       setTimerActive(true);
       setIsPlaying(true);
-      playExerciseStartSound(isSoundEnabled);
+      playExerciseStartSound(isSoundEnabled, soundVolume);
     } else {
       setTimerActive(false);
       setIsPlaying(false);
-      playExerciseClickSound(isSoundEnabled);
+      playExerciseClickSound(isSoundEnabled, soundVolume);
     }
   };
 
@@ -1842,59 +1980,141 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled, currentUser }: { exe
       }).catch(err => console.error('Failed to auto-save exercise log:', err));
     }
 
-    playExerciseSuccessSound(isSoundEnabled);
+    playExerciseSuccessSound(isSoundEnabled, soundVolume);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Runner Header Bar */}
-      <div className="bg-white p-4 border border-[#2D2D2D]/15 shadow-sm flex flex-wrap items-center justify-between gap-4">
+    <div className={`fixed inset-0 z-50 flex flex-col overflow-y-auto transition-colors duration-300 font-sans select-none ${
+      themeMode === 'dark' ? 'bg-[#121212] text-stone-100' :
+      themeMode === 'sepia' ? 'bg-[#F4EFE6] text-[#3D2C1F]' :
+      'bg-[#F5F5F0] text-stone-900'
+    }`}>
+      {/* Top Runner Sticky Header Bar */}
+      <div className={`p-3 sm:p-4 border-b flex flex-wrap items-center justify-between gap-3 shadow-md sticky top-0 z-40 transition-colors ${
+        themeMode === 'dark' ? 'bg-[#1A1A1A] border-stone-800' :
+        themeMode === 'sepia' ? 'bg-[#EFE8DA] border-[#D8CEBA]' :
+        'bg-white border-stone-200'
+      }`}>
         <div className="flex items-center gap-3">
           <button 
             onClick={() => {
+              if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+              }
               setIsPlaying(false);
               setTimerActive(false);
               onBack();
             }}
-            className="px-3 py-1.5 border border-stone-300 text-xs font-bold text-stone-700 hover:bg-stone-100 transition-colors flex items-center gap-1 cursor-pointer"
+            className={`px-3 py-1.5 border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
+              themeMode === 'dark' 
+                ? 'bg-stone-800 border-stone-700 text-stone-200 hover:bg-stone-700' 
+                : 'bg-white border-stone-300 text-stone-700 hover:bg-stone-100'
+            }`}
+            title="Egzersiz listesine dön (ESC)"
           >
-            ← Geri Dön
+            <ArrowLeft className="w-4 h-4" />
+            <span>Listeye Dön</span>
           </button>
+
           <div>
-            <h3 className="font-serif font-bold text-base text-[#2D2D2D] flex items-center gap-2">
-              <span>{exercise.title}</span>
-              <span className="text-[10px] font-sans uppercase font-extrabold px-2 py-0.5 bg-[#C5A059]/10 text-[#C5A059] border border-[#C5A059]/30">
+            <h3 className="font-serif font-extrabold text-sm sm:text-base flex items-center gap-2">
+              <span className={themeMode === 'dark' ? 'text-amber-300' : 'text-[#2D2D2D]'}>{exercise.title}</span>
+              <span className="text-[10px] font-sans uppercase font-extrabold px-2 py-0.5 bg-[#C5A059]/20 text-[#C5A059] border border-[#C5A059]/40">
                 {exercise.level} • {exercise.categoryLabel}
               </span>
             </h3>
-            <p className="text-xs text-stone-500">{exercise.description}</p>
+            <p className="text-xs opacity-75 hidden md:block">{exercise.description}</p>
           </div>
         </div>
 
-        {/* Global Stopwatch & Finish Controls */}
-        <div className="flex items-center gap-3">
+        {/* Center / Right: Theme Switcher, Fullscreen Toggle, Timer & Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          {/* Theme Selector */}
+          <div className={`flex items-center p-1 border text-xs ${
+            themeMode === 'dark' ? 'bg-stone-800 border-stone-700' : 'bg-stone-100 border-stone-300'
+          }`}>
+            <button 
+              onClick={() => setThemeMode('dark')}
+              className={`px-2 py-1 text-[11px] font-bold transition-colors cursor-pointer ${themeMode === 'dark' ? 'bg-amber-500 text-stone-950 font-extrabold' : 'opacity-60 hover:opacity-100'}`}
+              title="Gece Odağı (Karanlık Tema)"
+            >
+              🌙 Koyu
+            </button>
+            <button 
+              onClick={() => setThemeMode('sepia')}
+              className={`px-2 py-1 text-[11px] font-bold transition-colors cursor-pointer ${themeMode === 'sepia' ? 'bg-[#D8CEBA] text-[#3D2C1F] font-extrabold' : 'opacity-60 hover:opacity-100'}`}
+              title="Sıcak Göz Koruma (Sepya Tema)"
+            >
+              📜 Sıcak
+            </button>
+            <button 
+              onClick={() => setThemeMode('light')}
+              className={`px-2 py-1 text-[11px] font-bold transition-colors cursor-pointer ${themeMode === 'light' ? 'bg-white text-stone-900 font-extrabold shadow-sm' : 'opacity-60 hover:opacity-100'}`}
+              title="Klasik Beyaz Tema"
+            >
+              ☀️ Açık
+            </button>
+          </div>
+
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={toggleBrowserFullScreen}
+            className={`p-2 border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              isBrowserFullScreen 
+                ? 'bg-amber-500 text-stone-950 border-amber-400' 
+                : themeMode === 'dark' ? 'bg-stone-800 border-stone-700 text-stone-300 hover:bg-stone-700' : 'bg-white border-stone-300 text-stone-700 hover:bg-stone-100'
+            }`}
+            title={isBrowserFullScreen ? 'Tam Ekrandan Çık (F11 / ESC)' : 'Tam Ekran Yap (F11)'}
+          >
+            {isBrowserFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            <span className="hidden lg:inline text-[11px]">
+              {isBrowserFullScreen ? 'Küçült' : 'Tam Ekran'}
+            </span>
+          </button>
+
+          {/* Timer */}
           <button
             onClick={toggleTimer}
             className={`px-3 py-1.5 border text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              timerActive ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-stone-100 border-stone-300 text-stone-600'
+              timerActive 
+                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' 
+                : 'bg-stone-800 border-stone-700 text-stone-400'
             }`}
+            title="Zamanlayıcıyı Duraklat / Başlat (Boşluk Tuşu)"
           >
-            <Timer className={`w-3.5 h-3.5 ${timerActive ? 'text-amber-600 animate-pulse' : 'text-stone-400'}`} />
-            <span>Süre: {elapsedSec.toFixed(1)}s ({timerActive ? 'Çalışıyor' : 'Duraklatıldı'})</span>
+            <Timer className={`w-3.5 h-3.5 ${timerActive ? 'text-amber-400 animate-pulse' : 'text-stone-400'}`} />
+            <span>Süre: {elapsedSec.toFixed(1)}s</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setIsPlaying(false);
+              setTimerActive(false);
+              onNextExercise();
+            }}
+            className="px-3 py-1.5 bg-[#2D2D2D] hover:bg-[#C5A059] text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow flex items-center gap-1.5"
+            title="Sıradaki egzersize doğrudan geçiş yap"
+          >
+            <span>Sonraki</span>
+            <ChevronRight className="w-4 h-4" />
           </button>
 
           <button
             onClick={() => handleFinishExercise()}
-            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow flex items-center gap-2"
+            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow flex items-center gap-1.5"
           >
             <Award className="w-4 h-4" />
-            <span>Egzersizi Tamamla ve Puanla</span>
+            <span className="hidden sm:inline">Tamamla & Puanla</span>
           </button>
         </div>
       </div>
 
-      {/* Exercise Active Canvas Area */}
-      <div className="min-h-[420px] bg-white border border-[#2D2D2D]/15 p-6 shadow-sm flex flex-col items-center justify-center relative">
+      {/* Exercise Active Canvas Fullscreen Center Area */}
+      <div className={`flex-1 p-4 sm:p-8 flex flex-col items-center justify-center relative min-h-[500px] transition-colors ${
+        themeMode === 'dark' ? 'bg-[#181818]' :
+        themeMode === 'sepia' ? 'bg-[#FAF6EE]' :
+        'bg-white'
+      }`}>
         {exercise.category === 'hece-calismasi' && (
           <HeceCalismasiRunner 
             exercise={exercise} 
@@ -1903,6 +2123,7 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled, currentUser }: { exe
             speedBpm={speedBpm}
             setSpeedBpm={setSpeedBpm}
             isSoundEnabled={isSoundEnabled}
+            soundVolume={soundVolume}
             onCompleteResult={(wpm: number, acc: number, time: number) => handleFinishExercise(wpm, acc, time)}
           />
         )}
@@ -1915,6 +2136,7 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled, currentUser }: { exe
             speedBpm={speedBpm}
             setSpeedBpm={setSpeedBpm}
             isSoundEnabled={isSoundEnabled}
+            soundVolume={soundVolume}
             onCompleteResult={(wpm: number, acc: number, time: number) => handleFinishExercise(wpm, acc, time)}
           />
         )}
@@ -1927,7 +2149,8 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled, currentUser }: { exe
             isPlaying={isPlaying} 
             setIsPlaying={setIsPlaying}
             isSoundEnabled={isSoundEnabled}
-            onCompleteResult={(wpm, acc, time) => handleFinishExercise(wpm, acc, time)}
+            soundVolume={soundVolume}
+            onCompleteResult={(wpm: any, acc: any, time: any) => handleFinishExercise(wpm, acc, time)}
           />
         )}
 
@@ -1939,7 +2162,8 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled, currentUser }: { exe
             speedBpm={speedBpm}
             setSpeedBpm={setSpeedBpm}
             isSoundEnabled={isSoundEnabled}
-            onCompleteResult={(wpm, acc, time) => handleFinishExercise(wpm, acc, time)}
+            soundVolume={soundVolume}
+            onCompleteResult={(wpm: any, acc: any, time: any) => handleFinishExercise(wpm, acc, time)}
           />
         )}
 
@@ -1949,7 +2173,8 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled, currentUser }: { exe
             isPlaying={isPlaying}
             setIsPlaying={setIsPlaying}
             isSoundEnabled={isSoundEnabled} 
-            onCompleteResult={(wpm, acc, time) => handleFinishExercise(wpm, acc, time)}
+            soundVolume={soundVolume}
+            onCompleteResult={(wpm: any, acc: any, time: any) => handleFinishExercise(wpm, acc, time)}
           />
         )}
 
@@ -1959,7 +2184,8 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled, currentUser }: { exe
             isPlaying={isPlaying} 
             setIsPlaying={setIsPlaying}
             isSoundEnabled={isSoundEnabled}
-            onCompleteResult={(wpm, acc, time) => handleFinishExercise(wpm, acc, time)}
+            soundVolume={soundVolume}
+            onCompleteResult={(wpm: any, acc: any, time: any) => handleFinishExercise(wpm, acc, time)}
           />
         )}
 
@@ -1969,7 +2195,8 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled, currentUser }: { exe
             isPlaying={isPlaying}
             setIsPlaying={setIsPlaying}
             isSoundEnabled={isSoundEnabled}
-            onCompleteResult={(wpm, acc, time) => handleFinishExercise(wpm, acc, time)}
+            soundVolume={soundVolume}
+            onCompleteResult={(wpm: any, acc: any, time: any) => handleFinishExercise(wpm, acc, time)}
           />
         )}
       </div>
@@ -2069,11 +2296,12 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled, currentUser }: { exe
               <button
                 onClick={() => {
                   setResultModal(null);
-                  onBack();
+                  onNextExercise();
                 }}
-                className="flex-1 py-3 bg-[#C5A059] hover:bg-[#b08d4b] text-white text-xs font-bold uppercase tracking-wider cursor-pointer shadow"
+                className="flex-1 py-3 bg-[#C5A059] hover:bg-[#b08d4b] text-white text-xs font-bold uppercase tracking-wider cursor-pointer shadow flex items-center justify-center gap-1.5"
               >
-                Sonraki Egzersize Geç
+                <span>Sonraki Egzersize Geç</span>
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
@@ -2250,7 +2478,16 @@ function SayiCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setS
 // =========================================================================
 // 1. GÖZ TAKİP RUNNER (All Trajectory Animations: Spiral, Corner, Infinity, Zigzag, Horizontal, Vertical)
 // =========================================================================
-function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlaying, isSoundEnabled, onCompleteResult }: any) {
+function GozTakipRunner({ 
+  exercise, 
+  speedBpm, 
+  setSpeedBpm, 
+  isPlaying, 
+  setIsPlaying, 
+  isSoundEnabled, 
+  soundVolume = 1.0, 
+  onCompleteResult 
+}: any) {
   const type = exercise.data?.type || 'horizontal-dot';
 
   // Dynamic Word Generator with 40 words pool
@@ -2275,11 +2512,11 @@ function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlayi
         }
         return next;
       });
-      playExerciseTickSound(isSoundEnabled);
+      playExerciseTickSound(isSoundEnabled, soundVolume);
     }, intervalMs);
 
     return () => clearInterval(timer);
-  }, [isPlaying, speedBpm, type, wordList.length, isSoundEnabled, exercise.data?.words]);
+  }, [isPlaying, speedBpm, type, wordList.length, isSoundEnabled, soundVolume, exercise.data?.words]);
 
   const activeWord = wordList[currentWordIndex] || 'Gelişim';
 
@@ -2299,46 +2536,51 @@ function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlayi
       { x: 15, y: 18 }, // Sol Üst
       { x: 85, y: 18 }, // Sağ Üst
       { x: 85, y: 82 }, // Sağ Alt
-      { x: 15, y: 82 }  // Sol Alt
+      { x: 15, y: 82 }, // Sol Alt
+      { x: 50, y: 50 }  // Merkez Sıçrama
     ];
-    const c = corners[stepIndex % 4];
+    const c = corners[stepIndex % 5];
     posX = c.x;
     posY = c.y;
   } else if (type === 'zigzag') {
     const points = [
       { x: 15, y: 18 },
-      { x: 85, y: 82 },
       { x: 85, y: 18 },
-      { x: 15, y: 82 }
+      { x: 15, y: 50 },
+      { x: 85, y: 50 },
+      { x: 15, y: 82 },
+      { x: 85, y: 82 }
     ];
-    const p = points[stepIndex % 4];
+    const p = points[stepIndex % 6];
     posX = p.x;
     posY = p.y;
   } else if (type === 'spiral') {
-    const stepMod = stepIndex % 12;
-    const radius = 8 + stepMod * 3.2; // Expanding radius 8% to 43%
-    const angle = stepMod * (Math.PI / 2.5);
-    posX = Math.min(88, Math.max(12, 50 + Math.round(radius * Math.cos(angle))));
-    posY = Math.min(85, Math.max(15, 50 + Math.round((radius * 0.75) * Math.sin(angle))));
+    // 24-step continuous expanding & contracting Archimedean spiral
+    const stepMod = stepIndex % 24;
+    const progress = stepMod < 12 ? stepMod / 12 : (24 - stepMod) / 12;
+    const radius = 6 + progress * 32; // Radius 6% to 38%
+    const angle = stepMod * (Math.PI / 3);
+    posX = Math.min(88, Math.max(12, 50 + radius * Math.cos(angle)));
+    posY = Math.min(85, Math.max(15, 50 + (radius * 0.75) * Math.sin(angle)));
   } else if (type === 'infinity-loop') {
-    const t = ((stepIndex % 16) / 16) * Math.PI * 2;
-    posX = Math.min(88, Math.max(12, 50 + Math.round(36 * Math.sin(t))));
-    posY = Math.min(85, Math.max(15, 50 + Math.round(30 * Math.sin(t) * Math.cos(t))));
+    const t = ((stepIndex % 20) / 20) * Math.PI * 2;
+    posX = Math.min(88, Math.max(12, 50 + 36 * Math.sin(t)));
+    posY = Math.min(85, Math.max(15, 50 + 30 * Math.sin(t) * Math.cos(t)));
   }
 
   return (
-    <div className="w-full max-w-xl space-y-6 text-center select-none">
+    <div className="w-full max-w-5xl mx-auto space-y-4 text-center select-none flex-1 flex flex-col justify-center">
       <div className="space-y-1">
         <span className="text-[10px] font-bold text-[#C5A059] bg-[#FAF9F6] px-3 py-1 border border-[#C5A059]/30 uppercase tracking-widest inline-block">
           👁️ Göz Takip Trajektör Egzersizi
         </span>
-        <h4 className="font-serif font-bold text-[#2D2D2D] text-lg">{exercise.title}</h4>
+        <h4 className="font-serif font-bold text-lg">{exercise.title}</h4>
       </div>
 
       {/* Canvas */}
-      <div className="h-72 bg-[#FAF9F6] border border-stone-200 relative overflow-hidden shadow-inner">
+      <div className="h-[55vh] min-h-[360px] max-h-[600px] bg-[#FAF9F6] border border-stone-200 relative overflow-hidden shadow-inner rounded-none">
         {/* SVG Guide Layer for background visualization */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-25">
+        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-30">
           {type === 'horizontal-dot' && (
             <line x1="15%" y1="50%" x2="85%" y2="50%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="6 6" />
           )}
@@ -2346,14 +2588,19 @@ function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlayi
             <line x1="50%" y1="18%" x2="50%" y2="82%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="6 6" />
           )}
           {type === 'corner-jump' && (
-            <rect x="15%" y="18%" width="70%" height="64%" fill="none" stroke={activeDotColor} strokeWidth="2" strokeDasharray="6 6" />
+            <>
+              <rect x="15%" y="18%" width="70%" height="64%" fill="none" stroke={activeDotColor} strokeWidth="2" strokeDasharray="6 6" />
+              <line x1="15%" y1="18%" x2="85%" y2="82%" stroke={activeDotColor} strokeWidth="1" strokeDasharray="3 3" />
+              <line x1="85%" y1="18%" x2="15%" y2="82%" stroke={activeDotColor} strokeWidth="1" strokeDasharray="3 3" />
+            </>
           )}
           {type === 'zigzag' && (
             <>
-              <line x1="15%" y1="18%" x2="85%" y2="82%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
-              <line x1="85%" y1="82%" x2="85%" y2="18%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
-              <line x1="85%" y1="18%" x2="15%" y2="82%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
-              <line x1="15%" y1="82%" x2="15%" y2="18%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
+              <line x1="15%" y1="18%" x2="85%" y2="18%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
+              <line x1="85%" y1="18%" x2="15%" y2="50%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
+              <line x1="15%" y1="50%" x2="85%" y2="50%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
+              <line x1="85%" y1="50%" x2="15%" y2="82%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
+              <line x1="15%" y1="82%" x2="85%" y2="82%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
             </>
           )}
           {type === 'infinity-loop' && (
@@ -2367,21 +2614,27 @@ function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlayi
             />
           )}
           {type === 'spiral' && (
-            <circle cx="50%" cy="50%" r="35%" fill="none" stroke={activeDotColor} strokeWidth="1.5" strokeDasharray="4 4" />
+            <>
+              <circle cx="50%" cy="50%" r="10%" fill="none" stroke={activeDotColor} strokeWidth="1.5" strokeDasharray="4 4" opacity="0.4" />
+              <circle cx="50%" cy="50%" r="22%" fill="none" stroke={activeDotColor} strokeWidth="1.5" strokeDasharray="4 4" opacity="0.6" />
+              <circle cx="50%" cy="50%" r="35%" fill="none" stroke={activeDotColor} strokeWidth="1.5" strokeDasharray="4 4" opacity="0.8" />
+            </>
           )}
         </svg>
 
         {/* Floating Active Target Dot & Word Badge */}
         <div 
-          className="absolute transition-all duration-200 ease-out -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center z-10"
+          className="absolute transition-all duration-150 ease-out -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center z-10"
           style={{ left: `${posX}%`, top: `${posY}%` }}
         >
           <div 
-            className="w-7 h-7 rounded-full flex items-center justify-center shadow-md animate-ping mb-1"
+            className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white ring-4 ring-amber-400/50 mb-1"
             style={{ backgroundColor: activeDotColor }}
-          />
+          >
+            <div className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
+          </div>
           <div 
-            className="bg-[#2D2D2D] text-white px-3 py-1 rounded shadow-lg border border-[#C5A059] flex items-center gap-1.5 whitespace-nowrap"
+            className="bg-[#2D2D2D] text-white px-3 py-1 shadow-lg border border-[#C5A059] flex items-center gap-1.5 whitespace-nowrap"
           >
             <span className="font-serif font-black text-lg tracking-wide text-amber-300">{activeWord}</span>
           </div>
@@ -2391,6 +2644,7 @@ function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlayi
         {type === 'corner-jump' && (
           <div className="absolute inset-0 p-3 pointer-events-none text-[10px] text-stone-400 font-mono flex flex-col justify-between">
             <div className="flex justify-between"><span>[Sol Üst]</span><span>[Sağ Üst]</span></div>
+            <div className="flex justify-center"><span>[Merkez]</span></div>
             <div className="flex justify-between"><span>[Sol Alt]</span><span>[Sağ Alt]</span></div>
           </div>
         )}
