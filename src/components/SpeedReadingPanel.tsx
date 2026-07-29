@@ -1455,10 +1455,10 @@ function SayiCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setS
 }
 
 // =========================================================================
-// 1. GÖZ TAKİP RUNNER (Dynamically Changing Turkish Words - Single Unique Word Per Jump)
+// 1. GÖZ TAKİP RUNNER (All Trajectory Animations: Spiral, Corner, Infinity, Zigzag, Horizontal, Vertical)
 // =========================================================================
 function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlaying, isSoundEnabled, onCompleteResult }: any) {
-  const type = exercise.data?.type;
+  const type = exercise.data?.type || 'horizontal-dot';
 
   // Dynamic Word Generator with 40 words pool
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
@@ -1466,119 +1466,166 @@ function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlayi
     return getRandomWords(40, exercise.data?.words);
   });
 
-  const [position, setPosition] = useState<'left' | 'right' | 'top' | 'bottom'>('left');
+  const [stepIndex, setStepIndex] = useState(0);
 
   useEffect(() => {
     if (!isPlaying) return;
-    const intervalMs = Math.max(100, Math.round((60 / speedBpm) * 1000));
+    const intervalMs = Math.max(80, Math.round((60 / speedBpm) * 1000));
 
     const timer = setInterval(() => {
-      if (type === 'horizontal-dot') {
-        setPosition(prev => (prev === 'left' ? 'right' : 'left'));
-      } else if (type === 'vertical-dot') {
-        setPosition(prev => (prev === 'top' ? 'bottom' : 'top'));
-      } else if (type === 'zigzag') {
-        setPosition(prev => (prev === 'left' ? 'right' : 'left'));
-      }
-      
-      // Advance word on EVERY tick so each jump displays a NEW, unique word!
+      setStepIndex(prev => prev + 1);
       setCurrentWordIndex(prev => {
         const next = prev + 1;
         if (next >= wordList.length) {
-          setWordList(getRandomWords(40));
+          setWordList(getRandomWords(40, exercise.data?.words));
           return 0;
         }
         return next;
       });
-
       playExerciseTickSound(isSoundEnabled);
     }, intervalMs);
 
     return () => clearInterval(timer);
-  }, [isPlaying, speedBpm, type, wordList.length, isSoundEnabled]);
+  }, [isPlaying, speedBpm, type, wordList.length, isSoundEnabled, exercise.data?.words]);
 
   const activeWord = wordList[currentWordIndex] || 'Gelişim';
 
+  // Compute Active Position (x: %, y: %) based on trajectory type
+  let posX = 50;
+  let posY = 50;
+  let activeDotColor = exercise.data?.dotColor || '#C5A059';
+
+  if (type === 'horizontal-dot') {
+    posX = (stepIndex % 2 === 0) ? 15 : 85;
+    posY = 50;
+  } else if (type === 'vertical-dot') {
+    posX = 50;
+    posY = (stepIndex % 2 === 0) ? 18 : 82;
+  } else if (type === 'corner-jump') {
+    const corners = [
+      { x: 15, y: 18 }, // Sol Üst
+      { x: 85, y: 18 }, // Sağ Üst
+      { x: 85, y: 82 }, // Sağ Alt
+      { x: 15, y: 82 }  // Sol Alt
+    ];
+    const c = corners[stepIndex % 4];
+    posX = c.x;
+    posY = c.y;
+  } else if (type === 'zigzag') {
+    const points = [
+      { x: 15, y: 18 },
+      { x: 85, y: 82 },
+      { x: 85, y: 18 },
+      { x: 15, y: 82 }
+    ];
+    const p = points[stepIndex % 4];
+    posX = p.x;
+    posY = p.y;
+  } else if (type === 'spiral') {
+    const stepMod = stepIndex % 12;
+    const radius = 8 + stepMod * 3.2; // Expanding radius 8% to 43%
+    const angle = stepMod * (Math.PI / 2.5);
+    posX = Math.min(88, Math.max(12, 50 + Math.round(radius * Math.cos(angle))));
+    posY = Math.min(85, Math.max(15, 50 + Math.round((radius * 0.75) * Math.sin(angle))));
+  } else if (type === 'infinity-loop') {
+    const t = ((stepIndex % 16) / 16) * Math.PI * 2;
+    posX = Math.min(88, Math.max(12, 50 + Math.round(36 * Math.sin(t))));
+    posY = Math.min(85, Math.max(15, 50 + Math.round(30 * Math.sin(t) * Math.cos(t))));
+  }
+
   return (
-    <div className="w-full max-w-xl space-y-6 text-center">
+    <div className="w-full max-w-xl space-y-6 text-center select-none">
+      <div className="space-y-1">
+        <span className="text-[10px] font-bold text-[#C5A059] bg-[#FAF9F6] px-3 py-1 border border-[#C5A059]/30 uppercase tracking-widest inline-block">
+          👁️ Göz Takip Trajektör Egzersizi
+        </span>
+        <h4 className="font-serif font-bold text-[#2D2D2D] text-lg">{exercise.title}</h4>
+      </div>
+
       {/* Canvas */}
-      <div className="h-64 bg-[#FAF9F6] border border-stone-200 relative flex items-center justify-between p-8 overflow-hidden select-none">
-        {type === 'horizontal-dot' && (
-          <>
-            <div className={`transition-all duration-150 flex flex-col items-center justify-center ${
-              position === 'left' ? 'opacity-100 scale-125 text-[#C5A059]' : 'opacity-20 text-stone-300'
-            }`}>
-              <div className="w-6 h-6 rounded-full bg-[#C5A059] mx-auto mb-2 animate-ping" />
-              <span className="font-serif font-black text-xl min-h-[28px]">
-                {position === 'left' ? activeWord : ''}
-              </span>
-            </div>
+      <div className="h-72 bg-[#FAF9F6] border border-stone-200 relative overflow-hidden shadow-inner">
+        {/* SVG Guide Layer for background visualization */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-25">
+          {type === 'horizontal-dot' && (
+            <line x1="15%" y1="50%" x2="85%" y2="50%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="6 6" />
+          )}
+          {type === 'vertical-dot' && (
+            <line x1="50%" y1="18%" x2="50%" y2="82%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="6 6" />
+          )}
+          {type === 'corner-jump' && (
+            <rect x="15%" y="18%" width="70%" height="64%" fill="none" stroke={activeDotColor} strokeWidth="2" strokeDasharray="6 6" />
+          )}
+          {type === 'zigzag' && (
+            <>
+              <line x1="15%" y1="18%" x2="85%" y2="82%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
+              <line x1="85%" y1="82%" x2="85%" y2="18%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
+              <line x1="85%" y1="18%" x2="15%" y2="82%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
+              <line x1="15%" y1="82%" x2="15%" y2="18%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
+            </>
+          )}
+          {type === 'infinity-loop' && (
+            <path
+              d="M 120 144 C 120 70, 280 70, 280 144 C 280 218, 440 218, 440 144 C 440 70, 280 70, 280 144 C 280 218, 120 218, 120 144 Z"
+              fill="none"
+              stroke={activeDotColor}
+              strokeWidth="2"
+              strokeDasharray="5 5"
+              className="w-full h-full"
+            />
+          )}
+          {type === 'spiral' && (
+            <circle cx="50%" cy="50%" r="35%" fill="none" stroke={activeDotColor} strokeWidth="1.5" strokeDasharray="4 4" />
+          )}
+        </svg>
 
-            <div className={`transition-all duration-150 flex flex-col items-center justify-center ${
-              position === 'right' ? 'opacity-100 scale-125 text-[#C5A059]' : 'opacity-20 text-stone-300'
-            }`}>
-              <div className="w-6 h-6 rounded-full bg-[#C5A059] mx-auto mb-2 animate-ping" />
-              <span className="font-serif font-black text-xl min-h-[28px]">
-                {position === 'right' ? activeWord : ''}
-              </span>
-            </div>
-          </>
-        )}
-
-        {type === 'vertical-dot' && (
-          <div className="w-full h-full flex flex-col justify-between items-center py-4">
-            <div className={`transition-all duration-150 flex flex-col items-center justify-center ${
-              position === 'top' ? 'opacity-100 scale-125 text-emerald-600' : 'opacity-20 text-stone-300'
-            }`}>
-              <span className="font-serif font-black text-xl min-h-[28px]">
-                {position === 'top' ? activeWord : ''}
-              </span>
-              <div className="w-5 h-5 rounded-full bg-emerald-600 mt-1 animate-ping" />
-            </div>
-
-            <div className={`transition-all duration-150 flex flex-col items-center justify-center ${
-              position === 'bottom' ? 'opacity-100 scale-125 text-emerald-600' : 'opacity-20 text-stone-300'
-            }`}>
-              <div className="w-5 h-5 rounded-full bg-emerald-600 mb-1 animate-ping" />
-              <span className="font-serif font-black text-xl min-h-[28px]">
-                {position === 'bottom' ? activeWord : ''}
-              </span>
-            </div>
+        {/* Floating Active Target Dot & Word Badge */}
+        <div 
+          className="absolute transition-all duration-200 ease-out -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center z-10"
+          style={{ left: `${posX}%`, top: `${posY}%` }}
+        >
+          <div 
+            className="w-7 h-7 rounded-full flex items-center justify-center shadow-md animate-ping mb-1"
+            style={{ backgroundColor: activeDotColor }}
+          />
+          <div 
+            className="bg-[#2D2D2D] text-white px-3 py-1 rounded shadow-lg border border-[#C5A059] flex items-center gap-1.5 whitespace-nowrap"
+          >
+            <span className="font-serif font-black text-lg tracking-wide text-amber-300">{activeWord}</span>
           </div>
-        )}
+        </div>
 
-        {(type === 'zigzag' || type === 'infinity-loop' || type === 'spiral' || type === 'corner-jump') && (
-          <div className="w-full flex items-center justify-center">
-            <div className="text-center space-y-2">
-              <div className="w-12 h-12 rounded-full border-4 border-[#C5A059] border-t-transparent animate-spin mx-auto" />
-              <p className="font-serif font-black text-2xl text-[#2D2D2D]">{activeWord}</p>
-              <p className="text-xs text-stone-400 font-mono">Göz kaslarınızı esneterek odak kelimeyi yakalayın</p>
-            </div>
+        {/* Corner labels for context */}
+        {type === 'corner-jump' && (
+          <div className="absolute inset-0 p-3 pointer-events-none text-[10px] text-stone-400 font-mono flex flex-col justify-between">
+            <div className="flex justify-between"><span>[Sol Üst]</span><span>[Sağ Üst]</span></div>
+            <div className="flex justify-between"><span>[Sol Alt]</span><span>[Sağ Alt]</span></div>
           </div>
         )}
       </div>
 
       {/* Speed Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-stone-50 p-4 border border-stone-200">
-        <button
-          onClick={() => {
-            setIsPlaying(!isPlaying);
-            playExerciseClickSound(isSoundEnabled);
-          }}
-          className={`px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-all cursor-pointer flex items-center gap-2 ${
-            isPlaying ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#2D2D2D] hover:bg-[#C5A059]'
-          }`}
-        >
-          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
-          <span>{isPlaying ? 'Duraklat' : 'Egzersizi Başlat'}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setIsPlaying(!isPlaying);
+              playExerciseClickSound(isSoundEnabled);
+            }}
+            className={`px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-all cursor-pointer flex items-center gap-2 ${
+              isPlaying ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#2D2D2D] hover:bg-[#C5A059]'
+            }`}
+          >
+            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+            <span>{isPlaying ? 'Duraklat' : 'Egzersizi Başlat'}</span>
+          </button>
+        </div>
 
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold text-stone-600">Tempo (BPM):</span>
           <input 
             type="range"
             min="60"
-            max="400"
+            max="500"
             step="10"
             value={speedBpm}
             onChange={(e) => setSpeedBpm(Number(e.target.value))}
@@ -1586,6 +1633,13 @@ function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlayi
           />
           <span className="font-mono font-bold text-sm text-[#C5A059]">{speedBpm} BPM</span>
         </div>
+
+        <button
+          onClick={() => onCompleteResult(exercise.targetWpm || 300, 100, 30)}
+          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider cursor-pointer"
+        >
+          Tamamla & Puanla
+        </button>
       </div>
     </div>
   );
