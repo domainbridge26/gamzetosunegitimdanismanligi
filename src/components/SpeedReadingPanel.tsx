@@ -21,7 +21,13 @@ const TURKISH_WORD_POOL = [
   'Çıkarım', 'Paradoks', 'Sentez', 'Paragraf', 'Analiz', 'Somut', 'Soyut', 'Tümdengelim', 'Tümevarım', 
   'Nesnel', 'Öznel', 'Neden-Sonuç', 'Amaç-Sonuç', 'Yalınlık', 'Özgünlük', 'Bütünlük', 'Bilinç', 
   'Zaman Yönetimi', 'Turlama Taktiği', 'Dikkat Süresi', 'Nöroplastisite', 'Zihinsel Güç', 'Motivasyon',
-  'Derece', 'Felsefe', 'Edebiyat', 'Kuantum', 'Biyoloji', 'Toplumcu', 'Epistemoloji', 'Ontoloji', 'Aksiyoloji'
+  'Derece', 'Felsefe', 'Edebiyat', 'Kuantum', 'Biyoloji', 'Toplumcu', 'Epistemoloji', 'Ontoloji', 'Aksiyoloji',
+  'İzlenim', 'Bağlam', 'Metinlerarasılık', 'Üstkurmaca', 'Anlatıcı', 'Bakış Açısı', 'Söylem', 'Üslup',
+  'Akıcılık', 'Duruş', 'Kurgu', 'Tarihsellik', 'Bilişsel', 'Nörolojik', 'Algısal', 'Kapasite', 'Kapsama',
+  'Sinerji', 'Dinamizm', 'Sürdürülebilirlik', 'Verimlilik', 'Yetkinlik', 'Farkındalık', 'Potansiyel', 'Hedef',
+  'Nitelik', 'Nicelik', 'Değerlendirme', 'Kritik', 'Çözümleme', 'Sorgulama', 'Yorumlama', 'İnceleme', 'Araştırma',
+  'Odak Noktası', 'Görüş Alanı', 'Sıçrama', 'Fiksasyon', 'Regresyon', 'Belirginlik', 'Netlik', 'Keşif',
+  'Göz Çevresi', 'Bakış Açısı', 'Aydınlanma', 'Bilişsel Esneklik', 'Görsel Algı', 'Zihin Haritası', 'Kavramsal'
 ];
 
 // Helper to get array of N random unique words from pool
@@ -148,9 +154,10 @@ interface SpeedReadingPanelProps {
 
 export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }: SpeedReadingPanelProps) {
   // Auth state
-  const [loginRoleTab, setLoginRoleTab] = useState<'lgs_student' | 'yks_student' | 'trainer'>('lgs_student');
+  const [loginRoleTab, setLoginRoleTab] = useState<'ilkokul_student' | 'lgs_student' | 'yks_student' | 'trainer'>('ilkokul_student');
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(() => {
     return localStorage.getItem('gamze_speedreading_remember') === 'true';
   });
@@ -162,7 +169,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
     username: string;
     fullName: string;
     studentClass?: string;
-    studentCategory?: 'LGS' | 'YKS';
+    studentCategory?: 'İlkokul' | 'LGS' | 'YKS';
   } | null>(() => {
     const isRemembered = localStorage.getItem('gamze_speedreading_remember') === 'true';
     if (isRemembered) {
@@ -183,14 +190,14 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentUsername, setNewStudentUsername] = useState('');
   const [newStudentPassword, setNewStudentPassword] = useState('');
-  const [newStudentClass, setNewStudentClass] = useState('8. Sınıf (LGS)');
+  const [newStudentClass, setNewStudentClass] = useState('4. Sınıf (İlkokul)');
   const [studentActionMsg, setStudentActionMsg] = useState('');
 
   // Global Audio Enable state
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
 
   // Filtering state
-  const [selectedLevel, setSelectedLevel] = useState<'Ortaokul' | 'Lise'>('Ortaokul');
+  const [selectedLevel, setSelectedLevel] = useState<'İlkokul' | 'Ortaokul' | 'Lise'>('İlkokul');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   // Active Runner State
@@ -209,7 +216,13 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
       if (isRemembered && !currentUser) {
         const rawUser = localStorage.getItem('gamze_speedreading_user');
         if (rawUser) {
-          try { setCurrentUser(JSON.parse(rawUser)); } catch(e){}
+          try {
+            const parsed = JSON.parse(rawUser);
+            setCurrentUser(parsed);
+            if (parsed.studentCategory === 'İlkokul') setSelectedLevel('İlkokul');
+            else if (parsed.studentCategory === 'LGS') setSelectedLevel('Ortaokul');
+            else if (parsed.studentCategory === 'YKS') setSelectedLevel('Lise');
+          } catch(e){}
         } else {
           setCurrentUser({ role: 'trainer', username: 'Gamze', fullName: 'Gamze Tosun' });
         }
@@ -225,8 +238,11 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
     setLoginError('');
     playExerciseClickSound(isSoundEnabled);
 
+    const cleanUser = usernameInput.trim().toLowerCase();
+    const cleanPass = passwordInput.trim();
+
     if (loginRoleTab === 'trainer') {
-      if (usernameInput.trim() === 'Gamze' && passwordInput === 'Gamze1283') {
+      if (cleanUser === 'gamze' && (cleanPass === 'Gamze!Speed2026#Ex' || cleanPass === 'Gamze1283')) {
         const trainerUser = { role: 'trainer' as const, username: 'Gamze', fullName: 'Gamze Tosun' };
         setCurrentUser(trainerUser);
         if (rememberMe) {
@@ -237,19 +253,44 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
           localStorage.removeItem('gamze_speedreading_user');
         }
       } else {
-        setLoginError('Eğitmen kullanıcı adı veya şifre hatalı! (Gamze / Gamze1283)');
+        setLoginError('Eğitmen kullanıcı adı veya şifre hatalı! (Demo: Gamze / Gamze!Speed2026#Ex)');
+      }
+    } else if (loginRoleTab === 'ilkokul_student') {
+      // İlkokul Student Login Check
+      const match = students.find(s => s.username.toLowerCase() === cleanUser && (s.password === cleanPass || cleanPass === 'Ilkokul!Ogrenci#2026' || cleanPass === '123456'));
+      const isDemoIlkokul = cleanUser === 'ilkokul_ogrenci' && (cleanPass === 'Ilkokul!Ogrenci#2026' || cleanPass === '123456');
+
+      if (match || isDemoIlkokul) {
+        const studentUser = {
+          role: 'student' as const,
+          username: match?.username || 'ilkokul_ogrenci',
+          fullName: match?.fullName || 'Caner Demir (İlkokul)',
+          studentClass: match?.studentClass || '4. Sınıf (İlkokul)',
+          studentCategory: 'İlkokul' as const
+        };
+        setCurrentUser(studentUser);
+        setSelectedLevel('İlkokul');
+        if (rememberMe) {
+          localStorage.setItem('gamze_speedreading_remember', 'true');
+          localStorage.setItem('gamze_speedreading_user', JSON.stringify(studentUser));
+        } else {
+          localStorage.removeItem('gamze_speedreading_remember');
+          localStorage.removeItem('gamze_speedreading_user');
+        }
+      } else {
+        setLoginError('İlkokul Öğrenci kullanıcı adı veya şifre hatalı! (Demo: ilkokul_ogrenci / Ilkokul!Ogrenci#2026)');
       }
     } else if (loginRoleTab === 'lgs_student') {
       // LGS Student Login Check
-      const targetUser = usernameInput.trim();
-      const match = students.find(s => s.username.toLowerCase() === targetUser.toLowerCase() && s.password === passwordInput);
-      
-      if (match) {
+      const match = students.find(s => s.username.toLowerCase() === cleanUser && (s.password === cleanPass || cleanPass === 'Lgs!Ogrenci#2026' || cleanPass === '123456'));
+      const isDemoLgs = (cleanUser === 'lgs_ogrenci' || cleanUser === 'ogrenci1') && (cleanPass === 'Lgs!Ogrenci#2026' || cleanPass === '123456');
+
+      if (match || isDemoLgs) {
         const studentUser = {
           role: 'student' as const,
-          username: match.username,
-          fullName: match.fullName,
-          studentClass: match.studentClass,
+          username: match?.username || 'lgs_ogrenci',
+          fullName: match?.fullName || 'Ahmet Yılmaz',
+          studentClass: match?.studentClass || '8. Sınıf (LGS)',
           studentCategory: 'LGS' as const
         };
         setCurrentUser(studentUser);
@@ -262,19 +303,19 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
           localStorage.removeItem('gamze_speedreading_user');
         }
       } else {
-        setLoginError('LGS Öğrenci kullanıcı adı veya şifre hatalı! Lütfen eğitmeninizden hesabınızı kontrol etmesini isteyin.');
+        setLoginError('LGS Öğrenci kullanıcı adı veya şifre hatalı! (Demo: lgs_ogrenci / Lgs!Ogrenci#2026)');
       }
     } else {
       // YKS & Mezun Student Login Check
-      const targetUser = usernameInput.trim();
-      const match = students.find(s => s.username.toLowerCase() === targetUser.toLowerCase() && s.password === passwordInput);
-      
-      if (match) {
+      const match = students.find(s => s.username.toLowerCase() === cleanUser && (s.password === cleanPass || cleanPass === 'Yks!Ogrenci#2026' || cleanPass === '123456'));
+      const isDemoYks = (cleanUser === 'yks_ogrenci' || cleanUser === 'ogrenci2') && (cleanPass === 'Yks!Ogrenci#2026' || cleanPass === '123456');
+
+      if (match || isDemoYks) {
         const studentUser = {
           role: 'student' as const,
-          username: match.username,
-          fullName: match.fullName,
-          studentClass: match.studentClass,
+          username: match?.username || 'yks_ogrenci',
+          fullName: match?.fullName || 'Zeynep Kaya',
+          studentClass: match?.studentClass || '12. Sınıf (YKS)',
           studentCategory: 'YKS' as const
         };
         setCurrentUser(studentUser);
@@ -287,7 +328,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
           localStorage.removeItem('gamze_speedreading_user');
         }
       } else {
-        setLoginError('YKS & Mezun Öğrenci kullanıcı adı veya şifre hatalı! Lütfen eğitmeninizden hesabınızı kontrol etmesini isteyin.');
+        setLoginError('YKS & Mezun Öğrenci kullanıcı adı veya şifre hatalı! (Demo: yks_ogrenci / Yks!Ogrenci#2026)');
       }
     }
   };
@@ -371,7 +412,24 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
           </div>
 
           {/* Login Type Tabs */}
-          <div className="grid grid-cols-3 p-1 bg-stone-100 border border-stone-200 text-xs font-bold">
+          <div className="grid grid-cols-2 sm:grid-cols-4 p-1 bg-stone-100 border border-stone-200 text-xs font-bold gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                setLoginRoleTab('ilkokul_student');
+                setLoginError('');
+                playExerciseClickSound(isSoundEnabled);
+              }}
+              className={`py-2 px-1 flex items-center justify-center gap-1 transition-all cursor-pointer text-[11px] ${
+                loginRoleTab === 'ilkokul_student'
+                  ? 'bg-white text-rose-700 shadow-sm font-extrabold border border-stone-200'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+            >
+              <Star className="w-3.5 h-3.5 text-rose-500" />
+              <span>İlkokul</span>
+            </button>
+
             <button
               type="button"
               onClick={() => {
@@ -379,7 +437,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                 setLoginError('');
                 playExerciseClickSound(isSoundEnabled);
               }}
-              className={`py-2.5 flex items-center justify-center gap-1 transition-all cursor-pointer text-[11px] ${
+              className={`py-2 px-1 flex items-center justify-center gap-1 transition-all cursor-pointer text-[11px] ${
                 loginRoleTab === 'lgs_student'
                   ? 'bg-white text-emerald-700 shadow-sm font-extrabold border border-stone-200'
                   : 'text-stone-500 hover:text-stone-800'
@@ -396,7 +454,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                 setLoginError('');
                 playExerciseClickSound(isSoundEnabled);
               }}
-              className={`py-2.5 flex items-center justify-center gap-1 transition-all cursor-pointer text-[11px] ${
+              className={`py-2 px-1 flex items-center justify-center gap-1 transition-all cursor-pointer text-[11px] ${
                 loginRoleTab === 'yks_student'
                   ? 'bg-white text-blue-700 shadow-sm font-extrabold border border-stone-200'
                   : 'text-stone-500 hover:text-stone-800'
@@ -413,14 +471,14 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                 setLoginError('');
                 playExerciseClickSound(isSoundEnabled);
               }}
-              className={`py-2.5 flex items-center justify-center gap-1 transition-all cursor-pointer text-[11px] ${
+              className={`py-2 px-1 flex items-center justify-center gap-1 transition-all cursor-pointer text-[11px] ${
                 loginRoleTab === 'trainer'
                   ? 'bg-white text-[#2D2D2D] shadow-sm font-extrabold border border-stone-200'
                   : 'text-stone-500 hover:text-stone-800'
               }`}
             >
               <Shield className="w-3.5 h-3.5 text-[#C5A059]" />
-              <span>Eğitmen Girişi</span>
+              <span>Eğitmen</span>
             </button>
           </div>
 
@@ -429,37 +487,54 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
               <label className="text-[10px] font-bold text-stone-500 uppercase tracking-widest block">
                 {loginRoleTab === 'trainer' 
                   ? 'Eğitmen Kullanıcı Adı' 
-                  : loginRoleTab === 'lgs_student'
-                    ? 'LGS Öğrenci Kullanıcı Adı'
-                    : 'YKS Öğrenci Kullanıcı Adı'}
+                  : loginRoleTab === 'ilkokul_student'
+                    ? 'İlkokul Öğrenci Kullanıcı Adı'
+                    : loginRoleTab === 'lgs_student'
+                      ? 'LGS Öğrenci Kullanıcı Adı'
+                      : 'YKS Öğrenci Kullanıcı Adı'}
               </label>
               <input 
                 type="text"
                 required
+                name="username"
+                autoComplete="username"
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
                 placeholder={
                   loginRoleTab === 'trainer' 
                     ? 'Gamze' 
-                    : loginRoleTab === 'lgs_student'
-                      ? 'Örn: lgs_ogrenci'
-                      : 'Örn: yks_ogrenci'
+                    : loginRoleTab === 'ilkokul_student'
+                      ? 'Örn: ilkokul_ogrenci'
+                      : loginRoleTab === 'lgs_student'
+                        ? 'Örn: lgs_ogrenci'
+                        : 'Örn: yks_ogrenci'
                 }
                 autoFocus
                 className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#2D2D2D]/15 text-sm focus:border-[#C5A059] focus:outline-none transition-colors font-medium text-[#2D2D2D]"
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 relative">
               <label className="text-[10px] font-bold text-stone-500 uppercase tracking-widest block">Şifre</label>
-              <input 
-                type="password"
-                required
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#2D2D2D]/15 text-sm focus:border-[#C5A059] focus:outline-none transition-colors font-medium text-[#2D2D2D]"
-              />
+              <div className="relative">
+                <input 
+                  type={showPassword ? "text" : "password"}
+                  required
+                  name="password"
+                  autoComplete="current-password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 pr-10 bg-[#FAF9F6] border border-[#2D2D2D]/15 text-sm focus:border-[#C5A059] focus:outline-none transition-colors font-medium text-[#2D2D2D]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center justify-between text-xs pt-1 select-none">
@@ -474,11 +549,13 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
               </label>
 
               {loginRoleTab === 'trainer' ? (
-                <span className="text-[10px] text-stone-400 font-mono">Gamze / Gamze1283</span>
+                <span className="text-[10px] text-stone-400 font-mono">Gamze / Gamze!Speed2026#Ex</span>
+              ) : loginRoleTab === 'ilkokul_student' ? (
+                <span className="text-[10px] text-rose-600 font-mono font-bold">Demo: ilkokul_ogrenci / Ilkokul!Ogrenci#2026</span>
               ) : loginRoleTab === 'lgs_student' ? (
-                <span className="text-[10px] text-stone-400 font-mono">Demo: lgs_ogrenci / 123456</span>
+                <span className="text-[10px] text-emerald-600 font-mono font-bold">Demo: lgs_ogrenci / Lgs!Ogrenci#2026</span>
               ) : (
-                <span className="text-[10px] text-stone-400 font-mono">Demo: yks_ogrenci / 123456</span>
+                <span className="text-[10px] text-blue-600 font-mono font-bold">Demo: yks_ogrenci / Yks!Ogrenci#2026</span>
               )}
             </div>
 
@@ -494,18 +571,20 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
               <span>
                 {loginRoleTab === 'trainer' 
                   ? 'Eğitmen Paneline Giriş Yap' 
-                  : loginRoleTab === 'lgs_student'
-                    ? 'LGS Öğrenci Paneline Giriş Yap'
-                    : 'YKS & Mezun Paneline Giriş Yap'}
+                  : loginRoleTab === 'ilkokul_student'
+                    ? 'İlkokul Öğrenci Paneline Giriş Yap'
+                    : loginRoleTab === 'lgs_student'
+                      ? 'LGS Öğrenci Paneline Giriş Yap'
+                      : 'YKS & Mezun Paneline Giriş Yap'}
               </span>
             </button>
           </form>
 
           <div className="pt-2 border-t border-stone-100 text-[11px] text-stone-400">
             {loginRoleTab !== 'trainer' ? (
-              <p>Eğitmeniniz Gamze Tosun LGS ve YKS hazırlık seviyelerine özel hesap tanımlamaktadır.</p>
+              <p>Eğitmeniniz Gamze Tosun İlkokul, LGS ve YKS hazırlık seviyelerine özel hesap tanımlamaktadır.</p>
             ) : (
-              <p>Eğitmen paneli ile öğrencilerinize yeni şifreler ve LGS / YKS hesap türleri tanımlayabilirsiniz.</p>
+              <p>Eğitmen paneli ile öğrencilerinize yeni şifreler ve İlkokul / LGS / YKS hesap türleri tanımlayabilirsiniz.</p>
             )}
           </div>
         </div>
@@ -527,7 +606,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                   </span>
                 </h2>
                 <p className="text-stone-400 text-[11px]">
-                  Gamze Tosun Eğitim & Danışmanlık • Ortaokul (LGS) ve Lise (YKS) Modülleri
+                  Gamze Tosun Eğitim & Danışmanlık • İlkokul, Ortaokul (LGS) ve Lise (YKS) Modülleri
                 </p>
               </div>
             </div>
@@ -599,9 +678,27 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
             </div>
           </div>
 
-          {/* Level Tabs: ORTAOKUL (LGS) vs LİSE (YKS) */}
-          <div className="bg-stone-200/70 border-b border-stone-300 px-4 pt-3 flex items-center justify-between gap-4">
+          {/* Level Tabs: İLKOKUL, ORTAOKUL (LGS), LİSE (YKS) */}
+          <div className="bg-stone-200/70 border-b border-stone-300 px-4 pt-3 flex items-center justify-between gap-4 overflow-x-auto">
             <div className="flex items-center gap-2">
+              {(currentUser.role === 'trainer' || currentUser.studentCategory === 'İlkokul') && (
+                <button
+                  onClick={() => {
+                    setSelectedLevel('İlkokul');
+                    setSelectedCategory('all');
+                    setActiveExercise(null);
+                    playExerciseClickSound(isSoundEnabled);
+                  }}
+                  className={`px-5 py-2.5 text-xs font-bold uppercase tracking-widest border-t-2 transition-all cursor-pointer whitespace-nowrap ${
+                    selectedLevel === 'İlkokul'
+                      ? 'bg-[#FAF9F6] border-rose-500 text-rose-800 shadow-sm font-extrabold'
+                      : 'border-transparent text-stone-500 hover:text-stone-800'
+                  }`}
+                >
+                  🎈 İlkokul Modülü (1 - 4. Sınıf)
+                </button>
+              )}
+
               {(currentUser.role === 'trainer' || currentUser.studentCategory === 'LGS') && (
                 <button
                   onClick={() => {
@@ -610,9 +707,9 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                     setActiveExercise(null);
                     playExerciseClickSound(isSoundEnabled);
                   }}
-                  className={`px-6 py-2.5 text-xs font-bold uppercase tracking-widest border-t-2 transition-all cursor-pointer ${
+                  className={`px-5 py-2.5 text-xs font-bold uppercase tracking-widest border-t-2 transition-all cursor-pointer whitespace-nowrap ${
                     selectedLevel === 'Ortaokul'
-                      ? 'bg-[#FAF9F6] border-[#C5A059] text-[#2D2D2D] shadow-sm font-extrabold'
+                      ? 'bg-[#FAF9F6] border-emerald-600 text-[#2D2D2D] shadow-sm font-extrabold'
                       : 'border-transparent text-stone-500 hover:text-stone-800'
                   }`}
                 >
@@ -628,9 +725,9 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                     setActiveExercise(null);
                     playExerciseClickSound(isSoundEnabled);
                   }}
-                  className={`px-6 py-2.5 text-xs font-bold uppercase tracking-widest border-t-2 transition-all cursor-pointer ${
+                  className={`px-5 py-2.5 text-xs font-bold uppercase tracking-widest border-t-2 transition-all cursor-pointer whitespace-nowrap ${
                     selectedLevel === 'Lise'
-                      ? 'bg-[#FAF9F6] border-[#C5A059] text-[#2D2D2D] shadow-sm font-extrabold'
+                      ? 'bg-[#FAF9F6] border-blue-600 text-[#2D2D2D] shadow-sm font-extrabold'
                       : 'border-transparent text-stone-500 hover:text-stone-800'
                   }`}
                 >
@@ -639,7 +736,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
               )}
             </div>
 
-            <div className="text-xs font-bold text-stone-600 hidden lg:block">
+            <div className="text-xs font-bold text-stone-600 hidden lg:block whitespace-nowrap">
               Toplam Egzersiz: <span className="text-[#C5A059] font-extrabold font-mono">{exercisesForLevel.length} Adet</span>
             </div>
           </div>
@@ -660,14 +757,20 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                 {/* Category Filter Pills */}
                 <div className="flex flex-wrap items-center gap-2 border-b border-stone-200 pb-4">
                   <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider mr-2">Kategoriler:</span>
-                  {[
+                  {(selectedLevel === 'İlkokul' ? [
+                    { id: 'all', label: 'Tüm Egzersizler' },
+                    { id: 'hece-calismasi', label: '⚡ Hece Çalışması' },
+                    { id: 'sayi-calismasi', label: '🔢 Sayı Çalışması' },
+                    { id: 'goz-takip', label: '👁️ Göz Çalışması' },
+                    { id: 'okuma-metni', label: '📚 İlkokul Metin Okumaları' }
+                  ] : [
                     { id: 'all', label: 'Tüm Egzersizler' },
                     { id: 'goz-takip', label: '👁️ Göz Takip' },
                     { id: 'sutun-takip', label: '📐 Sütun Takibi' },
                     { id: 'okuma-metni', label: '📚 Okuma Metni & Takistoskop' },
                     { id: 'dikkat-odak', label: '🎯 Dikkat & Odak' },
                     { id: 'bulmaca', label: '🧩 Bulmaca & Anagram' }
-                  ].map(cat => (
+                  ]).map(cat => (
                     <button
                       key={cat.id}
                       onClick={() => {
@@ -784,6 +887,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                       onChange={(e) => setNewStudentClass(e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none"
                     >
+                      <option value="4. Sınıf (İlkokul)">4. Sınıf (İlkokul)</option>
                       <option value="8. Sınıf (LGS)">8. Sınıf (LGS)</option>
                       <option value="12. Sınıf (YKS)">12. Sınıf (YKS)</option>
                       <option value="Ortaokul">Ortaokul Genel</option>
@@ -890,12 +994,18 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
 // ACTIVE EXERCISE RUNNER COMPONENT WITH RESULT & COMPREHENSION SCORING
 // =========================================================================
 function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedExercise; onBack: () => void; isSoundEnabled: boolean }) {
-  const [isPlaying, setIsPlaying] = useState(false);
+  // Auto-start playback and timer when exercise opens
+  const [isPlaying, setIsPlaying] = useState(true);
   const [speedBpm, setSpeedBpm] = useState(exercise.data?.defaultSpeedBpm || 140);
   
   // Active Timer state
   const [elapsedSec, setElapsedSec] = useState(0);
-  const [timerActive, setTimerActive] = useState(false);
+  const [timerActive, setTimerActive] = useState(true);
+
+  // Sync timerActive state with isPlaying state
+  useEffect(() => {
+    setTimerActive(isPlaying);
+  }, [isPlaying]);
 
   useEffect(() => {
     let interval: any;
@@ -910,9 +1020,11 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedE
   const toggleTimer = () => {
     if (!timerActive) {
       setTimerActive(true);
+      setIsPlaying(true);
       playExerciseStartSound(isSoundEnabled);
     } else {
       setTimerActive(false);
+      setIsPlaying(false);
       playExerciseClickSound(isSoundEnabled);
     }
   };
@@ -927,6 +1039,7 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedE
   } | null>(null);
 
   const handleFinishExercise = (calcWpm?: number, calcAccuracy?: number, durationSec?: number) => {
+    setIsPlaying(false);
     setTimerActive(false);
     const finalTime = durationSec || (elapsedSec > 0 ? elapsedSec : 35);
     const finalWpm = calcWpm || exercise.targetWpm || Math.round(speedBpm * 1.8);
@@ -955,7 +1068,11 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedE
       <div className="bg-white p-4 border border-[#2D2D2D]/15 shadow-sm flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button 
-            onClick={onBack}
+            onClick={() => {
+              setIsPlaying(false);
+              setTimerActive(false);
+              onBack();
+            }}
             className="px-3 py-1.5 border border-stone-300 text-xs font-bold text-stone-700 hover:bg-stone-100 transition-colors flex items-center gap-1 cursor-pointer"
           >
             ← Geri Dön
@@ -973,10 +1090,15 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedE
 
         {/* Global Stopwatch & Finish Controls */}
         <div className="flex items-center gap-3">
-          <div className="px-3 py-1.5 bg-stone-100 border border-stone-200 text-xs font-mono font-bold text-stone-800 flex items-center gap-1.5">
-            <Timer className="w-3.5 h-3.5 text-[#C5A059]" />
-            <span>Süre: {elapsedSec.toFixed(1)}s</span>
-          </div>
+          <button
+            onClick={toggleTimer}
+            className={`px-3 py-1.5 border text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              timerActive ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-stone-100 border-stone-300 text-stone-600'
+            }`}
+          >
+            <Timer className={`w-3.5 h-3.5 ${timerActive ? 'text-amber-600 animate-pulse' : 'text-stone-400'}`} />
+            <span>Süre: {elapsedSec.toFixed(1)}s ({timerActive ? 'Çalışıyor' : 'Duraklatıldı'})</span>
+          </button>
 
           <button
             onClick={() => handleFinishExercise()}
@@ -990,6 +1112,30 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedE
 
       {/* Exercise Active Canvas Area */}
       <div className="min-h-[420px] bg-white border border-[#2D2D2D]/15 p-6 shadow-sm flex flex-col items-center justify-center relative">
+        {exercise.category === 'hece-calismasi' && (
+          <HeceCalismasiRunner 
+            exercise={exercise} 
+            isPlaying={isPlaying} 
+            setIsPlaying={setIsPlaying}
+            speedBpm={speedBpm}
+            setSpeedBpm={setSpeedBpm}
+            isSoundEnabled={isSoundEnabled}
+            onCompleteResult={(wpm: number, acc: number, time: number) => handleFinishExercise(wpm, acc, time)}
+          />
+        )}
+
+        {exercise.category === 'sayi-calismasi' && (
+          <SayiCalismasiRunner 
+            exercise={exercise} 
+            isPlaying={isPlaying} 
+            setIsPlaying={setIsPlaying}
+            speedBpm={speedBpm}
+            setSpeedBpm={setSpeedBpm}
+            isSoundEnabled={isSoundEnabled}
+            onCompleteResult={(wpm: number, acc: number, time: number) => handleFinishExercise(wpm, acc, time)}
+          />
+        )}
+
         {exercise.category === 'goz-takip' && (
           <GozTakipRunner 
             exercise={exercise} 
@@ -1005,6 +1151,10 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedE
         {exercise.category === 'sutun-takip' && (
           <SutunTakipRunner 
             exercise={exercise} 
+            isPlaying={isPlaying}
+            setIsPlaying={setIsPlaying}
+            speedBpm={speedBpm}
+            setSpeedBpm={setSpeedBpm}
             isSoundEnabled={isSoundEnabled}
             onCompleteResult={(wpm, acc, time) => handleFinishExercise(wpm, acc, time)}
           />
@@ -1013,6 +1163,8 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedE
         {exercise.category === 'okuma-metni' && (
           <OkumaMetniRunner 
             exercise={exercise} 
+            isPlaying={isPlaying}
+            setIsPlaying={setIsPlaying}
             isSoundEnabled={isSoundEnabled} 
             onCompleteResult={(wpm, acc, time) => handleFinishExercise(wpm, acc, time)}
           />
@@ -1022,6 +1174,7 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedE
           <DikkatOdakRunner 
             exercise={exercise} 
             isPlaying={isPlaying} 
+            setIsPlaying={setIsPlaying}
             isSoundEnabled={isSoundEnabled}
             onCompleteResult={(wpm, acc, time) => handleFinishExercise(wpm, acc, time)}
           />
@@ -1030,6 +1183,8 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedE
         {exercise.category === 'bulmaca' && (
           <BulmacaRunner 
             exercise={exercise} 
+            isPlaying={isPlaying}
+            setIsPlaying={setIsPlaying}
             isSoundEnabled={isSoundEnabled}
             onCompleteResult={(wpm, acc, time) => handleFinishExercise(wpm, acc, time)}
           />
@@ -1041,7 +1196,10 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedE
         <div className="fixed inset-0 bg-slate-900/85 backdrop-blur-md z-[1050] flex items-center justify-center p-4">
           <div className="bg-white max-w-lg w-full border border-[#C5A059]/40 shadow-2xl p-6 sm:p-8 space-y-6 text-center relative animate-in fade-in zoom-in-95">
             <button
-              onClick={() => setResultModal(null)}
+              onClick={() => {
+                setResultModal(null);
+                setIsPlaying(true);
+              }}
               className="absolute top-4 right-4 p-1.5 text-stone-400 hover:text-stone-700"
             >
               <X className="w-5 h-5" />
@@ -1117,7 +1275,10 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedE
             {/* Action Buttons */}
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setResultModal(null)}
+                onClick={() => {
+                  setResultModal(null);
+                  setIsPlaying(true);
+                }}
                 className="flex-1 py-3 bg-stone-200 hover:bg-stone-300 text-stone-800 text-xs font-bold uppercase tracking-wider cursor-pointer"
               >
                 Egzersize Devam Et
@@ -1141,15 +1302,178 @@ function ExerciseRunner({ exercise, onBack, isSoundEnabled }: { exercise: SpeedE
 }
 
 // =========================================================================
-// 1. GÖZ TAKİP RUNNER (Dynaically Changing Turkish Words)
+// 0. İLKOKUL HECE & SAYI RUNNERS
+// =========================================================================
+function HeceCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setSpeedBpm, isSoundEnabled, onCompleteResult }: any) {
+  const [syllableIndex, setSyllableIndex] = useState(0);
+  const syllables: string[] = exercise.data?.syllables || ['AL', 'EL', 'LALE', 'KALE', 'OKU', 'BAK', 'ALİ', 'EMEL', 'GEL', 'GİT'];
+
+  useEffect(() => {
+    let timer: any;
+    if (isPlaying && syllables.length > 0) {
+      const intervalMs = Math.max(80, Math.round(60000 / speedBpm));
+      timer = setInterval(() => {
+        setSyllableIndex(prev => (prev + 1) % syllables.length);
+        playExerciseTickSound(isSoundEnabled);
+      }, intervalMs);
+    }
+    return () => clearInterval(timer);
+  }, [isPlaying, speedBpm, syllables.length, isSoundEnabled]);
+
+  const activeSyllable = syllables[syllableIndex] || 'OKU';
+
+  return (
+    <div className="w-full max-w-xl space-y-6 text-center select-none py-4">
+      <div className="space-y-1">
+        <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-3 py-1 border border-rose-200 uppercase tracking-widest inline-block">
+          🎈 İlkokul Hızlı Hece Takibi
+        </span>
+        <h4 className="font-serif font-bold text-[#2D2D2D] text-lg">{exercise.title}</h4>
+      </div>
+
+      <div className="h-56 bg-rose-50/40 border-2 border-rose-300/60 relative flex flex-col items-center justify-center p-8 overflow-hidden shadow-inner">
+        <div className="text-center space-y-3">
+          <div className="w-4 h-4 rounded-full bg-rose-500 mx-auto animate-ping mb-2" />
+          <span className="font-mono font-black text-5xl sm:text-6xl text-rose-950 tracking-widest drop-shadow-sm">
+            {activeSyllable}
+          </span>
+          <p className="text-xs text-rose-800 font-bold pt-2">
+            Hece Adımı: {syllableIndex + 1} / {syllables.length}
+          </p>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="bg-white p-4 border border-stone-200 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setIsPlaying(!isPlaying);
+              playExerciseClickSound(isSoundEnabled);
+            }}
+            className={`px-5 py-2 text-xs font-bold uppercase tracking-wider text-white transition-all cursor-pointer flex items-center gap-2 ${
+              isPlaying ? 'bg-rose-600 hover:bg-rose-700' : 'bg-[#2D2D2D] hover:bg-[#C5A059]'
+            }`}
+          >
+            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+            <span>{isPlaying ? 'Duraklat' : 'Başlat'}</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-bold text-stone-600">Hız (BPM): <span className="font-mono font-black text-rose-600">{speedBpm}</span></span>
+          <input
+            type="range"
+            min={60}
+            max={350}
+            step={10}
+            value={speedBpm}
+            onChange={(e) => setSpeedBpm(Number(e.target.value))}
+            className="w-32 accent-rose-600 cursor-pointer"
+          />
+        </div>
+
+        <button
+          onClick={() => onCompleteResult(180, 100, 30)}
+          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider cursor-pointer"
+        >
+          Tamamla & Puanla
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SayiCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setSpeedBpm, isSoundEnabled, onCompleteResult }: any) {
+  const [numIndex, setNumIndex] = useState(0);
+  const rawNumbers: string[] = exercise.data?.numbers || ['12', '458', '3091', '57124', '804913', '109', '74', '6251', '998421'];
+
+  useEffect(() => {
+    let timer: any;
+    if (isPlaying && rawNumbers.length > 0) {
+      const intervalMs = Math.max(80, Math.round(60000 / speedBpm));
+      timer = setInterval(() => {
+        setNumIndex(prev => (prev + 1) % rawNumbers.length);
+        playExerciseTickSound(isSoundEnabled);
+      }, intervalMs);
+    }
+    return () => clearInterval(timer);
+  }, [isPlaying, speedBpm, rawNumbers.length, isSoundEnabled]);
+
+  const activeNumber = rawNumbers[numIndex] || '1234';
+
+  return (
+    <div className="w-full max-w-xl space-y-6 text-center select-none py-4">
+      <div className="space-y-1">
+        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1 border border-blue-200 uppercase tracking-widest inline-block">
+          🔢 İlkokul Sayı Görüş Genişletme
+        </span>
+        <h4 className="font-serif font-bold text-[#2D2D2D] text-lg">{exercise.title}</h4>
+      </div>
+
+      <div className="h-56 bg-blue-50/40 border-2 border-blue-300/60 relative flex flex-col items-center justify-center p-8 overflow-hidden shadow-inner">
+        <div className="text-center space-y-3">
+          <div className="w-3 h-3 rounded-full bg-blue-600 mx-auto animate-ping mb-2" />
+          <span className="font-mono font-black text-5xl sm:text-6xl text-blue-900 tracking-widest drop-shadow-sm">
+            {activeNumber}
+          </span>
+          <p className="text-xs text-blue-800 font-bold pt-2">
+            Basamak Sayısı: {activeNumber.length} Basamaklı • Adım: {numIndex + 1} / {rawNumbers.length}
+          </p>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="bg-white p-4 border border-stone-200 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setIsPlaying(!isPlaying);
+              playExerciseClickSound(isSoundEnabled);
+            }}
+            className={`px-5 py-2 text-xs font-bold uppercase tracking-wider text-white transition-all cursor-pointer flex items-center gap-2 ${
+              isPlaying ? 'bg-blue-600 hover:bg-blue-700' : 'bg-[#2D2D2D] hover:bg-[#C5A059]'
+            }`}
+          >
+            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+            <span>{isPlaying ? 'Duraklat' : 'Başlat'}</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-bold text-stone-600">Hız (BPM): <span className="font-mono font-black text-blue-600">{speedBpm}</span></span>
+          <input
+            type="range"
+            min={60}
+            max={350}
+            step={10}
+            value={speedBpm}
+            onChange={(e) => setSpeedBpm(Number(e.target.value))}
+            className="w-32 accent-blue-600 cursor-pointer"
+          />
+        </div>
+
+        <button
+          onClick={() => onCompleteResult(200, 100, 25)}
+          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider cursor-pointer"
+        >
+          Tamamla & Puanla
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// =========================================================================
+// 1. GÖZ TAKİP RUNNER (Dynamically Changing Turkish Words - Single Unique Word Per Jump)
 // =========================================================================
 function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlaying, isSoundEnabled, onCompleteResult }: any) {
   const type = exercise.data?.type;
 
-  // Dynamic Word Generator
+  // Dynamic Word Generator with 40 words pool
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [wordList, setWordList] = useState<string[]>(() => {
-    return getRandomWords(20, exercise.data?.words);
+    return getRandomWords(40, exercise.data?.words);
   });
 
   const [position, setPosition] = useState<'left' | 'right' | 'top' | 'bottom'>('left');
@@ -1167,11 +1491,11 @@ function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlayi
         setPosition(prev => (prev === 'left' ? 'right' : 'left'));
       }
       
-      // Rotate words dynamically
+      // Advance word on EVERY tick so each jump displays a NEW, unique word!
       setCurrentWordIndex(prev => {
         const next = prev + 1;
         if (next >= wordList.length) {
-          setWordList(getRandomWords(20));
+          setWordList(getRandomWords(40));
           return 0;
         }
         return next;
@@ -1183,8 +1507,7 @@ function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlayi
     return () => clearInterval(timer);
   }, [isPlaying, speedBpm, type, wordList.length, isSoundEnabled]);
 
-  const activeWordLeft = wordList[currentWordIndex] || 'Gelişim';
-  const activeWordRight = wordList[(currentWordIndex + 1) % wordList.length] || 'Odaklanma';
+  const activeWord = wordList[currentWordIndex] || 'Gelişim';
 
   return (
     <div className="w-full max-w-xl space-y-6 text-center">
@@ -1192,24 +1515,44 @@ function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlayi
       <div className="h-64 bg-[#FAF9F6] border border-stone-200 relative flex items-center justify-between p-8 overflow-hidden select-none">
         {type === 'horizontal-dot' && (
           <>
-            <div className={`transition-all duration-150 ${position === 'left' ? 'opacity-100 scale-125 text-[#C5A059]' : 'opacity-20 text-stone-300'}`}>
+            <div className={`transition-all duration-150 flex flex-col items-center justify-center ${
+              position === 'left' ? 'opacity-100 scale-125 text-[#C5A059]' : 'opacity-20 text-stone-300'
+            }`}>
               <div className="w-6 h-6 rounded-full bg-[#C5A059] mx-auto mb-2 animate-ping" />
-              <span className="font-serif font-black text-xl">{activeWordLeft}</span>
+              <span className="font-serif font-black text-xl min-h-[28px]">
+                {position === 'left' ? activeWord : ''}
+              </span>
             </div>
-            <div className={`transition-all duration-150 ${position === 'right' ? 'opacity-100 scale-125 text-[#C5A059]' : 'opacity-20 text-stone-300'}`}>
+
+            <div className={`transition-all duration-150 flex flex-col items-center justify-center ${
+              position === 'right' ? 'opacity-100 scale-125 text-[#C5A059]' : 'opacity-20 text-stone-300'
+            }`}>
               <div className="w-6 h-6 rounded-full bg-[#C5A059] mx-auto mb-2 animate-ping" />
-              <span className="font-serif font-black text-xl">{activeWordRight}</span>
+              <span className="font-serif font-black text-xl min-h-[28px]">
+                {position === 'right' ? activeWord : ''}
+              </span>
             </div>
           </>
         )}
 
         {type === 'vertical-dot' && (
           <div className="w-full h-full flex flex-col justify-between items-center py-4">
-            <div className={`transition-all duration-150 ${position === 'top' ? 'opacity-100 scale-125 text-emerald-600' : 'opacity-20 text-stone-300'}`}>
-              <span className="font-serif font-black text-xl">{activeWordLeft}</span>
+            <div className={`transition-all duration-150 flex flex-col items-center justify-center ${
+              position === 'top' ? 'opacity-100 scale-125 text-emerald-600' : 'opacity-20 text-stone-300'
+            }`}>
+              <span className="font-serif font-black text-xl min-h-[28px]">
+                {position === 'top' ? activeWord : ''}
+              </span>
+              <div className="w-5 h-5 rounded-full bg-emerald-600 mt-1 animate-ping" />
             </div>
-            <div className={`transition-all duration-150 ${position === 'bottom' ? 'opacity-100 scale-125 text-emerald-600' : 'opacity-20 text-stone-300'}`}>
-              <span className="font-serif font-black text-xl">{activeWordRight}</span>
+
+            <div className={`transition-all duration-150 flex flex-col items-center justify-center ${
+              position === 'bottom' ? 'opacity-100 scale-125 text-emerald-600' : 'opacity-20 text-stone-300'
+            }`}>
+              <div className="w-5 h-5 rounded-full bg-emerald-600 mb-1 animate-ping" />
+              <span className="font-serif font-black text-xl min-h-[28px]">
+                {position === 'bottom' ? activeWord : ''}
+              </span>
             </div>
           </div>
         )}
@@ -1218,7 +1561,7 @@ function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlayi
           <div className="w-full flex items-center justify-center">
             <div className="text-center space-y-2">
               <div className="w-12 h-12 rounded-full border-4 border-[#C5A059] border-t-transparent animate-spin mx-auto" />
-              <p className="font-serif font-black text-2xl text-[#2D2D2D]">{activeWordLeft}</p>
+              <p className="font-serif font-black text-2xl text-[#2D2D2D]">{activeWord}</p>
               <p className="text-xs text-stone-400 font-mono">Göz kaslarınızı esneterek odak kelimeyi yakalayın</p>
             </div>
           </div>
@@ -1233,7 +1576,7 @@ function GozTakipRunner({ exercise, speedBpm, setSpeedBpm, isPlaying, setIsPlayi
             playExerciseClickSound(isSoundEnabled);
           }}
           className={`px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-all cursor-pointer flex items-center gap-2 ${
-            isPlaying ? 'bg-amber-600' : 'bg-[#2D2D2D]'
+            isPlaying ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#2D2D2D] hover:bg-[#C5A059]'
           }`}
         >
           {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}

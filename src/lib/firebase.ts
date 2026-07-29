@@ -507,18 +507,26 @@ import { StudentAccount } from '../types';
 export const DEFAULT_STUDENTS: StudentAccount[] = [
   {
     id: 'st-1',
-    username: 'ogrenci1',
-    password: '123456',
+    username: 'lgs_ogrenci',
+    password: 'Lgs!Ogrenci#2026',
     fullName: 'Ahmet Yılmaz',
     studentClass: '8. Sınıf (LGS)',
     createdAt: new Date().toLocaleDateString('tr-TR')
   },
   {
     id: 'st-2',
-    username: 'ogrenci2',
-    password: '123456',
+    username: 'yks_ogrenci',
+    password: 'Yks!Ogrenci#2026',
     fullName: 'Zeynep Kaya',
     studentClass: '12. Sınıf (YKS)',
+    createdAt: new Date().toLocaleDateString('tr-TR')
+  },
+  {
+    id: 'st-3',
+    username: 'ilkokul_ogrenci',
+    password: 'Ilkokul!Ogrenci#2026',
+    fullName: 'Caner Demir',
+    studentClass: '4. Sınıf (İlkokul)',
     createdAt: new Date().toLocaleDateString('tr-TR')
   }
 ];

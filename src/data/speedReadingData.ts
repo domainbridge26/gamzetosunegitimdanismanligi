@@ -1,8 +1,8 @@
 export interface SpeedExercise {
   id: string;
   title: string;
-  level: 'Ortaokul' | 'Lise';
-  category: 'goz-takip' | 'sutun-takip' | 'okuma-metni' | 'dikkat-odak' | 'bulmaca';
+  level: 'İlkokul' | 'Ortaokul' | 'Lise';
+  category: 'hece-calismasi' | 'sayi-calismasi' | 'goz-takip' | 'sutun-takip' | 'okuma-metni' | 'dikkat-odak' | 'bulmaca';
   categoryLabel: string;
   description: string;
   iconName: string;
@@ -11,6 +11,210 @@ export interface SpeedExercise {
 }
 
 export const SPEED_READING_EXERCISES: SpeedExercise[] = [
+  // ==================== İLKOKUL EGZERSİZLERİ (10 ADET) ====================
+  // 1. Hece Çalışmaları
+  {
+    id: 'i-hc-1',
+    title: 'İlkokul Ritmik Hece Flaşör Çalışması',
+    level: 'İlkokul',
+    category: 'hece-calismasi',
+    categoryLabel: 'Hece Çalışması',
+    iconName: 'Zap',
+    description: '2, 3 ve 4 harfli temel Türkçe heceleri ekranda ritmik olarak takip edip hızlı okuyun.',
+    targetWpm: 150,
+    data: {
+      type: 'syllable-flash',
+      defaultSpeedBpm: 90,
+      syllables: [
+        'AL', 'EL', 'AK', 'EK', 'İK', 'OK', 'OL', 'AN', 'EN', 'AT', 'ET',
+        'LA', 'LE', 'LI', 'Lİ', 'LO', 'KA', 'KE', 'KI', 'Kİ', 'KO', 'MA',
+        'BA', 'BE', 'BI', 'Bİ', 'BO', 'DA', 'DE', 'DI', 'Dİ', 'DO', 'SA',
+        'ELE', 'LALE', 'KALE', 'OKU', 'BAK', 'KOŞ', 'BUL', 'GEL', 'GİT',
+        'SEV', 'YAZ', 'ÇİZ', 'ALİ', 'CAN', 'EFE', 'ELMA', 'KEDİ', 'KUŞ'
+      ]
+    }
+  },
+  {
+    id: 'i-hc-2',
+    title: 'Kelime & Hece Merdiveni Egzersizi',
+    level: 'İlkokul',
+    category: 'hece-calismasi',
+    categoryLabel: 'Hece Çalışması',
+    iconName: 'Activity',
+    description: 'Tek heceden başlayan kelime basamaklarını tek bakışta algılama egzersizi.',
+    targetWpm: 170,
+    data: {
+      type: 'syllable-flash',
+      defaultSpeedBpm: 100,
+      syllables: [
+        'AL', 'AL-İ', 'AL-İ-YE', 'Kİ-TAP', 'OKU-YOR',
+        'BAK', 'BAK-TI', 'BAK-I-YOR', 'GÖZ-LER', 'ODAK-LAN',
+        'E-LE', 'LA-LE', 'KA-LE', 'O-KUL', 'SIN-IF',
+        'BA-ŞA-RII', 'DİK-KAT', 'GÜ-NEŞ', 'YIL-DIZ'
+      ]
+    }
+  },
+
+  // 2. Sayı Çalışmaları
+  {
+    id: 'i-sc-1',
+    title: 'Görsel Sayı Genişletme (2-6 Basamak)',
+    level: 'İlkokul',
+    category: 'sayi-calismasi',
+    categoryLabel: 'Sayı Çalışması',
+    iconName: 'Grid',
+    description: '2 basamaktan 6 basamağa doğru büyüyen sayıları anlık olarak algılayın.',
+    targetWpm: 160,
+    data: {
+      type: 'number-flash',
+      defaultSpeedBpm: 90,
+      numbers: [
+        '12', '45', '78', '93', 
+        '142', '589', '703', '816',
+        '2041', '5893', '7104', '9382',
+        '15904', '48219', '73052', '89143',
+        '104928', '391054', '782910', '950481'
+      ]
+    }
+  },
+  {
+    id: 'i-sc-2',
+    title: 'İlkokul Schulte Tablosu 3x3 (1-9 Sayı Avı)',
+    level: 'İlkokul',
+    category: 'sayi-calismasi',
+    categoryLabel: 'Sayı Çalışması',
+    iconName: 'Target',
+    description: '1’den 9’a kadar olan sayıları en hızlı sırayla tıklayarak göz ve dikkat hızınızı ölçün.',
+    targetWpm: 0,
+    data: {
+      type: 'schulte',
+      gridSize: 3
+    }
+  },
+
+  // 3. Göz Çalışmaları
+  {
+    id: 'i-gt-1',
+    title: 'Neşeli Kelime Sıçraması (İlkokul Göz Takip)',
+    level: 'İlkokul',
+    category: 'goz-takip',
+    categoryLabel: 'Göz Takip',
+    iconName: 'Eye',
+    description: 'Sol ve sağ noktalar arasında neşeli kelimeleri sıçrayarak göz kaslarını esnetin.',
+    targetWpm: 160,
+    data: {
+      type: 'horizontal-dot',
+      dotColor: '#E11D48',
+      defaultSpeedBpm: 90,
+      words: ['Elma', 'Kedi', 'Güneş', 'Balık', 'Yıldız', 'Tavşan', 'Okul', 'Çiçek', 'Şeker', 'Rüzgar', 'Kuş', 'Araba']
+    }
+  },
+  {
+    id: 'i-gt-2',
+    title: 'Dikey Kelime Sıçraması (Yukarı-Aşağı)',
+    level: 'İlkokul',
+    category: 'goz-takip',
+    categoryLabel: 'Göz Takip',
+    iconName: 'ArrowDown',
+    description: 'Yukarıdan aşağıya hızlı göz hareketleriyle odak esnekliğini artırın.',
+    targetWpm: 180,
+    data: {
+      type: 'vertical-dot',
+      dotColor: '#2563EB',
+      defaultSpeedBpm: 100,
+      words: ['Kitap', 'Kalem', 'Silgi', 'Defter', 'Çanta', 'Sınıf', 'Zil', 'Oyun', 'Başarı', 'Gelişim']
+    }
+  },
+
+  // 4. İlkokul Düzeyi Metin Okumaları
+  {
+    id: 'i-om-1',
+    title: 'Küçük Kelam ve Kırmızı Uçurtma',
+    level: 'İlkokul',
+    category: 'okuma-metni',
+    categoryLabel: 'Metin Okuma',
+    iconName: 'BookOpen',
+    description: 'İlkokul seviyesine uygun, hızlı okuma ve kavrama testli renkli hikaye.',
+    targetWpm: 150,
+    data: {
+      content: 'Küçük Kelam kitap okumayı çok seviyordu. Bir bahar günü kırmızı uçurtmasını alıp parka gitti. Gökyüzünde süzülen uçurtmasını izlerken kitaplarındaki masal kahramanlarını düşledi. Kelam her gün yeni heceler öğrendikçe uçurtması daha yükseklere uçuyordu.',
+      wordCount: 36,
+      quiz: [
+        {
+          question: 'Küçük Kelam parka neyi ile gitti?',
+          options: ['Kırmızı bisikletiyle', 'Kırmızı uçurtmasıyla', 'Mavi topuyla', 'Sevimli köpeğiyle'],
+          correctAnswer: 1
+        },
+        {
+          question: 'Kelam her gün yeni heceler öğrendikçe ne oluyordu?',
+          options: ['Uçurtması daha yükseklere uçuyordu', 'Park kapanıyordu', 'Uykusu geliyordu', 'Rüzgar duruyordu'],
+          correctAnswer: 0
+        }
+      ]
+    }
+  },
+  {
+    id: 'i-om-2',
+    title: 'Uzaylı Dostum BipBip',
+    level: 'İlkokul',
+    category: 'okuma-metni',
+    categoryLabel: 'Metin Okuma',
+    iconName: 'Sparkles',
+    description: 'Sevimli robot BipBip ile hece ve okuma hızlandırma hikayesi.',
+    targetWpm: 160,
+    data: {
+      content: 'BipBip, sevimli bir robottur. Dünyaya gelince Türkçe heceleri ve kelimeleri öğrenmeye karar verdi. Ali ona "Kitap okumak zihni güçlendirir" dedi. BipBip her gün 15 dakika okuma yaparak sınıfın en hızlı okuyan dostu oldu.',
+      wordCount: 35,
+      quiz: [
+        {
+          question: 'Ali, robot BipBip’e kitap okumakla ilgili ne söyledi?',
+          options: ['Okumak yorar', 'Kitap okumak zihni güçlendirir', 'Kitaplar sıkıcıdır', 'Robotlar okuyamaz'],
+          correctAnswer: 1
+        },
+        {
+          question: 'BipBip her gün kaç dakika okuma yapıyordu?',
+          options: ['5 dakika', '15 dakika', '1 saat', '30 dakika'],
+          correctAnswer: 1
+        }
+      ]
+    }
+  },
+  {
+    id: 'i-om-3',
+    title: 'Neşeli Orman Okulu',
+    level: 'İlkokul',
+    category: 'okuma-metni',
+    categoryLabel: 'Metin Okuma',
+    iconName: 'Clock',
+    description: 'Orman hayvanlarının hızlı okuma ve göz egzersizi macera metni.',
+    targetWpm: 170,
+    data: {
+      content: 'Neşeli ormanda sevimli tavşan Tontiş ve minik sincap okula başladı. Baykuş öğretmen onlara heceleri ve göz egzersizlerini öğretti. Tontiş gözlerini sağa ve sola sıçratarak tüm kelimeleri tek bakışta kolayca okudu.',
+      wordCount: 34,
+      quiz: [
+        {
+          question: 'Tavşan Tontiş kelimeleri tek bakışta nasıl okudu?',
+          options: ['Gözlerini sağa ve sola sıçratarak', 'Parmakla takip ederek', 'Yüksek sesle bağırarak', 'Hepsini ezberleyerek'],
+          correctAnswer: 0
+        }
+      ]
+    }
+  },
+  {
+    id: 'i-om-4',
+    title: 'İlkokul Takistoskop (Flaşör Hızlı Kelimeler)',
+    level: 'İlkokul',
+    category: 'okuma-metni',
+    categoryLabel: 'Takistoskop',
+    iconName: 'Zap',
+    description: 'İlkokul kelimelerini yüksek hızda ekranda yakalama çalışması.',
+    targetWpm: 180,
+    data: {
+      type: 'rsvp',
+      words: ['Okul', 'Kitap', 'Kalem', 'Başarı', 'Sevgi', 'Güneş', 'Yıldız', 'Çiçek', 'Orman', 'Deniz', 'Bilgi', 'Bayrak']
+    }
+  },
+
   // ==================== ORTAOKUL EGZERSİZLERİ (20 ADET) ====================
   // 1. Göz Takip
   {

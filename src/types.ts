@@ -72,7 +72,7 @@ export interface StudentAccount {
   username: string;
   password: string;
   fullName: string;
-  studentClass: string; // e.g. "8. Sınıf (LGS)", "12. Sınıf (YKS)", "Ortaokul", "Lise"
+  studentClass: string; // e.g. "4. Sınıf (İlkokul)", "8. Sınıf (LGS)", "12. Sınıf (YKS)"
   createdAt: string;
   lastLogin?: string;
 }
