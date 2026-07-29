@@ -531,16 +531,16 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
   },
   {
     id: 'i-do-3',
-    title: 'İlkokul Stroop Renk Oyunu',
+    title: 'İlkokul Stroop Renk Oyunu (40 Kelime)',
     level: 'İlkokul',
     category: 'dikkat-odak',
     categoryLabel: 'Dikkat & Odak',
     iconName: 'Palette',
-    description: 'Yazıya değil, yazının rengine odaklanarak doğru butona basın!',
+    description: 'Yazıya değil, yazının rengine odaklanarak doğru butona basın! (40 Kelime)',
     targetWpm: 0,
     data: {
       type: 'stroop',
-      itemsCount: 8
+      itemsCount: 40
     }
   },
 
@@ -1444,16 +1444,16 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
   },
   {
     id: 'l-do-2',
-    title: 'Gelişmiş Stroop Çelişki Testi (Hızlı Seri)',
+    title: 'Gelişmiş Stroop Çelişki Testi (40 Kelime)',
     level: 'Lise',
     category: 'dikkat-odak',
     categoryLabel: 'Dikkat & Odak',
     iconName: 'Palette',
-    description: 'Saniyenin 1/3\'ü kadar sürede renk-kelime çelişkilerini doğru yanıtlayın.',
+    description: 'Yazıya değil, yazının rengine odaklanarak 40 kelimelik testi tamamlayın.',
     targetWpm: 0,
     data: {
       type: 'stroop',
-      itemsCount: 15
+      itemsCount: 40
     }
   },
   {

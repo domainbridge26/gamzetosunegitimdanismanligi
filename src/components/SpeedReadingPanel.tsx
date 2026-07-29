@@ -2961,55 +2961,76 @@ function DikkatOdakRunner({ exercise, isPlaying, isSoundEnabled, onCompleteResul
 
   // ---------------- STROOP TEST ENGINE ----------------
   const COLOR_PALETTE = [
-    { name: 'KIRMIZI', colorHex: '#DC2626', bgClass: 'bg-red-600 hover:bg-red-700' },
-    { name: 'MAVİ', colorHex: '#2563EB', bgClass: 'bg-blue-600 hover:bg-blue-700' },
-    { name: 'YEŞİL', colorHex: '#16A34A', bgClass: 'bg-green-600 hover:bg-green-700' },
-    { name: 'SARI', colorHex: '#D97706', bgClass: 'bg-amber-500 hover:bg-amber-600' },
-    { name: 'MOR', colorHex: '#9333EA', bgClass: 'bg-purple-600 hover:bg-purple-700' },
-    { name: 'TURUNCU', colorHex: '#EA580C', bgClass: 'bg-orange-600 hover:bg-orange-700' },
+    { name: 'KIRMIZI', colorHex: '#EF4444', bgClass: 'bg-red-600 hover:bg-red-700' },
+    { name: 'MAVİ', colorHex: '#3B82F6', bgClass: 'bg-blue-600 hover:bg-blue-700' },
+    { name: 'YEŞİL', colorHex: '#22C55E', bgClass: 'bg-emerald-600 hover:bg-emerald-700' },
+    { name: 'PEMBE', colorHex: '#EC4899', bgClass: 'bg-pink-500 hover:bg-pink-600' },
+    { name: 'MOR', colorHex: '#A855F7', bgClass: 'bg-purple-600 hover:bg-purple-700' },
+    { name: 'SİYAH', colorHex: '#000000', bgClass: 'bg-stone-900 hover:bg-black' },
   ];
 
-  const [stroopWord, setStroopWord] = useState('KIRMIZI');
-  const [stroopInkIndex, setStroopInkIndex] = useState(1); // MAVİ ink
+  const STROOP_TOTAL_LIMIT = 40;
+
+  const [stroopSequence, setStroopSequence] = useState<{ word: string; inkIndex: number }[]>([]);
+  const [stroopIndex, setStroopIndex] = useState(0);
   const [stroopScore, setStroopScore] = useState(0);
   const [stroopTotal, setStroopTotal] = useState(0);
   const [stroopFeedback, setStroopFeedback] = useState('');
+  const [stroopCompleted, setStroopCompleted] = useState(false);
 
-  const generateNewStroop = useCallback(() => {
-    const wordObj = COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
-    let inkIdx = Math.floor(Math.random() * COLOR_PALETTE.length);
-    // Ensure word and ink differ 80% of the time for optimal challenge
-    if (COLOR_PALETTE[inkIdx].name === wordObj.name && Math.random() > 0.2) {
-      inkIdx = (inkIdx + 1) % COLOR_PALETTE.length;
+  // Generate a fresh randomized sequence of 40 items every time test starts/restarts
+  const generateNewStroopSequence = useCallback(() => {
+    const sequence: { word: string; inkIndex: number }[] = [];
+    for (let i = 0; i < STROOP_TOTAL_LIMIT; i++) {
+      const wordObj = COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
+      let inkIdx = Math.floor(Math.random() * COLOR_PALETTE.length);
+      // Ensure conflict 80% of the time for optimal challenge
+      if (COLOR_PALETTE[inkIdx].name === wordObj.name && Math.random() > 0.2) {
+        inkIdx = (inkIdx + 1) % COLOR_PALETTE.length;
+      }
+      sequence.push({ word: wordObj.name, inkIndex: inkIdx });
     }
-    setStroopWord(wordObj.name);
-    setStroopInkIndex(inkIdx);
+    setStroopSequence(sequence);
+    setStroopIndex(0);
+    setStroopScore(0);
+    setStroopTotal(0);
+    setStroopFeedback('');
+    setStroopCompleted(false);
   }, []);
 
   useEffect(() => {
     if (type === 'stroop') {
-      generateNewStroop();
-      setStroopScore(0);
-      setStroopTotal(0);
-      setStroopFeedback('');
+      generateNewStroopSequence();
     }
-  }, [type, generateNewStroop]);
+  }, [type, generateNewStroopSequence]);
 
   const handleStroopColorAnswer = (selectedColorName: string) => {
+    if (stroopCompleted || stroopSequence.length === 0) return;
+
     playExerciseClickSound(isSoundEnabled);
-    const correctInkName = COLOR_PALETTE[stroopInkIndex].name;
+    const currentItem = stroopSequence[stroopIndex];
+    const correctInkName = COLOR_PALETTE[currentItem.inkIndex].name;
     const isCorrect = selectedColorName === correctInkName;
 
-    setStroopTotal(prev => prev + 1);
+    const newTotal = stroopTotal + 1;
+    const newScore = isCorrect ? stroopScore + 1 : stroopScore;
+
+    setStroopTotal(newTotal);
     if (isCorrect) {
-      setStroopScore(prev => prev + 1);
+      setStroopScore(newScore);
       setStroopFeedback('✅ Doğru! (+1 Puan)');
     } else {
-      setStroopFeedback(`❌ Hata! Yazı rengi: ${correctInkName} idi.`);
+      setStroopFeedback(`❌ Hata! Doğru Renk: ${correctInkName}`);
     }
 
-    // Instantly generate new color and word!
-    generateNewStroop();
+    if (newTotal >= STROOP_TOTAL_LIMIT) {
+      setStroopCompleted(true);
+      playExerciseSuccessSound(isSoundEnabled);
+      const acc = Math.round((newScore / STROOP_TOTAL_LIMIT) * 100);
+      onCompleteResult(320, acc, 35);
+    } else {
+      setStroopIndex(prev => prev + 1);
+    }
   };
 
   // ---------------- DENSE WORD MATRIX ENGINE ----------------
@@ -3106,7 +3127,7 @@ function DikkatOdakRunner({ exercise, isPlaying, isSoundEnabled, onCompleteResul
         <div className="bg-white p-6 sm:p-8 border border-[#2D2D2D]/15 shadow-sm text-center space-y-6">
           <div className="space-y-1">
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#C5A059] bg-[#C5A059]/10 px-3 py-1 border border-[#C5A059]/30">
-              STROOP RENK ÇELİŞKİ DİKKAT TESTİ
+              STROOP RENK ÇELİŞKİ DİKKAT TESTİ (40 KELİME)
             </span>
             <p className="text-stone-500 text-xs font-bold pt-1">
               YAZILAN KELİME NEYİ İŞARET EDERSE ETSİN, SADECE <span className="text-rose-600 font-extrabold underline">MÜREKKEP RENGİNİ</span> SEÇİN!
@@ -3114,47 +3135,68 @@ function DikkatOdakRunner({ exercise, isPlaying, isSoundEnabled, onCompleteResul
           </div>
 
           {/* Active Stroop Target Word */}
-          <div className="py-8 bg-[#FAF9F6] border border-stone-200 shadow-inner flex items-center justify-center">
-            <span 
-              className="font-black text-4xl sm:text-5xl font-serif tracking-widest transition-all duration-100 select-none"
-              style={{ color: COLOR_PALETTE[stroopInkIndex].colorHex }}
-            >
-              {stroopWord}
+          <div className="py-8 bg-[#FAF9F6] border border-stone-200 shadow-inner flex flex-col items-center justify-center gap-2">
+            {stroopSequence.length > 0 && stroopIndex < stroopSequence.length ? (
+              <span 
+                className="font-black text-4xl sm:text-5xl font-serif tracking-widest transition-all duration-100 select-none"
+                style={{ color: COLOR_PALETTE[stroopSequence[stroopIndex].inkIndex].colorHex }}
+              >
+                {stroopSequence[stroopIndex].word}
+              </span>
+            ) : (
+              <span className="font-bold text-emerald-600 text-lg">Test Tamamlandı! 🎉</span>
+            )}
+            <span className="text-[11px] font-mono font-bold text-stone-400">
+              Soru: {Math.min(stroopTotal + 1, STROOP_TOTAL_LIMIT)} / {STROOP_TOTAL_LIMIT}
             </span>
           </div>
 
-          {/* Color Answer Buttons */}
+          {/* Color Answer Buttons (6 Colors: Kırmızı, Mavi, Yeşil, Pembe, Mor, Siyah) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {COLOR_PALETTE.map((item) => (
               <button 
                 key={item.name}
+                disabled={stroopCompleted}
                 onClick={() => handleStroopColorAnswer(item.name)}
-                className={`py-3.5 px-4 text-white font-extrabold text-xs uppercase tracking-wider transition-all cursor-pointer shadow flex items-center justify-center gap-1.5 ${item.bgClass}`}
+                className={`py-3.5 px-4 text-white font-extrabold text-xs uppercase tracking-wider transition-all cursor-pointer shadow flex items-center justify-center gap-1.5 ${item.bgClass} disabled:opacity-40 disabled:cursor-not-allowed`}
               >
                 <span>{item.name}</span>
               </button>
             ))}
           </div>
 
-          {/* Stroop Score & Feedback */}
-          <div className="flex items-center justify-between pt-4 border-t border-stone-200 text-xs font-bold">
+          {/* Stroop Score & Controls */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-stone-200 text-xs font-bold">
             <div className="text-stone-600">
-              Doğru: <span className="text-emerald-600 font-mono text-sm">{stroopScore}</span> / {stroopTotal}
+              Doğru: <span className="text-emerald-600 font-mono text-sm font-black">{stroopScore}</span> / {STROOP_TOTAL_LIMIT}
             </div>
+
             {stroopFeedback && (
-              <span className="text-amber-700 bg-amber-50 px-2.5 py-1 border border-amber-200">
+              <span className="text-amber-700 bg-amber-50 px-2.5 py-1 border border-amber-200 text-[11px]">
                 {stroopFeedback}
               </span>
             )}
-            <button
-              onClick={() => {
-                const acc = stroopTotal > 0 ? Math.round((stroopScore / stroopTotal) * 100) : 90;
-                onCompleteResult(320, acc, 30);
-              }}
-              className="px-4 py-2 bg-[#C5A059] hover:bg-[#b08d4b] text-white uppercase text-[11px] tracking-wider shadow cursor-pointer"
-            >
-              Testi Tamamla
-            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={generateNewStroopSequence}
+                className="px-3 py-2 bg-stone-800 hover:bg-stone-900 text-white uppercase text-[10px] tracking-wider transition-all cursor-pointer flex items-center gap-1"
+                title="Yeni rastgele kelimelerle testi tekrar başlat"
+              >
+                <RefreshCw className="w-3 h-3" />
+                <span>Rastgele Yeniden Başlat</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  const acc = stroopTotal > 0 ? Math.round((stroopScore / stroopTotal) * 100) : 100;
+                  onCompleteResult(320, acc, 35);
+                }}
+                className="px-3.5 py-2 bg-[#C5A059] hover:bg-[#b08d4b] text-white uppercase text-[10px] tracking-wider shadow cursor-pointer"
+              >
+                Tamamla
+              </button>
+            </div>
           </div>
         </div>
       )}
