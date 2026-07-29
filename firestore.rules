@@ -10,5 +10,15 @@ service cloud.firestore {
     match /analytics/{document} {
       allow read, write: if true;
     }
+    match /students/{document} {
+      allow read, write: if true;
+    }
+    match /exerciseResults/{document} {
+      allow read, write: if true;
+    }
+    match /{document=**} {
+      allow read, write: if true;
+    }
   }
 }
+
