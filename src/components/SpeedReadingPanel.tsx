@@ -2174,6 +2174,7 @@ function ExerciseRunner({
             setIsPlaying={setIsPlaying}
             isSoundEnabled={isSoundEnabled} 
             soundVolume={soundVolume}
+            elapsedSec={elapsedSec}
             onCompleteResult={(wpm: any, acc: any, time: any) => handleFinishExercise(wpm, acc, time)}
           />
         )}
@@ -2775,30 +2776,14 @@ function SutunTakipRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
 // =========================================================================
 // 3. OKUMA METNİ & TAKİSTOSKOP RUNNER
 // =========================================================================
-function OkumaMetniRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
+function OkumaMetniRunner({ exercise, isSoundEnabled, elapsedSec = 0, onCompleteResult }: any) {
   const isRSVP = exercise.data?.type === 'rsvp';
   const words = exercise.data?.words || TURKISH_WORD_POOL;
   const [wordIdx, setWordIdx] = useState(0);
   const [isPlayingRSVP, setIsPlayingRSVP] = useState(false);
 
-  // Passage Timer State
-  const [elapsedSec, setElapsedSec] = useState(0);
-  const [timerRunning, setTimerRunning] = useState(false);
-  const [calculatedWpm, setCalculatedWpm] = useState(0);
-
   // Quiz State
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
-
-  // Timer interval
-  useEffect(() => {
-    let interval: any;
-    if (timerRunning) {
-      interval = setInterval(() => {
-        setElapsedSec(prev => prev + 0.1);
-      }, 100);
-    }
-    return () => clearInterval(interval);
-  }, [timerRunning]);
 
   // RSVP interval
   useEffect(() => {
@@ -2818,11 +2803,9 @@ function OkumaMetniRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
   }, [isPlayingRSVP, isRSVP, words.length, isSoundEnabled]);
 
   const handleFinishReadingPassage = () => {
-    setTimerRunning(false);
-    const wordCount = exercise.data?.wordCount || 45;
+    const wordCount = exercise.data?.wordCount || 120;
     const finalSec = Math.max(elapsedSec, 1);
     const wpm = Math.round((wordCount / finalSec) * 60);
-    setCalculatedWpm(wpm);
 
     // Calculate accuracy if quiz completed
     const quizList = exercise.data?.quiz || [];
@@ -2864,41 +2847,20 @@ function OkumaMetniRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
           </div>
         </div>
       ) : (
-        /* Full Passage Display with Timer & Quiz */
+        /* Full Passage Display */
         <div className="bg-white border border-[#2D2D2D]/15 p-6 shadow-sm space-y-6">
-          <div className="flex items-center justify-between border-b border-stone-200 pb-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  if (timerRunning) {
-                    handleFinishReadingPassage();
-                  } else {
-                    setElapsedSec(0);
-                    setTimerRunning(true);
-                    playExerciseStartSound(isSoundEnabled);
-                  }
-                }}
-                className={`px-4 py-2 text-xs font-bold uppercase tracking-wider text-white transition-all cursor-pointer ${
-                  timerRunning ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'
-                }`}
-              >
-                {timerRunning ? 'Okumayı Bitirdim ve Değerlendir' : 'Kronometreyi Başlat'}
-              </button>
-
-              <div className="text-xs font-mono">
-                Süre: <span className="font-bold text-[#2D2D2D] text-sm">{elapsedSec.toFixed(1)}s</span>
-              </div>
+          <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+            <div className="flex items-center gap-2 text-xs text-[#C5A059] font-extrabold uppercase tracking-wider">
+              <BookOpen className="w-4 h-4 text-[#C5A059]" />
+              <span>Anlayarak Okuma Metni</span>
             </div>
-
-            {calculatedWpm > 0 && (
-              <div className="bg-[#C5A059]/10 text-[#C5A059] px-3 py-1 border border-[#C5A059]/20 font-bold text-xs font-mono">
-                Hesaplanan Hız: {calculatedWpm} WPM
-              </div>
-            )}
+            <span className="text-[11px] font-mono font-bold text-stone-500 bg-stone-100 px-2.5 py-1 border border-stone-200">
+              {exercise.data?.wordCount || 120} Kelime
+            </span>
           </div>
 
           {/* Passage Text */}
-          <p className="text-[#2D2D2D] text-base leading-relaxed font-serif p-5 bg-[#FAF9F6] border border-stone-200 shadow-inner">
+          <p className="text-[#2D2D2D] text-base sm:text-lg leading-relaxed font-serif p-5 sm:p-6 bg-[#FAF9F6] border border-stone-200 shadow-inner">
             {exercise.data?.content}
           </p>
 
@@ -2934,16 +2896,18 @@ function OkumaMetniRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
                 </div>
               ))}
 
-              <button
-                onClick={() => {
-                  handleFinishReadingPassage();
-                }}
-                className="w-full py-3 bg-[#C5A059] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#b08d4b] transition-all cursor-pointer shadow"
-              >
-                Anlama Testini Değerlendir ve Puanla
-              </button>
             </div>
           )}
+
+          <button
+            onClick={() => {
+              handleFinishReadingPassage();
+            }}
+            className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow flex items-center justify-center gap-2"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Okuduğumu Anladım ve Testi Tamamla</span>
+          </button>
         </div>
       )}
     </div>
@@ -3264,17 +3228,44 @@ function DikkatOdakRunner({ exercise, isPlaying, isSoundEnabled, onCompleteResul
   );
 }
 
+// Helper to normalize Turkish text for accurate string comparison (e.g. i/İ, ı/I, space handling)
+function normalizeTurkishText(str: string): string {
+  if (!str) return '';
+  return str
+    .trim()
+    .replace(/\s+/g, '')
+    .replace(/i/g, 'İ')
+    .replace(/ı/g, 'I')
+    .replace(/ğ/g, 'Ğ')
+    .replace(/ü/g, 'Ü')
+    .replace(/ş/g, 'Ş')
+    .replace(/ö/g, 'Ö')
+    .replace(/ç/g, 'Ç')
+    .toLocaleUpperCase('tr-TR');
+}
+
+function checkTurkishWordMatch(input: string, expected: string): boolean {
+  const normIn = normalizeTurkishText(input);
+  const normExp = normalizeTurkishText(expected);
+  if (normIn === normExp) return true;
+  // Fallback tolerance for English keyboard I / İ variations
+  if (normIn.replace(/I/g, 'İ') === normExp.replace(/I/g, 'İ')) return true;
+  if (normIn.replace(/İ/g, 'I') === normExp.replace(/İ/g, 'I')) return true;
+  return false;
+}
+
 // Helper to dynamically shuffle letters of a target word for anagram tests
 function shuffleLetters(wordStr: string): string {
   if (!wordStr) return '';
-  const chars = wordStr.replace(/\s+/g, '').toUpperCase().split('');
+  const cleanWord = wordStr.replace(/\s+/g, '');
+  const chars = cleanWord.split('');
   if (chars.length <= 1) return chars.join(' ');
   for (let i = chars.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [chars[i], chars[j]] = [chars[j], chars[i]];
   }
   // Ensure it's not identical to the target answer
-  if (chars.join('') === wordStr.replace(/\s+/g, '').toUpperCase()) {
+  if (chars.join('') === cleanWord) {
     [chars[0], chars[chars.length - 1]] = [chars[chars.length - 1], chars[0]];
   }
   return chars.join(' ');
@@ -3300,7 +3291,8 @@ function BulmacaRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
   useEffect(() => {
     if (type === 'anagram' && anagramWords[anagramIndex]) {
       const currentObj = anagramWords[anagramIndex];
-      setScrambledLetters(shuffleLetters(currentObj.answer));
+      const targetWord = currentObj.answer || currentObj.scrambled?.replace(/\s+/g, '') || '';
+      setScrambledLetters(shuffleLetters(targetWord));
       setUserInput('');
       setAnagramFeedback(null);
     }
@@ -3309,23 +3301,24 @@ function BulmacaRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
   const handleAnagramCheck = () => {
     if (!anagramWords[anagramIndex] || anagramFeedback !== null) return;
     const currentObj = anagramWords[anagramIndex];
-    const cleanInput = userInput.trim().toUpperCase();
-    const cleanExpected = currentObj.answer.trim().toUpperCase();
+    const expected = currentObj.answer || currentObj.scrambled?.replace(/\s+/g, '') || '';
 
-    if (cleanInput === cleanExpected) {
+    if (checkTurkishWordMatch(userInput, expected)) {
       setAnagramScore(prev => prev + 1);
       setAnagramFeedback({ isCorrect: true, msg: '🎉 Doğru Cevap! Tebrikler! (+1 Puan)' });
       playExerciseSuccessSound(isSoundEnabled);
     } else {
       setAnagramFeedback({ 
         isCorrect: false, 
-        msg: `❌ Yanlış Cevap! Doğru Cevap: "${cleanExpected}"` 
+        msg: `❌ Yanlış Cevap! Doğru Cevap: "${expected.toLocaleUpperCase('tr-TR')}"` 
       });
       playExerciseClickSound(isSoundEnabled);
     }
   };
 
   const handleNextAnagram = () => {
+    setUserInput('');
+    setAnagramFeedback(null);
     if (anagramIndex + 1 < anagramWords.length) {
       setAnagramIndex(prev => prev + 1);
     } else {
@@ -3416,10 +3409,9 @@ function BulmacaRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
 
   const handleFillCheck = () => {
     if (!fillItems[fillIndex] || fillFeedback !== null) return;
-    const expected = fillItems[fillIndex].word.replace(/\s+/g, '').toUpperCase();
-    const entered = fillInput.replace(/\s+/g, '').toUpperCase();
+    const expected = fillItems[fillIndex].word;
 
-    if (entered === expected) {
+    if (checkTurkishWordMatch(fillInput, expected)) {
       setFillScore(prev => prev + 1);
       setFillFeedback({ isCorrect: true, msg: '🎉 Doğru Tamamladınız!' });
       playExerciseSuccessSound(isSoundEnabled);
