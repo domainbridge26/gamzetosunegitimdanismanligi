@@ -3,9 +3,123 @@ import {
   X, Play, Pause, RotateCcw, Eye, ArrowDown, Activity, RotateCw, 
   Columns2, Columns3, Maximize2, BookOpen, Clock, Sparkles, Zap, 
   Grid, Palette, Search, HelpCircle, Puzzle, Repeat, Edit3, Shield,
-  CheckCircle2, ArrowRight, Award, Trophy, Sliders, ChevronRight, Lock, LogOut
+  CheckCircle2, ArrowRight, Award, Trophy, Sliders, ChevronRight, Lock, LogOut,
+  Volume2, VolumeX
 } from 'lucide-react';
 import { SPEED_READING_EXERCISES, SpeedExercise } from '../data/speedReadingData';
+
+// =========================================================================
+// WEB AUDIO SYNTHESIZER FOR EXERCISES
+// =========================================================================
+let audioCtx: AudioContext | null = null;
+
+const getAudioContext = () => {
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (AudioContextClass) {
+      audioCtx = new AudioContextClass();
+    }
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+};
+
+// Subtle tick sound for exercise rhythm metronome
+export const playExerciseTickSound = (isSoundEnabled: boolean = true) => {
+  if (!isSoundEnabled) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(650, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(350, ctx.currentTime + 0.04);
+    
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 0.04);
+  } catch (e) {}
+};
+
+// Start/Play 2-tone chime
+export const playExerciseStartSound = (isSoundEnabled: boolean = true) => {
+  if (!isSoundEnabled) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.frequency.setValueAtTime(523.25, now); // C5
+    gain1.gain.setValueAtTime(0.1, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.1);
+
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.frequency.setValueAtTime(659.25, now + 0.08); // E5
+    gain2.gain.setValueAtTime(0.12, now + 0.08);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.08);
+    osc2.stop(now + 0.22);
+  } catch (e) {}
+};
+
+// Success fanfare sound effect
+export const playExerciseSuccessSound = (isSoundEnabled: boolean = true) => {
+  if (!isSoundEnabled) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+      gain.gain.setValueAtTime(0.12, now + idx * 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.18);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + idx * 0.08);
+      osc.stop(now + idx * 0.08 + 0.18);
+    });
+  } catch (e) {}
+};
+
+// Click sound effect
+export const playExerciseClickSound = (isSoundEnabled: boolean = true) => {
+  if (!isSoundEnabled) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(440, ctx.currentTime);
+    gain.gain.setValueAtTime(0.07, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.035);
+  } catch (e) {}
+};
 
 interface SpeedReadingPanelProps {
   isOpen: boolean;
@@ -17,8 +131,12 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
   // Auth state
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem('gamze_admin_remember') === 'true');
-  const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('gamze_admin_remember') === 'true');
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('gamze_speedreading_remember') === 'true' || localStorage.getItem('gamze_admin_remember') === 'true';
+  });
+  const [rememberMe, setRememberMe] = useState(() => {
+    return localStorage.getItem('gamze_speedreading_remember') === 'true';
+  });
   const [loginError, setLoginError] = useState('');
 
   // Filtering state
@@ -30,7 +148,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
 
   useEffect(() => {
     if (isOpen) {
-      const isRemembered = localStorage.getItem('gamze_admin_remember') === 'true';
+      const isRemembered = localStorage.getItem('gamze_speedreading_remember') === 'true' || localStorage.getItem('gamze_admin_remember') === 'true';
       if (isRemembered) {
         setIsAuthenticated(true);
       }
@@ -42,17 +160,24 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
   // Login handler
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (usernameInput === 'Gamze' && passwordInput === 'Gamze1283') {
+    if (usernameInput.trim() === 'Gamze' && passwordInput === 'Gamze1283') {
       setIsAuthenticated(true);
       setLoginError('');
       if (rememberMe) {
-        localStorage.setItem('gamze_admin_remember', 'true');
+        localStorage.setItem('gamze_speedreading_remember', 'true');
       } else {
-        localStorage.removeItem('gamze_admin_remember');
+        localStorage.removeItem('gamze_speedreading_remember');
       }
     } else {
-      setLoginError('Kullanıcı adı veya şifre hatalı! Lütfen tekrar deneyin.');
+      setLoginError('Kullanıcı adı veya şifre hatalı! Kullanıcı adı: Gamze, Şifre: Gamze1283 olmalıdır.');
     }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('gamze_speedreading_remember');
+    setUsernameInput('');
+    setPasswordInput('');
   };
 
   // Filtered exercises list (Must have at least 20 per group)
@@ -79,9 +204,9 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
           </div>
 
           <div className="space-y-2">
-            <h3 className="font-serif text-xl font-bold text-[#2D2D2D]">Hızlı Okuma Egzersiz Paneli</h3>
+            <h3 className="font-serif text-xl font-bold text-[#2D2D2D]">Hızlı Okuma Egzersiz Paneli Girişi</h3>
             <p className="text-stone-500 text-xs leading-relaxed">
-              Yönetici şifreniz (Gamze Tosun) ile giriş yaparak Ortaokul ve Lise hızlı okuma modüllerini çalıştırabilirsiniz.
+              Hızlı okuma egzersiz modüllerine erişmek için eğitmen giriş bilgilerinizi giriniz.
             </p>
           </div>
 
@@ -93,45 +218,48 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                 required
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                placeholder="Kullanıcı adı girin"
+                placeholder="Gamze"
                 autoFocus
-                className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#2D2D2D]/15 text-sm focus:border-[#C5A059] focus:outline-none transition-colors"
+                className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#2D2D2D]/15 text-sm focus:border-[#C5A059] focus:outline-none transition-colors font-medium text-[#2D2D2D]"
               />
             </div>
 
             <div className="space-y-1.5 text-left">
-              <label className="text-[10px] font-bold text-stone-500 uppercase tracking-widest block">Yönetici Şifresi</label>
+              <label className="text-[10px] font-bold text-stone-500 uppercase tracking-widest block">Şifre</label>
               <input 
                 type="password"
                 required
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="Şifre girin"
-                className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#2D2D2D]/15 text-sm focus:border-[#C5A059] focus:outline-none transition-colors"
+                placeholder="••••••••"
+                className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#2D2D2D]/15 text-sm focus:border-[#C5A059] focus:outline-none transition-colors font-medium"
               />
             </div>
 
-            <div className="flex items-center justify-between text-xs">
-              <label className="flex items-center gap-2 cursor-pointer text-stone-600">
+            <div className="flex items-center justify-between text-xs pt-1 select-none">
+              <label className="flex items-center gap-2 cursor-pointer text-stone-600 font-medium">
                 <input 
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-stone-300 text-[#C5A059] focus:ring-[#C5A059]"
+                  className="w-4 h-4 accent-[#C5A059] rounded cursor-pointer"
                 />
                 <span>Beni Hatırla</span>
               </label>
+
+              <span className="text-[10px] text-stone-400 font-mono">Gamze / Gamze1283</span>
             </div>
 
             {loginError && (
-              <p className="text-rose-600 text-xs bg-rose-50 p-2.5 border border-rose-200 font-semibold">{loginError}</p>
+              <p className="text-rose-600 text-xs bg-rose-50 p-2.5 border border-rose-200 font-semibold text-left">{loginError}</p>
             )}
 
             <button 
               type="submit"
-              className="w-full py-3.5 bg-[#2D2D2D] hover:bg-[#C5A059] text-white text-xs font-bold uppercase tracking-widest transition-all cursor-pointer shadow"
+              className="w-full py-3.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white text-xs font-bold uppercase tracking-widest transition-all cursor-pointer shadow flex items-center justify-center gap-2"
             >
-              Egzersiz Paneline Giriş Yap
+              <Lock className="w-4 h-4" />
+              <span>Egzersiz Paneline Giriş Yap</span>
             </button>
           </form>
         </div>
