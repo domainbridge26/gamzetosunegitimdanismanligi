@@ -547,16 +547,6 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                 />
                 <span>Beni Hatırla</span>
               </label>
-
-              {loginRoleTab === 'trainer' ? (
-                <span className="text-[10px] text-stone-400 font-mono">Gamze / Gamze!Speed2026#Ex</span>
-              ) : loginRoleTab === 'ilkokul_student' ? (
-                <span className="text-[10px] text-rose-600 font-mono font-bold">Demo: ilkokul_ogrenci / Ilkokul!Ogrenci#2026</span>
-              ) : loginRoleTab === 'lgs_student' ? (
-                <span className="text-[10px] text-emerald-600 font-mono font-bold">Demo: lgs_ogrenci / Lgs!Ogrenci#2026</span>
-              ) : (
-                <span className="text-[10px] text-blue-600 font-mono font-bold">Demo: yks_ogrenci / Yks!Ogrenci#2026</span>
-              )}
             </div>
 
             {loginError && (
