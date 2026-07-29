@@ -498,3 +498,134 @@ export function dbSubscribeToPageViews(callback: (views: PageViews) => void): ()
   };
 }
 
+// ==========================================
+// STUDENT ACCOUNTS MANAGEMENT SERVICES
+// ==========================================
+
+import { StudentAccount } from '../types';
+
+export const DEFAULT_STUDENTS: StudentAccount[] = [
+  {
+    id: 'st-1',
+    username: 'ogrenci1',
+    password: '123456',
+    fullName: 'Ahmet Yılmaz',
+    studentClass: '8. Sınıf (LGS)',
+    createdAt: new Date().toLocaleDateString('tr-TR')
+  },
+  {
+    id: 'st-2',
+    username: 'ogrenci2',
+    password: '123456',
+    fullName: 'Zeynep Kaya',
+    studentClass: '12. Sınıf (YKS)',
+    createdAt: new Date().toLocaleDateString('tr-TR')
+  }
+];
+
+export async function dbGetStudents(): Promise<StudentAccount[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'students'));
+    const result: StudentAccount[] = [];
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      result.push({
+        id: docSnap.id,
+        username: data.username || '',
+        password: data.password || '',
+        fullName: data.fullName || '',
+        studentClass: data.studentClass || 'Ortaokul',
+        createdAt: data.createdAt || new Date().toLocaleDateString('tr-TR'),
+        lastLogin: data.lastLogin
+      });
+    });
+
+    if (result.length === 0) {
+      // Seed default students to Firestore
+      const batch = writeBatch(db);
+      DEFAULT_STUDENTS.forEach((st) => {
+        const docRef = doc(db, 'students', st.id);
+        batch.set(docRef, st);
+      });
+      await batch.commit();
+      localStorage.setItem('gamze_students', JSON.stringify(DEFAULT_STUDENTS));
+      return DEFAULT_STUDENTS;
+    }
+
+    localStorage.setItem('gamze_students', JSON.stringify(result));
+    return result;
+  } catch (error) {
+    console.error('Failed to fetch students from Firestore, falling back to local storage:', error);
+    const raw = localStorage.getItem('gamze_students');
+    return raw ? JSON.parse(raw) : DEFAULT_STUDENTS;
+  }
+}
+
+export async function dbAddStudent(student: Omit<StudentAccount, 'id'>): Promise<StudentAccount> {
+  const newStudentData = {
+    ...student,
+    createdAt: student.createdAt || new Date().toLocaleDateString('tr-TR')
+  };
+  try {
+    const docRef = await addDoc(collection(db, 'students'), newStudentData);
+    const created: StudentAccount = { ...newStudentData, id: docRef.id };
+    
+    // Update local cache
+    const raw = localStorage.getItem('gamze_students');
+    const local: StudentAccount[] = raw ? JSON.parse(raw) : DEFAULT_STUDENTS;
+    local.push(created);
+    localStorage.setItem('gamze_students', JSON.stringify(local));
+    return created;
+  } catch (error) {
+    console.error('Failed to add student to Firestore:', error);
+    const id = 'st-' + Math.random().toString(36).substring(2, 8);
+    const created: StudentAccount = { ...newStudentData, id };
+    const raw = localStorage.getItem('gamze_students');
+    const local: StudentAccount[] = raw ? JSON.parse(raw) : DEFAULT_STUDENTS;
+    local.push(created);
+    localStorage.setItem('gamze_students', JSON.stringify(local));
+    return created;
+  }
+}
+
+export async function dbUpdateStudent(id: string, updates: Partial<StudentAccount>): Promise<void> {
+  try {
+    const ref = doc(db, 'students', id);
+    await updateDoc(ref, updates);
+  } catch (error) {
+    console.error(`Failed to update student ${id} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_students');
+    if (raw) {
+      const local: StudentAccount[] = JSON.parse(raw);
+      const updated = local.map(st => st.id === id ? { ...st, ...updates } : st);
+      localStorage.setItem('gamze_students', JSON.stringify(updated));
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export async function dbDeleteStudent(id: string): Promise<void> {
+  try {
+    const ref = doc(db, 'students', id);
+    await deleteDoc(ref);
+  } catch (error) {
+    console.error(`Failed to delete student ${id} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_students');
+    if (raw) {
+      const local: StudentAccount[] = JSON.parse(raw);
+      const updated = local.filter(st => st.id !== id);
+      localStorage.setItem('gamze_students', JSON.stringify(updated));
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+

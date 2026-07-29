@@ -66,3 +66,24 @@ export interface LgsExamInput {
   din: number;
   yabanciDil: number;
 }
+
+export interface StudentAccount {
+  id: string;
+  username: string;
+  password: string;
+  fullName: string;
+  studentClass: string; // e.g. "8. Sınıf (LGS)", "12. Sınıf (YKS)", "Ortaokul", "Lise"
+  createdAt: string;
+  lastLogin?: string;
+}
+
+export interface ExerciseResult {
+  exerciseId: string;
+  exerciseTitle: string;
+  wpm: number;
+  comprehensionRate: number; // percentage (0-100)
+  effectiveWpm: number; // wpm * comprehensionRate / 100
+  score: number; // 0-100
+  timeSeconds: number;
+  date: string;
+}
