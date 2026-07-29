@@ -323,16 +323,20 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
     data: {
       type: 'anagram',
       words: [
-        { scrambled: 'A R A G A R F P', answer: 'PARAGRAF', hint: 'Metin bölümü' },
-        { scrambled: 'K I N T A M', answer: 'MANTIK', hint: 'Akıl yürütme' },
-        { scrambled: 'C I L K E S A', answer: 'SAYISAL', hint: 'Matematik ve Fen' },
-        { scrambled: 'T I K K A D', answer: 'DİKKAT', hint: 'Konsantrasyon' }
+        { scrambled: 'P A R A G R A F', answer: 'PARAGRAF', hint: 'Metin bölümü' },
+        { scrambled: 'M A N T I K', answer: 'MANTIK', hint: 'Akıl yürütme' },
+        { scrambled: 'S A Y I S A L', answer: 'SAYISAL', hint: 'Matematik ve Fen' },
+        { scrambled: 'D İ K K A T', answer: 'DİKKAT', hint: 'Konsantrasyon' },
+        { scrambled: 'K A V R A M', answer: 'KAVRAM', hint: 'Zihinsel tasarım' },
+        { scrambled: 'A N A L İ Z', answer: 'ANALİZ', hint: 'Çözümleme' },
+        { scrambled: 'H I Z L I', answer: 'HIZLI', hint: 'Süratli' },
+        { scrambled: 'B A Ş A R I', answer: 'BAŞARI', hint: 'Hedefe ulaşma' }
       ]
     }
   },
   {
     id: 'o-bm-2',
-    title: 'Zıt Anlamlı Kelime Hız Eşleştirmesi',
+    title: 'LGS Zıt Anlamlı Kelime Hız Testi',
     level: 'Ortaokul',
     category: 'bulmaca',
     categoryLabel: 'Bulmaca & Anagram',
@@ -341,12 +345,40 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
     targetWpm: 0,
     data: {
       type: 'word-match',
+      matchType: 'antonym',
       pairs: [
         { word: 'Hızlı', match: 'Yavaş' },
         { word: 'Cevap', match: 'Soru' },
         { word: 'Kolay', match: 'Zor' },
         { word: 'Başlangıç', match: 'Bitiş' },
-        { word: 'Geniş', match: 'Dar' }
+        { word: 'Geniş', match: 'Dar' },
+        { word: 'Soyut', match: 'Somut' },
+        { word: 'Öznel', match: 'Nesnel' },
+        { word: 'Derin', match: 'Sığ' }
+      ]
+    }
+  },
+  {
+    id: 'o-bm-5',
+    title: 'LGS Eş Anlamlı Kelime Hız Testi',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Anagram',
+    iconName: 'Repeat',
+    description: 'LGS Türkçe ve Paragrafta sık çıkan kelimelerin eş anlamlılarını bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-match',
+      matchType: 'synonym',
+      pairs: [
+        { word: 'Soru', match: 'Sual' },
+        { word: 'Cevap', match: 'Yanıt' },
+        { word: 'Olanak', match: 'İmkan' },
+        { word: 'Sözcük', match: 'Kelime' },
+        { word: 'Cümle', match: 'Tümleç' },
+        { word: 'Zaman', match: 'Vakit' },
+        { word: 'Deneyim', match: 'Tecrübe' },
+        { word: 'Akıl', match: 'Us' }
       ]
     }
   },
@@ -361,7 +393,7 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
     targetWpm: 0,
     data: {
       type: 'word-search',
-      targetWords: ['LGS', 'OKUMA', 'SINA V', 'ODAK']
+      targetWords: ['LGS', 'OKUMA', 'SINAV', 'ODAK']
     }
   },
   {
@@ -376,9 +408,11 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
     data: {
       type: 'word-fill',
       items: [
-        { word: 'D A N I Ş M A N L I K', masked: 'D A N _ Ş M A N L _ K' },
-        { word: 'Ö Ğ R E N C İ', masked: 'Ö Ğ _ E N C _' },
-        { word: 'P A R A G R A F', masked: 'P A _ A G R _ F' }
+        { word: 'DANIŞMANLIK', masked: 'D A N _ Ş M A N L _ K' },
+        { word: 'ÖĞRENCİ', masked: 'Ö Ğ _ E N C _' },
+        { word: 'PARAGRAF', masked: 'P A _ A G R _ F' },
+        { word: 'KONSANTRASYON', masked: 'K O N S A N _ R A S Y O N' },
+        { word: 'MUHAKEME', masked: 'M U H _ K E M _' }
       ]
     }
   },
@@ -679,30 +713,62 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
     data: {
       type: 'anagram',
       words: [
-        { scrambled: 'E P İ S T E M O L O J İ', answer: 'EPESTEMOLOJİ', hint: 'Bilgi Felsefesi' },
+        { scrambled: 'E P İ S T E M O L O J İ', answer: 'EPİSTEMOLOJİ', hint: 'Bilgi Felsefesi' },
         { scrambled: 'M E T İ N L E R A R A S I L I K', answer: 'METİNLERARASILIK', hint: 'Postmodern Teknik' },
         { scrambled: 'Ü S T K U R M A C A', answer: 'ÜSTKURMACA', hint: 'Roman Tekniği' },
-        { scrambled: 'M U H A K E M E', answer: 'MUHAKEME', hint: 'Akıl Yürütme' }
+        { scrambled: 'M U H A K E M E', answer: 'MUHAKEME', hint: 'Akıl Yürütme' },
+        { scrambled: 'P A R A D İ G M A', answer: 'PARADİGMA', hint: 'Model / Değerler Dizisi' },
+        { scrambled: 'P S İ K O L O J İ', answer: 'PSİKOLOJİ', hint: 'Ruh Bilimi' },
+        { scrambled: 'D E Ğ E R L E N D İ R M E', answer: 'DEĞERLENDİRME', hint: 'Yargıya varma' },
+        { scrambled: 'P A R A G R A F', answer: 'PARAGRAF', hint: 'Düşünce Birimi' }
       ]
     }
   },
   {
     id: 'l-bm-2',
-    title: 'YKS Kelime & Eş Anlam Hız Testi',
+    title: 'YKS Eş Anlamlı Kelime Hız Testi',
     level: 'Lise',
     category: 'bulmaca',
     categoryLabel: 'Bulmaca & Anagram',
     iconName: 'Repeat',
-    description: 'Paragrafta sıkça karşılaşılan ağdalı kelimelerin karşılığını bulun.',
+    description: 'YKS Türkçe ve Paragrafta sıkça karşılaşılan ağdalı kelimelerin eş anlamlılarını bulun.',
     targetWpm: 0,
     data: {
       type: 'word-match',
+      matchType: 'synonym',
       pairs: [
         { word: 'Özgün', match: 'Orijinal' },
         { word: 'Öznitelik', match: 'Vasıf' },
         { word: 'Yalınlık', match: 'Sadelik' },
         { word: 'Ağdalı', match: 'Karmaşık' },
-        { word: 'Kanımsamak', match: 'Benimsemek' }
+        { word: 'Kanımsamak', match: 'Benimsemek' },
+        { word: 'Mülakat', match: 'Görüşme' },
+        { word: 'Yöntem', match: 'Metot' },
+        { word: 'Varsayım', match: 'Hipotez' }
+      ]
+    }
+  },
+  {
+    id: 'l-bm-5',
+    title: 'YKS Zıt Anlamlı Kelime Hız Testi',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Anagram',
+    iconName: 'Repeat',
+    description: 'YKS Paragraf ve Mantık sorularında çeldirici zıt kavramları hızla eşleştirin.',
+    targetWpm: 0,
+    data: {
+      type: 'word-match',
+      matchType: 'antonym',
+      pairs: [
+        { word: 'Soyut', match: 'Somut' },
+        { word: 'Öznel', match: 'Nesnel' },
+        { word: 'Tümdengelim', match: 'Tümevarım' },
+        { word: 'Geleneksel', match: 'Yenilikçi' },
+        { word: 'Kolektif', match: 'Bireysel' },
+        { word: 'Pasif', match: 'Aktif' },
+        { word: 'Durağan', match: 'Dinamik' },
+        { word: 'İçsel', match: 'Dışsal' }
       ]
     }
   },
@@ -732,9 +798,11 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
     data: {
       type: 'word-fill',
       items: [
-        { word: 'P A R A D İ G M A', masked: 'P A R _ D İ G _ A' },
-        { word: 'S E N T E Z', masked: 'S E _ T E Z' },
-        { word: 'B İ L İ N Ç A K I Ş I', masked: 'B İ L _ N Ç  A K _ Ş I' }
+        { word: 'PARADİGMA', masked: 'P A R _ D İ G _ A' },
+        { word: 'SENTEZ', masked: 'S E _ T E Z' },
+        { word: 'BİLİNÇ AKIŞI', masked: 'B İ L _ N Ç  A K _ Ş I' },
+        { word: 'EPİSTEMOLOJİ', masked: 'E P _ S T E M O L _ J İ' },
+        { word: 'METİNLERARASILIK', masked: 'M E T _ N L E R _ R A S I L I K' }
       ]
     }
   }

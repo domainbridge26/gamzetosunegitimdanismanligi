@@ -148,7 +148,7 @@ interface SpeedReadingPanelProps {
 
 export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }: SpeedReadingPanelProps) {
   // Auth state
-  const [loginRole, setLoginRole] = useState<'trainer' | 'student'>('student');
+  const [loginRoleTab, setLoginRoleTab] = useState<'lgs_student' | 'yks_student' | 'trainer'>('lgs_student');
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [rememberMe, setRememberMe] = useState(() => {
@@ -162,6 +162,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
     username: string;
     fullName: string;
     studentClass?: string;
+    studentCategory?: 'LGS' | 'YKS';
   } | null>(() => {
     const isRemembered = localStorage.getItem('gamze_speedreading_remember') === 'true';
     if (isRemembered) {
@@ -224,7 +225,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
     setLoginError('');
     playExerciseClickSound(isSoundEnabled);
 
-    if (loginRole === 'trainer') {
+    if (loginRoleTab === 'trainer') {
       if (usernameInput.trim() === 'Gamze' && passwordInput === 'Gamze1283') {
         const trainerUser = { role: 'trainer' as const, username: 'Gamze', fullName: 'Gamze Tosun' };
         setCurrentUser(trainerUser);
@@ -238,8 +239,8 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
       } else {
         setLoginError('Eğitmen kullanıcı adı veya şifre hatalı! (Gamze / Gamze1283)');
       }
-    } else {
-      // Student Login Check
+    } else if (loginRoleTab === 'lgs_student') {
+      // LGS Student Login Check
       const targetUser = usernameInput.trim();
       const match = students.find(s => s.username.toLowerCase() === targetUser.toLowerCase() && s.password === passwordInput);
       
@@ -248,9 +249,11 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
           role: 'student' as const,
           username: match.username,
           fullName: match.fullName,
-          studentClass: match.studentClass
+          studentClass: match.studentClass,
+          studentCategory: 'LGS' as const
         };
         setCurrentUser(studentUser);
+        setSelectedLevel('Ortaokul');
         if (rememberMe) {
           localStorage.setItem('gamze_speedreading_remember', 'true');
           localStorage.setItem('gamze_speedreading_user', JSON.stringify(studentUser));
@@ -259,7 +262,32 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
           localStorage.removeItem('gamze_speedreading_user');
         }
       } else {
-        setLoginError('Öğrenci kullanıcı adı veya şifre hatalı! Lütfen eğitmeninizden hesabınızı kontrol etmesini isteyin.');
+        setLoginError('LGS Öğrenci kullanıcı adı veya şifre hatalı! Lütfen eğitmeninizden hesabınızı kontrol etmesini isteyin.');
+      }
+    } else {
+      // YKS & Mezun Student Login Check
+      const targetUser = usernameInput.trim();
+      const match = students.find(s => s.username.toLowerCase() === targetUser.toLowerCase() && s.password === passwordInput);
+      
+      if (match) {
+        const studentUser = {
+          role: 'student' as const,
+          username: match.username,
+          fullName: match.fullName,
+          studentClass: match.studentClass,
+          studentCategory: 'YKS' as const
+        };
+        setCurrentUser(studentUser);
+        setSelectedLevel('Lise');
+        if (rememberMe) {
+          localStorage.setItem('gamze_speedreading_remember', 'true');
+          localStorage.setItem('gamze_speedreading_user', JSON.stringify(studentUser));
+        } else {
+          localStorage.removeItem('gamze_speedreading_remember');
+          localStorage.removeItem('gamze_speedreading_user');
+        }
+      } else {
+        setLoginError('YKS & Mezun Öğrenci kullanıcı adı veya şifre hatalı! Lütfen eğitmeninizden hesabınızı kontrol etmesini isteyin.');
       }
     }
   };
@@ -343,38 +371,55 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
           </div>
 
           {/* Login Type Tabs */}
-          <div className="grid grid-cols-2 p-1 bg-stone-100 border border-stone-200 text-xs font-bold">
+          <div className="grid grid-cols-3 p-1 bg-stone-100 border border-stone-200 text-xs font-bold">
             <button
               type="button"
               onClick={() => {
-                setLoginRole('student');
+                setLoginRoleTab('lgs_student');
                 setLoginError('');
                 playExerciseClickSound(isSoundEnabled);
               }}
-              className={`py-2.5 flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                loginRole === 'student'
-                  ? 'bg-white text-[#C5A059] shadow-sm font-extrabold border border-stone-200'
+              className={`py-2.5 flex items-center justify-center gap-1 transition-all cursor-pointer text-[11px] ${
+                loginRoleTab === 'lgs_student'
+                  ? 'bg-white text-emerald-700 shadow-sm font-extrabold border border-stone-200'
                   : 'text-stone-500 hover:text-stone-800'
               }`}
             >
-              <GraduationCap className="w-4 h-4" />
-              <span>Öğrenci Girişi</span>
+              <GraduationCap className="w-3.5 h-3.5 text-emerald-600" />
+              <span>LGS Girişi</span>
             </button>
 
             <button
               type="button"
               onClick={() => {
-                setLoginRole('trainer');
+                setLoginRoleTab('yks_student');
                 setLoginError('');
                 playExerciseClickSound(isSoundEnabled);
               }}
-              className={`py-2.5 flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                loginRole === 'trainer'
+              className={`py-2.5 flex items-center justify-center gap-1 transition-all cursor-pointer text-[11px] ${
+                loginRoleTab === 'yks_student'
+                  ? 'bg-white text-blue-700 shadow-sm font-extrabold border border-stone-200'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+            >
+              <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
+              <span>YKS & Mezun</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setLoginRoleTab('trainer');
+                setLoginError('');
+                playExerciseClickSound(isSoundEnabled);
+              }}
+              className={`py-2.5 flex items-center justify-center gap-1 transition-all cursor-pointer text-[11px] ${
+                loginRoleTab === 'trainer'
                   ? 'bg-white text-[#2D2D2D] shadow-sm font-extrabold border border-stone-200'
                   : 'text-stone-500 hover:text-stone-800'
               }`}
             >
-              <Shield className="w-4 h-4 text-[#C5A059]" />
+              <Shield className="w-3.5 h-3.5 text-[#C5A059]" />
               <span>Eğitmen Girişi</span>
             </button>
           </div>
@@ -382,14 +427,24 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
           <form onSubmit={handleLogin} className="space-y-4 text-left">
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-stone-500 uppercase tracking-widest block">
-                {loginRole === 'trainer' ? 'Eğitmen Kullanıcı Adı' : 'Öğrenci Kullanıcı Adı'}
+                {loginRoleTab === 'trainer' 
+                  ? 'Eğitmen Kullanıcı Adı' 
+                  : loginRoleTab === 'lgs_student'
+                    ? 'LGS Öğrenci Kullanıcı Adı'
+                    : 'YKS Öğrenci Kullanıcı Adı'}
               </label>
               <input 
                 type="text"
                 required
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                placeholder={loginRole === 'trainer' ? 'Gamze' : 'Örn: ogrenci1'}
+                placeholder={
+                  loginRoleTab === 'trainer' 
+                    ? 'Gamze' 
+                    : loginRoleTab === 'lgs_student'
+                      ? 'Örn: lgs_ogrenci'
+                      : 'Örn: yks_ogrenci'
+                }
                 autoFocus
                 className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#2D2D2D]/15 text-sm focus:border-[#C5A059] focus:outline-none transition-colors font-medium text-[#2D2D2D]"
               />
@@ -418,10 +473,12 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                 <span>Beni Hatırla</span>
               </label>
 
-              {loginRole === 'trainer' ? (
+              {loginRoleTab === 'trainer' ? (
                 <span className="text-[10px] text-stone-400 font-mono">Gamze / Gamze1283</span>
+              ) : loginRoleTab === 'lgs_student' ? (
+                <span className="text-[10px] text-stone-400 font-mono">Demo: lgs_ogrenci / 123456</span>
               ) : (
-                <span className="text-[10px] text-stone-400 font-mono">Demo: ogrenci1 / 123456</span>
+                <span className="text-[10px] text-stone-400 font-mono">Demo: yks_ogrenci / 123456</span>
               )}
             </div>
 
@@ -434,15 +491,21 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
               className="w-full py-3.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white text-xs font-bold uppercase tracking-widest transition-all cursor-pointer shadow flex items-center justify-center gap-2"
             >
               <Lock className="w-4 h-4" />
-              <span>{loginRole === 'trainer' ? 'Eğitmen Paneline Giriş Yap' : 'Öğrenci Paneline Giriş Yap'}</span>
+              <span>
+                {loginRoleTab === 'trainer' 
+                  ? 'Eğitmen Paneline Giriş Yap' 
+                  : loginRoleTab === 'lgs_student'
+                    ? 'LGS Öğrenci Paneline Giriş Yap'
+                    : 'YKS & Mezun Paneline Giriş Yap'}
+              </span>
             </button>
           </form>
 
           <div className="pt-2 border-t border-stone-100 text-[11px] text-stone-400">
-            {loginRole === 'student' ? (
-              <p>Eğitmeniniz Gamze Tosun size özel kullanıcı adı ve şifre tanımlamaktadır.</p>
+            {loginRoleTab !== 'trainer' ? (
+              <p>Eğitmeniniz Gamze Tosun LGS ve YKS hazırlık seviyelerine özel hesap tanımlamaktadır.</p>
             ) : (
-              <p>Eğitmen paneli ile öğrencilerinize yeni şifreler ve hesaplar tanımlayabilirsiniz.</p>
+              <p>Eğitmen paneli ile öğrencilerinize yeni şifreler ve LGS / YKS hesap türleri tanımlayabilirsiniz.</p>
             )}
           </div>
         </div>
@@ -497,7 +560,9 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                 ) : (
                   <>
                     <GraduationCap className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="font-bold text-emerald-300">Öğrenci: {currentUser.fullName}</span>
+                    <span className="font-bold text-emerald-300">
+                      Öğrenci: {currentUser.fullName} ({currentUser.studentCategory || 'Öğrenci'})
+                    </span>
                   </>
                 )}
               </div>
@@ -537,37 +602,41 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
           {/* Level Tabs: ORTAOKUL (LGS) vs LİSE (YKS) */}
           <div className="bg-stone-200/70 border-b border-stone-300 px-4 pt-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setSelectedLevel('Ortaokul');
-                  setSelectedCategory('all');
-                  setActiveExercise(null);
-                  playExerciseClickSound(isSoundEnabled);
-                }}
-                className={`px-6 py-2.5 text-xs font-bold uppercase tracking-widest border-t-2 transition-all cursor-pointer ${
-                  selectedLevel === 'Ortaokul'
-                    ? 'bg-[#FAF9F6] border-[#C5A059] text-[#2D2D2D] shadow-sm font-extrabold'
-                    : 'border-transparent text-stone-500 hover:text-stone-800'
-                }`}
-              >
-                🏫 Ortaokul Modülü (LGS Hazırlık)
-              </button>
+              {(currentUser.role === 'trainer' || currentUser.studentCategory === 'LGS') && (
+                <button
+                  onClick={() => {
+                    setSelectedLevel('Ortaokul');
+                    setSelectedCategory('all');
+                    setActiveExercise(null);
+                    playExerciseClickSound(isSoundEnabled);
+                  }}
+                  className={`px-6 py-2.5 text-xs font-bold uppercase tracking-widest border-t-2 transition-all cursor-pointer ${
+                    selectedLevel === 'Ortaokul'
+                      ? 'bg-[#FAF9F6] border-[#C5A059] text-[#2D2D2D] shadow-sm font-extrabold'
+                      : 'border-transparent text-stone-500 hover:text-stone-800'
+                  }`}
+                >
+                  🏫 Ortaokul Modülü (LGS Hazırlık)
+                </button>
+              )}
 
-              <button
-                onClick={() => {
-                  setSelectedLevel('Lise');
-                  setSelectedCategory('all');
-                  setActiveExercise(null);
-                  playExerciseClickSound(isSoundEnabled);
-                }}
-                className={`px-6 py-2.5 text-xs font-bold uppercase tracking-widest border-t-2 transition-all cursor-pointer ${
-                  selectedLevel === 'Lise'
-                    ? 'bg-[#FAF9F6] border-[#C5A059] text-[#2D2D2D] shadow-sm font-extrabold'
-                    : 'border-transparent text-stone-500 hover:text-stone-800'
-                }`}
-              >
-                🎓 Lise & YKS Modülü (TYT / AYT)
-              </button>
+              {(currentUser.role === 'trainer' || currentUser.studentCategory === 'YKS') && (
+                <button
+                  onClick={() => {
+                    setSelectedLevel('Lise');
+                    setSelectedCategory('all');
+                    setActiveExercise(null);
+                    playExerciseClickSound(isSoundEnabled);
+                  }}
+                  className={`px-6 py-2.5 text-xs font-bold uppercase tracking-widest border-t-2 transition-all cursor-pointer ${
+                    selectedLevel === 'Lise'
+                      ? 'bg-[#FAF9F6] border-[#C5A059] text-[#2D2D2D] shadow-sm font-extrabold'
+                      : 'border-transparent text-stone-500 hover:text-stone-800'
+                  }`}
+                >
+                  🎓 Lise & YKS Modülü (TYT / AYT)
+                </button>
+              )}
             </div>
 
             <div className="text-xs font-bold text-stone-600 hidden lg:block">
@@ -1761,72 +1830,425 @@ function DikkatOdakRunner({ exercise, isPlaying, isSoundEnabled, onCompleteResul
   );
 }
 
+// Helper to dynamically shuffle letters of a target word for anagram tests
+function shuffleLetters(wordStr: string): string {
+  if (!wordStr) return '';
+  const chars = wordStr.replace(/\s+/g, '').toUpperCase().split('');
+  if (chars.length <= 1) return chars.join(' ');
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  // Ensure it's not identical to the target answer
+  if (chars.join('') === wordStr.replace(/\s+/g, '').toUpperCase()) {
+    [chars[0], chars[chars.length - 1]] = [chars[chars.length - 1], chars[0]];
+  }
+  return chars.join(' ');
+}
+
 // =========================================================================
-// 5. BULMACA RUNNER
+// 5. BULMACA RUNNER (ANAGRAM, EŞ ANLAM, ZİT ANLAM, EKSİK HARF)
 // =========================================================================
 function BulmacaRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
+  const type = exercise.data?.type;
+
+  // ---------------- ANAGRAM ENGINE ----------------
+  const anagramWords: { scrambled?: string; answer: string; hint: string }[] = exercise.data?.words || [
+    { answer: 'PARAGRAF', hint: 'Metin bölümü' },
+    { answer: 'MANTIK', hint: 'Akıl yürütme' }
+  ];
+  const [anagramIndex, setAnagramIndex] = useState(0);
   const [userInput, setUserInput] = useState('');
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [scrambledLetters, setScrambledLetters] = useState('');
+  const [anagramFeedback, setAnagramFeedback] = useState<{ isCorrect: boolean; msg: string } | null>(null);
+  const [anagramScore, setAnagramScore] = useState(0);
 
-  const anagramWord = exercise.data?.words?.[0] || { scrambled: 'P A R A G R A F', answer: 'PARAGRAF', hint: 'Metin bölümü' };
+  useEffect(() => {
+    if (type === 'anagram' && anagramWords[anagramIndex]) {
+      const currentObj = anagramWords[anagramIndex];
+      setScrambledLetters(shuffleLetters(currentObj.answer));
+      setUserInput('');
+      setAnagramFeedback(null);
+    }
+  }, [type, anagramIndex, exercise]);
 
-  const handleCheck = () => {
-    if (userInput.trim().toUpperCase() === anagramWord.answer) {
-      setIsCorrect(true);
+  const handleAnagramCheck = () => {
+    if (!anagramWords[anagramIndex] || anagramFeedback !== null) return;
+    const currentObj = anagramWords[anagramIndex];
+    const cleanInput = userInput.trim().toUpperCase();
+    const cleanExpected = currentObj.answer.trim().toUpperCase();
+
+    if (cleanInput === cleanExpected) {
+      setAnagramScore(prev => prev + 1);
+      setAnagramFeedback({ isCorrect: true, msg: '🎉 Doğru Cevap! Tebrikler! (+1 Puan)' });
       playExerciseSuccessSound(isSoundEnabled);
-      onCompleteResult(320, 100, 20);
     } else {
-      setIsCorrect(false);
+      setAnagramFeedback({ 
+        isCorrect: false, 
+        msg: `❌ Yanlış Cevap! Doğru Cevap: "${cleanExpected}"` 
+      });
       playExerciseClickSound(isSoundEnabled);
     }
   };
 
+  const handleNextAnagram = () => {
+    if (anagramIndex + 1 < anagramWords.length) {
+      setAnagramIndex(prev => prev + 1);
+    } else {
+      // Completed all anagrams!
+      const finalAccuracy = Math.round((anagramScore / anagramWords.length) * 100);
+      onCompleteResult(360, finalAccuracy, 30);
+    }
+  };
+
+  // ---------------- WORD MATCH (EŞ ANLAM / ZİT ANLAM) ENGINE ----------------
+  const matchPairs: { word: string; match: string }[] = exercise.data?.pairs || [
+    { word: 'Hızlı', match: 'Yavaş' }
+  ];
+  const matchType = exercise.data?.matchType || 'antonym'; // 'antonym' or 'synonym'
+  const [matchIndex, setMatchIndex] = useState(0);
+  const [matchChoices, setMatchChoices] = useState<string[]>([]);
+  const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
+  const [matchScore, setMatchScore] = useState(0);
+  const [matchFeedback, setMatchFeedback] = useState<{ isCorrect: boolean; msg: string } | null>(null);
+
+  // Generate 4 multiple choice options for current word pair
+  const generateChoicesForPair = useCallback((idx: number) => {
+    if (!matchPairs[idx]) return;
+    const currentPair = matchPairs[idx];
+    const correctAnswer = currentPair.match;
+
+    // Collect distractors from other pairs or generic pool
+    const allMatches = matchPairs.map(p => p.match).filter(m => m !== correctAnswer);
+    const shuffledDistractors = allMatches.sort(() => Math.random() - 0.5).slice(0, 3);
+    
+    // Add default fillers if not enough distractors
+    const backupFillers = ['Kelimeler', 'Sual', 'Anlam', 'Düşünce', 'Vasıf', 'Nitelik'];
+    while (shuffledDistractors.length < 3) {
+      const filler = backupFillers[Math.floor(Math.random() * backupFillers.length)];
+      if (!shuffledDistractors.includes(filler) && filler !== correctAnswer) {
+        shuffledDistractors.push(filler);
+      }
+    }
+
+    const options = [correctAnswer, ...shuffledDistractors].sort(() => Math.random() - 0.5);
+    setMatchChoices(options);
+    setSelectedMatch(null);
+    setMatchFeedback(null);
+  }, [matchPairs]);
+
+  useEffect(() => {
+    if (type === 'word-match') {
+      generateChoicesForPair(matchIndex);
+    }
+  }, [type, matchIndex, generateChoicesForPair]);
+
+  const handleSelectChoice = (choice: string) => {
+    if (selectedMatch !== null) return;
+    setSelectedMatch(choice);
+    const correctAnswer = matchPairs[matchIndex].match;
+
+    if (choice === correctAnswer) {
+      setMatchScore(prev => prev + 1);
+      setMatchFeedback({ isCorrect: true, msg: '✅ DOĞRU CEVAP! (+1 Puan)' });
+      playExerciseSuccessSound(isSoundEnabled);
+    } else {
+      setMatchFeedback({ 
+        isCorrect: false, 
+        msg: `❌ YANLIŞ CEVAP! Doğru Cevap: "${correctAnswer}"` 
+      });
+      playExerciseClickSound(isSoundEnabled);
+    }
+  };
+
+  const handleNextMatch = () => {
+    if (matchIndex + 1 < matchPairs.length) {
+      setMatchIndex(prev => prev + 1);
+    } else {
+      // Finished all match items!
+      const finalAccuracy = Math.round((matchScore / matchPairs.length) * 100);
+      onCompleteResult(380, finalAccuracy, 25);
+    }
+  };
+
+  // ---------------- WORD FILL ENGINE ----------------
+  const fillItems: { word: string; masked: string }[] = exercise.data?.items || [
+    { word: 'PARAGRAF', masked: 'P A _ A G R _ F' }
+  ];
+  const [fillIndex, setFillIndex] = useState(0);
+  const [fillInput, setFillInput] = useState('');
+  const [fillFeedback, setFillFeedback] = useState<{ isCorrect: boolean; msg: string } | null>(null);
+  const [fillScore, setFillScore] = useState(0);
+
+  const handleFillCheck = () => {
+    if (!fillItems[fillIndex] || fillFeedback !== null) return;
+    const expected = fillItems[fillIndex].word.replace(/\s+/g, '').toUpperCase();
+    const entered = fillInput.replace(/\s+/g, '').toUpperCase();
+
+    if (entered === expected) {
+      setFillScore(prev => prev + 1);
+      setFillFeedback({ isCorrect: true, msg: '🎉 Doğru Tamamladınız!' });
+      playExerciseSuccessSound(isSoundEnabled);
+    } else {
+      setFillFeedback({ 
+        isCorrect: false, 
+        msg: `❌ Hatalı! Doğru Kelime: "${fillItems[fillIndex].word}"` 
+      });
+      playExerciseClickSound(isSoundEnabled);
+    }
+  };
+
+  const handleNextFill = () => {
+    if (fillIndex + 1 < fillItems.length) {
+      setFillIndex(prev => prev + 1);
+      setFillInput('');
+      setFillFeedback(null);
+    } else {
+      const acc = Math.round((fillScore / fillItems.length) * 100);
+      onCompleteResult(340, acc, 20);
+    }
+  };
+
   return (
-    <div className="w-full max-w-md bg-white p-6 border border-[#2D2D2D]/15 text-center space-y-6 shadow-sm">
-      <div className="space-y-1">
-        <span className="text-[10px] font-bold text-[#C5A059] uppercase tracking-widest block">
-          Bulmaca & Anagram
-        </span>
-        <h4 className="font-serif font-bold text-base text-[#2D2D2D]">
-          Karışık Harfleri Düzenleyin
-        </h4>
-      </div>
-
-      <div className="bg-[#FAF9F6] p-4 border border-stone-200">
-        <p className="text-2xl font-black text-[#2D2D2D] tracking-widest font-mono">
-          {anagramWord.scrambled}
-        </p>
-        <p className="text-xs text-stone-400 mt-2">İpucu: {anagramWord.hint}</p>
-      </div>
-
-      <div className="space-y-3">
-        <input 
-          type="text"
-          value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
-          placeholder="Cevabınızı buraya yazın..."
-          className="w-full px-4 py-3 bg-[#FAF9F6] border border-stone-300 text-sm focus:border-[#C5A059] focus:outline-none uppercase font-bold text-center"
-        />
-
-        <button
-          onClick={handleCheck}
-          className="w-full py-3 bg-[#2D2D2D] hover:bg-[#C5A059] text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow"
-        >
-          Cevabı Kontrol Et ve Değerlendir
-        </button>
-
-        {isCorrect === true && (
-          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
-            🎉 Doğru Cevap! Tebrikler!
+    <div className="w-full max-w-lg bg-white p-6 sm:p-8 border border-[#2D2D2D]/15 text-center space-y-6 shadow-sm">
+      
+      {/* 1. ANAGRAM TEST */}
+      {type === 'anagram' && anagramWords[anagramIndex] && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between border-b border-stone-200 pb-3 text-xs font-bold">
+            <span className="text-[#C5A059] uppercase tracking-widest font-extrabold">
+              Karışık Harf Anagram Testi
+            </span>
+            <span className="text-stone-500 font-mono bg-stone-100 px-2.5 py-1">
+              Soru {anagramIndex + 1} / {anagramWords.length}
+            </span>
           </div>
-        )}
 
-        {isCorrect === false && (
-          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold">
-            ❌ Hatalı cevap. Tekrar deneyin!
+          <div className="bg-[#FAF9F6] p-6 border border-stone-200 shadow-inner space-y-3">
+            <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">HARFLERİ KARILI SÖZCÜK:</p>
+            <p className="text-3xl font-black text-[#2D2D2D] tracking-[0.25em] font-mono select-none">
+              {scrambledLetters}
+            </p>
+            {anagramWords[anagramIndex].hint && (
+              <p className="text-xs text-[#C5A059] font-bold pt-1">
+                İpucu: {anagramWords[anagramIndex].hint}
+              </p>
+            )}
           </div>
-        )}
-      </div>
+
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (anagramFeedback === null) handleAnagramCheck();
+              else handleNextAnagram();
+            }}
+            className="space-y-4"
+          >
+            <input 
+              type="text"
+              value={userInput}
+              disabled={anagramFeedback !== null}
+              onChange={(e) => setUserInput(e.target.value)}
+              placeholder="Çözdüğünüz kelimeyi yazın..."
+              autoFocus
+              className="w-full px-4 py-3 bg-[#FAF9F6] border border-stone-300 text-base focus:border-[#C5A059] focus:outline-none uppercase font-bold text-center tracking-widest text-[#2D2D2D]"
+            />
+
+            {anagramFeedback === null ? (
+              <button
+                type="submit"
+                className="w-full py-3.5 bg-[#2D2D2D] hover:bg-[#C5A059] text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow"
+              >
+                Cevabı Kontrol Et ↵
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleNextAnagram}
+                className="w-full py-3.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow flex items-center justify-center gap-2"
+              >
+                <span>{anagramIndex + 1 < anagramWords.length ? 'Sonraki Kelime ➔' : 'Egzersizi Tamamla 🏆'}</span>
+              </button>
+            )}
+
+            {anagramFeedback && (
+              <div className={`p-4 border text-xs font-bold text-center ${
+                anagramFeedback.isCorrect 
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
+                  : 'bg-rose-50 border-rose-300 text-rose-800'
+              }`}>
+                {anagramFeedback.msg}
+              </div>
+            )}
+          </form>
+        </div>
+      )}
+
+      {/* 2. EŞ ANLAM / ZİT ANLAM TESTİ */}
+      {type === 'word-match' && matchPairs[matchIndex] && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between border-b border-stone-200 pb-3 text-xs font-bold">
+            <span className="text-[#C5A059] uppercase tracking-widest font-extrabold">
+              {matchType === 'synonym' ? 'Eş Anlamlı Kelime Testi' : 'Zıt Anlamlı Kelime Testi'}
+            </span>
+            <span className="text-stone-500 font-mono bg-stone-100 px-2.5 py-1">
+              Soru {matchIndex + 1} / {matchPairs.length}
+            </span>
+          </div>
+
+          <div className="bg-[#FAF9F6] p-6 border border-stone-200 shadow-inner space-y-2">
+            <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+              {matchType === 'synonym' ? 'VERİLEN KELİMENİN EŞ ANLAMLISINI SEÇİN:' : 'VERİLEN KELİMENİN ZİT ANLAMLISINI SEÇİN:'}
+            </p>
+            <p className="text-3xl font-black text-[#2D2D2D] font-serif tracking-wide select-none">
+              "{matchPairs[matchIndex].word}"
+            </p>
+          </div>
+
+          {/* Multiple Choice Options */}
+          <div className="grid grid-cols-2 gap-3">
+            {matchChoices.map((choice, i) => {
+              const isCorrectOpt = choice === matchPairs[matchIndex].match;
+              const isSelected = selectedMatch === choice;
+
+              let btnStyle = "bg-[#FAF9F6] text-[#2D2D2D] border-stone-300 hover:border-[#C5A059] hover:bg-[#C5A059]/10";
+              if (selectedMatch !== null) {
+                if (isCorrectOpt) {
+                  btnStyle = "bg-emerald-600 text-white border-emerald-700 font-black scale-102 shadow-md";
+                } else if (isSelected) {
+                  btnStyle = "bg-rose-600 text-white border-rose-700 font-black";
+                } else {
+                  btnStyle = "bg-stone-100 text-stone-400 border-stone-200 opacity-40";
+                }
+              }
+
+              return (
+                <button
+                  key={i}
+                  disabled={selectedMatch !== null}
+                  onClick={() => handleSelectChoice(choice)}
+                  className={`py-3.5 px-4 text-sm font-bold border transition-all cursor-pointer rounded-none select-none flex items-center justify-center gap-2 ${btnStyle}`}
+                >
+                  {selectedMatch !== null && isCorrectOpt && <span>✅</span>}
+                  {selectedMatch !== null && isSelected && !isCorrectOpt && <span>❌</span>}
+                  <span>{choice}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {matchFeedback && (
+            <div className={`p-4 border text-xs font-bold text-center space-y-3 ${
+              matchFeedback.isCorrect 
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
+                : 'bg-rose-50 border-rose-300 text-rose-800'
+            }`}>
+              <p>{matchFeedback.msg}</p>
+
+              <button
+                onClick={handleNextMatch}
+                className="w-full py-3 bg-[#2D2D2D] hover:bg-[#C5A059] text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow"
+              >
+                {matchIndex + 1 < matchPairs.length ? 'Sonraki Soruya Geç ➔' : 'Sonuçları Gör ve Tamamla 🏆'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. EKSİK HARF TAMAMLAMA */}
+      {type === 'word-fill' && fillItems[fillIndex] && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between border-b border-stone-200 pb-3 text-xs font-bold">
+            <span className="text-[#C5A059] uppercase tracking-widest font-extrabold">
+              Eksik Harf Tamamlama
+            </span>
+            <span className="text-stone-500 font-mono bg-stone-100 px-2.5 py-1">
+              {fillIndex + 1} / {fillItems.length}
+            </span>
+          </div>
+
+          <div className="bg-[#FAF9F6] p-6 border border-stone-200 shadow-inner space-y-2">
+            <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">NOKTALI HARFLERİ TAMAMLAYIN:</p>
+            <p className="text-2xl font-black text-[#2D2D2D] tracking-widest font-mono">
+              {fillItems[fillIndex].masked}
+            </p>
+          </div>
+
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (fillFeedback === null) handleFillCheck();
+              else handleNextFill();
+            }}
+            className="space-y-4"
+          >
+            <input 
+              type="text"
+              value={fillInput}
+              disabled={fillFeedback !== null}
+              onChange={(e) => setFillInput(e.target.value)}
+              placeholder="Tamamlanan tam kelimeyi yazın..."
+              autoFocus
+              className="w-full px-4 py-3 bg-[#FAF9F6] border border-stone-300 text-sm focus:border-[#C5A059] focus:outline-none uppercase font-bold text-center tracking-wider text-[#2D2D2D]"
+            />
+
+            {fillFeedback === null ? (
+              <button
+                type="submit"
+                className="w-full py-3.5 bg-[#2D2D2D] hover:bg-[#C5A059] text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow"
+              >
+                Cevabı Onayla
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleNextFill}
+                className="w-full py-3.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow"
+              >
+                {fillIndex + 1 < fillItems.length ? 'Sonraki Soru ➔' : 'Egzersizi Tamamla 🏆'}
+              </button>
+            )}
+
+            {fillFeedback && (
+              <div className={`p-3.5 border text-xs font-bold ${
+                fillFeedback.isCorrect ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-rose-50 border-rose-300 text-rose-800'
+              }`}>
+                {fillFeedback.msg}
+              </div>
+            )}
+          </form>
+        </div>
+      )}
+
+      {/* 4. DEFAULT SEARCH MATRIX PLACEHOLDER FOR OTHER TYPES */}
+      {type === 'word-search' && (
+        <div className="space-y-6">
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold text-[#C5A059] uppercase tracking-widest block">
+              Sözcük Matrisi & Kelime Avı
+            </span>
+            <h4 className="font-serif font-bold text-base text-[#2D2D2D]">
+              Gizlenen Hedef Sözcükleri Gözünüzle Tarayın
+            </h4>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2 bg-[#FAF9F6] p-4 border border-stone-200">
+            {exercise.data?.targetWords?.map((w: string, i: number) => (
+              <div key={i} className="p-3 bg-white border border-stone-300 font-bold text-xs text-[#2D2D2D]">
+                🎯 {w}
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => onCompleteResult(350, 100, 20)}
+            className="w-full py-3.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow"
+          >
+            Tarama Tamamlandı & Değerlendir
+          </button>
+        </div>
+      )}
     </div>
   );
 }
