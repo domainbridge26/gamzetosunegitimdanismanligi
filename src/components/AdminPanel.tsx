@@ -3,7 +3,7 @@ import {
   X, Check, Trash2, Archive, Shield, Phone, 
   Mail, Calendar, Users, FileSpreadsheet, PlusCircle, UserCheck,
   ListFilter, Sparkles, MessageSquare, ThumbsUp, LogOut, Clock, Info,
-  Eye, TrendingUp, Globe
+  Eye, TrendingUp, Globe, Zap
 } from 'lucide-react';
 import { ContactSubmission, Testimonial } from '../types';
 import { TESTIMONIALS_DATA } from '../data';
@@ -27,9 +27,10 @@ import {
 interface AdminPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenSpeedReading?: () => void;
 }
 
-export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
+export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading }: AdminPanelProps) {
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -470,6 +471,19 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
               <Sparkles className="w-4 h-4" />
               <span>Ders Programı Robotu</span>
             </button>
+
+            {onOpenSpeedReading && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenSpeedReading();
+                }}
+                className="px-4 py-2 text-xs font-extrabold transition-all rounded-lg flex items-center gap-2 cursor-pointer bg-[#C5A059] text-stone-950 hover:bg-[#b08d4b]"
+              >
+                <Zap className="w-4 h-4" />
+                <span>Hızlı Okuma Panelini Aç 🚀</span>
+              </button>
+            )}
           </div>
 
           <button

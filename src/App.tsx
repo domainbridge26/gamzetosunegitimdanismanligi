@@ -13,6 +13,7 @@ import About from './components/About';
 import Testimonials from './components/Testimonials';
 import ContactForm from './components/ContactForm';
 import AdminPanel from './components/AdminPanel';
+import SpeedReadingPanel from './components/SpeedReadingPanel';
 import LogoIcon from './components/LogoIcon';
 import logoImg from './assets/images/gamze_tosun_logo_1783782272260.jpg';
 import { 
@@ -25,6 +26,7 @@ import { dbGetInquiries, dbGetTestimonials, dbIncrementPageViews } from './lib/f
 export default function App() {
   const [activeSection, setActiveSection] = useState('hero');
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isSpeedReadingOpen, setIsSpeedReadingOpen] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [notifCount, setNotifCount] = useState(0);
 
@@ -118,6 +120,7 @@ export default function App() {
         activeSection={activeSection} 
         setActiveSection={setActiveSection} 
         onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenSpeedReading={() => setIsSpeedReadingOpen(true)}
         notifCount={notifCount}
       />
 
@@ -275,6 +278,14 @@ export default function App() {
       <AdminPanel 
         isOpen={isAdminOpen} 
         onClose={() => setIsAdminOpen(false)} 
+        onOpenSpeedReading={() => setIsSpeedReadingOpen(true)}
+      />
+
+      {/* SPEED READING EXERCISE PANEL DIALOG */}
+      <SpeedReadingPanel 
+        isOpen={isSpeedReadingOpen} 
+        onClose={() => setIsSpeedReadingOpen(false)} 
+        onOpenAdminPanel={() => setIsAdminOpen(true)}
       />
 
       {/* FLOATING ACTION & BACK TO TOP BUTTONS */}

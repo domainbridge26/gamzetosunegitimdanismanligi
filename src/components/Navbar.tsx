@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Settings, User, Eye } from 'lucide-react';
+import { Menu, X, Settings, User, Eye, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import logoImg from '../assets/images/gamze_tosun_logo_1783782272260.jpg';
 import { dbSubscribeToPageViews, PageViews } from '../lib/firebase';
@@ -8,10 +8,11 @@ interface NavbarProps {
   activeSection: string;
   setActiveSection: (section: string) => void;
   onOpenAdmin: () => void;
+  onOpenSpeedReading?: () => void;
   notifCount?: number;
 }
 
-export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, notifCount = 0 }: NavbarProps) {
+export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, onOpenSpeedReading, notifCount = 0 }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [pageViews, setPageViews] = useState<PageViews>({ todayViews: 0, totalViews: 0 });
@@ -142,6 +143,16 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, n
             </div>
 
             <button
+              id="btn-speed-reading-portal"
+              onClick={onOpenSpeedReading}
+              className="flex items-center gap-1.5 px-3 py-2 border border-[#C5A059]/40 bg-[#C5A059]/10 text-[10px] font-extrabold uppercase tracking-widest text-[#C5A059] hover:bg-[#C5A059] hover:text-white transition-colors cursor-pointer"
+              title="Hızlı Okuma Egzersiz Paneli"
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>Hızlı Okuma Paneli</span>
+            </button>
+
+            <button
               id="btn-admin-portal"
               onClick={onOpenAdmin}
               className="flex items-center gap-1.5 px-3 py-2 border border-[#2D2D2D]/20 text-[10px] font-bold uppercase tracking-widest text-[#2D2D2D]/60 hover:text-[#2D2D2D] hover:bg-[#2D2D2D]/5 transition-colors cursor-pointer relative"
@@ -187,6 +198,13 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, n
               </div>
             </div>
 
+            <button
+              onClick={onOpenSpeedReading}
+              className="p-1.5 text-[#C5A059] hover:bg-[#C5A059]/10 border border-[#C5A059]/40 bg-[#C5A059]/5 relative"
+              title="Hızlı Okuma Paneli"
+            >
+              <Zap className="w-4 h-4" />
+            </button>
             <button
               onClick={onOpenAdmin}
               className="p-1.5 text-[#2D2D2D]/60 hover:text-[#C5A059] hover:bg-[#2D2D2D]/5 border border-[#2D2D2D]/20 relative"
@@ -249,6 +267,17 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, n
                   </div>
                   <span className="text-sm font-black text-[#2D2D2D] font-mono">{pageViews.totalViews}</span>
                 </div>
+
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    if (onOpenSpeedReading) onOpenSpeedReading();
+                  }}
+                  className="flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-widest text-[#C5A059] bg-[#C5A059]/10 border border-[#C5A059]/30 hover:bg-[#C5A059] hover:text-white transition-colors relative"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span>Hızlı Okuma Egzersiz Paneli</span>
+                </button>
 
                 <button
                   onClick={() => {
