@@ -42,6 +42,29 @@ const EXAM_SUBJECTS: Record<string, SubjectTemplate[]> = {
     { name: 'Türkçe & Paragraf', color: 'bg-rose-50 border-rose-200 text-rose-800', focusTopics: ['Paragrafta Ana Düşünce', 'Paragrafta Yardımcı Düşünce', 'Sözcükte Anlam'] },
     { name: 'Temel Matematik', color: 'bg-slate-100 border-slate-300 text-slate-700', focusTopics: ['Temel Kavramlar', 'Bölme-Bölünebilme', 'Rasyonel Sayılar', 'Basit Denklemler'] }
   ],
+  'KPSS Genel Kültür & Genel Yetenek': [
+    { name: 'Türkçe & Sözel Mantık (KPSS)', color: 'bg-rose-50 border-rose-200 text-rose-800', focusTopics: ['Sözcükte ve Cümlede Anlam', 'Paragrafta Yapı ve Ana Düşünce', 'Sözel Mantık ve Akıl Yürütme', 'Dil Bilgisi (Ses, Yapı, Cümle)', 'Yazım Kuralları ve Noktalama'] },
+    { name: 'Matematik & Geometri (KPSS)', color: 'bg-indigo-50 border-indigo-200 text-indigo-800', focusTopics: ['Temel Kavramlar ve Sayılar', 'Rasyonel ve Üslü-Köklü Sayılar', 'Sayısal Mantık ve Problemler', 'Oran-Orantı ve Yüzde-Kâr', 'Kümeler ve Fonksiyonlar', 'Geometri (Açılar, Üçgen, Analitik)'] },
+    { name: 'Tarih (KPSS)', color: 'bg-amber-50 border-amber-200 text-amber-800', focusTopics: ['İslamiyet Öncesi Türk Tarihi', 'İlk Türk-İslam Devletleri', 'Osmanlı Siyasi ve Teşkilat Tarihi', 'Atatürk İnkılapları ve Milli Mücadele', 'Çağdaş Türk ve Dünya Tarihi'] },
+    { name: 'Coğrafya (KPSS)', color: 'bg-orange-50 border-orange-200 text-orange-800', focusTopics: ['Türkiye’nin Coğrafi Konumu ve Yer Şekilleri', 'Türkiye İklimi ve Bitki Örtüsü', 'Nüfus, Yerleşme ve Göç', 'Tarım, Hayvancılık ve Sanayi', 'Madenler, Enerji Kaynakları ve Ulaşım'] },
+    { name: 'Vatandaşlık & Anayasa (KPSS)', color: 'bg-emerald-50 border-emerald-200 text-emerald-800', focusTopics: ['Temel Hukuk Kavramları', 'Anayasa Tarihi ve 1982 Anayasası', 'Devlet Organları (Yasama, Yürütme, Yargı)', 'İdare Hukuku ve Temel Haklar', 'Güncel Bilgiler ve Uluslararası Örgütler'] }
+  ],
+  'KPSS Eğitim Bilimleri & ÖABT': [
+    { name: 'Gelişim ve Öğrenme Psikolojisi', color: 'bg-purple-50 border-purple-200 text-purple-800', focusTopics: ['Bilişsel ve Kişilik Gelişimi', 'Ahlak ve Dil Gelişimi', 'Davranışçı Öğrenme Kuramları', 'Bilişsel Öğrenme ve Hafıza', 'Gelişim Psikolojisi Soru Çözümü'] },
+    { name: 'Öğretim Yöntem ve Teknikleri (ÖYT)', color: 'bg-blue-50 border-blue-200 text-blue-800', focusTopics: ['Öğretim İlkeleri ve Stratejileri', 'Öğretim Yöntemleri ve Modelleri', 'Kavram Öğretimi ve İşbirlikli Öğrenme', 'Düşünme Becerileri'] },
+    { name: 'Ölçme, Değerlendirme & Program', color: 'bg-cyan-50 border-cyan-200 text-cyan-800', focusTopics: ['Ölçmede Temel Kavramlar ve Hata', 'Güvenirlik ve Geçerlik', 'Test ve Madde İstatistiği', 'Program Geliştirme Yaklaşımları', 'Sınıf Yönetimi ve Materyal Tasarımı'] },
+    { name: 'Rehberlik ve Özel Eğitim', color: 'bg-teal-50 border-teal-200 text-teal-800', focusTopics: ['Rehberlik Hizmet Türleri', 'Bireyi Tanıma Teknikleri', 'Özel Eğitim ve BİLSEM', 'Mesleki Rehberlik Kuramları'] },
+    { name: 'ÖABT / Öğretmenlik Alan Bilgisi', color: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-800', focusTopics: ['Alan Eğitimi ve Metodoloji', 'Müfredat ve Öğretim Programları', 'Alan Alan Soru Çözümü', 'Özel Öğretim Yöntemleri'] },
+    { name: 'KPSS GK-GY Genel Tekrar', color: 'bg-amber-50 border-amber-200 text-amber-800', focusTopics: ['Tarih & Coğrafya Karma Soru Çözümü', 'Sözel Mantık & Güncel Bilgiler Tekrarı'] }
+  ],
+  'AGS (Akademi Giriş Sınavı)': [
+    { name: 'AGS Sözel Yetenek & Türkçe', color: 'bg-rose-50 border-rose-200 text-rose-800', focusTopics: ['Sözcük, Cümle ve Paragrafta Anlam', 'Sözel Akıl Yürütme ve Sözel Mantık', 'Dil Bilgisi ve Metin Çözümleme', 'Paragrafta Yapı ve Ana Düşünce'] },
+    { name: 'AGS Sayısal Yetenek & Matematik', color: 'bg-indigo-50 border-indigo-200 text-indigo-800', focusTopics: ['Temel Kavramlar ve Bölünebilme', 'Oran-Orantı ve Problem Çözme', 'Sayısal Mantık ve Veri Analizi', 'Grafik Okuma ve Tablo Yorumlama'] },
+    { name: 'AGS Tarih & Türk Kültürü', color: 'bg-amber-50 border-amber-200 text-amber-800', focusTopics: ['Türk Tarihi ve Medeniyeti', 'Osmanlı Eğitim ve Kültür Sistemi', 'Atatürk İlke ve İnkılapları', 'Milli Mücadele Tarihi'] },
+    { name: 'AGS Türkiye Coğrafyası & Jeopolitiği', color: 'bg-orange-50 border-orange-200 text-orange-800', focusTopics: ['Türkiye Coğrafyası ve Fiziki Yapısı', 'Türkiye Ekonomik Coğrafyası ve Bölgeler', 'Türkiye Jeopolitiği ve Stratejik Konumu'] },
+    { name: 'AGS Eğitim Teorileri & Mevzuat', color: 'bg-emerald-50 border-emerald-200 text-emerald-800', focusTopics: ['Türk Milli Eğitim Sistemi ve Temel Kanunlar', 'Eğitim Öğretim İlke ve Yaklaşımları', 'Anayasa ve Devlet Teşkilatı', 'Öğretmenlik Meslek Kanunu'] },
+    { name: 'AGS Öğretmenlik Alan Bilgisi (ÖABT)', color: 'bg-purple-50 border-purple-200 text-purple-800', focusTopics: ['Alan Eğitimi ve Yöntemleri', 'Müfredat Okuryazarlığı', 'Alan Özel Öğretim Yaklaşımları', 'Ölçme ve Değerlendirme Esasları'] }
+  ],
   'LGS (8. Sınıf)': [
     { name: 'Matematik', color: 'bg-blue-50 border-blue-200 text-blue-800', focusTopics: ['Çarpanlar ve Katlar', 'Üslü İfadeler', 'Kareköklü İfadeler', 'Veri Analizi', 'Basit Olayların Olma Olasılığı', 'Cebirsel İfadeler'] },
     { name: 'Fen Bilimleri', color: 'bg-emerald-50 border-emerald-200 text-emerald-800', focusTopics: ['Mevsimler ve İklim', 'DNA ve Genetik Kod', 'Basınç', 'Madde ve Endüstri', 'Basit Makineler', 'Enerji Dönüşümleri'] },
@@ -62,10 +85,12 @@ const EXAM_SUBJECTS: Record<string, SubjectTemplate[]> = {
 const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
 
 const COACH_ADVICES = [
-  'Düzenli paragraf çözmek okuma hızını ve anlama kabiliyetini %40 oranında artırır.',
-  'Çözemediğin her soruyu kesip "yanlış kutuna" at, haftalık olarak o soruları mutlaka öğretmenine çözdür.',
-  'Uykudan önceki son 20 dakikayı sözel derslerin tekrarına ayırarak kalıcı hafızayı güçlendir.',
+  'Düzenli paragraf ve sözel mantık çözmek okuma hızını ve anlama kabiliyetini %40 oranında artırır.',
+  'Çözemediğin her soruyu kesip "yanlış kutuna" at, haftalık olarak o soruları mutlaka tekrar çöz.',
+  'KPSS ve AGS sınavlarında zaman yönetimi için her gün mutlaka en az 1 set sözel veya sayısal mantık sorusu çöz.',
+  'Uykudan önceki son 20 dakikayı sözel derslerin ve Anayasa/Tarih notlarının tekrarına ayırarak kalıcı hafızayı güçlendir.',
   'Masaya oturmadan önce telefonunu kesinlikle başka bir odaya bırak, dikkatinin bölünmesine izin verme.',
+  'Eğitim bilimleri ve mevzuat sorularında kavram karmaşasını önlemek için çıkmış sorular üzerindeki seçenek analizlerini incele.',
   'Her 50 dakikalık çalışmadan sonra 10 dakika temiz hava al. Ekranlardan uzak dur!',
   'Deneme sınavı sonuçlarında netlerine değil, yaptığın yanlışların hangi konulardan olduğuna odaklan.'
 ];
@@ -781,10 +806,10 @@ export default function SchedulePlanner() {
 
             {/* Target Major / Dream school */}
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Hedeflenen Üniversite / Lise veya Bölüm</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Hedeflenen Üniversite, Kurum, Derece veya Kadro</label>
               <input 
                 type="text"
-                placeholder="Örn: ODTÜ Bilgisayar Mühendisliği"
+                placeholder="Örn: ODTÜ Bilgisayar / KPSS 90+ Puan / MEB Akademi Derecesi"
                 value={targetGoal}
                 onChange={(e) => setTargetGoal(e.target.value)}
                 className="w-full px-3 py-2 bg-[#FAF9F6] border border-stone-200 rounded-xl text-xs focus:border-[#C5A059] focus:outline-none transition-colors"

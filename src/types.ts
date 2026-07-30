@@ -12,7 +12,7 @@ export interface Testimonial {
   id: string;
   name: string;
   role: 'Öğrenci' | 'Veli' | 'Öğretmen';
-  examType?: 'YKS' | 'LGS' | 'Hızlı Okuma' | 'Genel';
+  examType?: 'YKS' | 'LGS' | 'KPSS' | 'AGS' | 'Hızlı Okuma' | 'Genel';
   achievement: string;
   comment: string;
   avatarUrl?: string;

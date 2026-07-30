@@ -268,12 +268,14 @@ export default function Testimonials() {
                 <label className="text-[10px] font-bold text-[#2D2D2D]/60 uppercase tracking-widest block">Program / Sınav Tipi</label>
                 <select 
                   value={examType}
-                  onChange={(e) => setExamType(e.target.value as 'YKS' | 'LGS' | 'Hızlı Okuma' | 'Genel')}
+                  onChange={(e) => setExamType(e.target.value as 'YKS' | 'LGS' | 'KPSS' | 'AGS' | 'Hızlı Okuma' | 'Genel')}
                   className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#2D2D2D]/15 text-sm focus:border-[#C5A059] focus:outline-none transition-colors appearance-none cursor-pointer"
                 >
                   <option value="Genel">Genel Koçluk / Danışmanlık</option>
                   <option value="YKS">YKS Hazırlık</option>
                   <option value="LGS">LGS Hazırlık</option>
+                  <option value="KPSS">KPSS Hazırlık</option>
+                  <option value="AGS">AGS (Akademi Giriş Sınavı)</option>
                   <option value="Hızlı Okuma">Hızlı Okuma Teknikleri</option>
                 </select>
               </div>

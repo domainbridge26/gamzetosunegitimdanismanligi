@@ -40,6 +40,75 @@ function getRandomWords(count: number, exclude?: string[]): string[] {
   return shuffled.slice(0, count);
 }
 
+// Helper to generate a word search matrix grid for Akademik Kelime Matris Bulmacası
+function generateWordSearchGrid(targetWords: string[], gridRows = 10, gridCols = 10) {
+  const grid: string[][] = Array.from({ length: gridRows }, () => Array(gridCols).fill(''));
+  const wordLocations: { word: string; cells: { r: number; c: number }[] }[] = [];
+  const TURKISH_CHARS = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ';
+
+  for (const rawWord of targetWords) {
+    const word = rawWord.toUpperCase().replace(/\s+/g, '');
+    if (!word) continue;
+    let placed = false;
+    let attempts = 0;
+
+    while (!placed && attempts < 150) {
+      attempts++;
+      const dir = Math.floor(Math.random() * 3); // 0: Horiz, 1: Vert, 2: Diag
+      let r = 0, c = 0;
+
+      if (dir === 0) { // Horizontal
+        r = Math.floor(Math.random() * gridRows);
+        c = Math.floor(Math.random() * Math.max(1, gridCols - word.length + 1));
+      } else if (dir === 1) { // Vertical
+        r = Math.floor(Math.random() * Math.max(1, gridRows - word.length + 1));
+        c = Math.floor(Math.random() * gridCols);
+      } else { // Diagonal
+        r = Math.floor(Math.random() * Math.max(1, gridRows - word.length + 1));
+        c = Math.floor(Math.random() * Math.max(1, gridCols - word.length + 1));
+      }
+
+      let fits = true;
+      const cells: { r: number; c: number }[] = [];
+
+      for (let i = 0; i < word.length; i++) {
+        const curR = dir === 0 ? r : dir === 1 ? r + i : r + i;
+        const curC = dir === 0 ? c + i : dir === 1 ? c : c + i;
+
+        if (curR >= gridRows || curC >= gridCols) {
+          fits = false;
+          break;
+        }
+
+        if (grid[curR][curC] !== '' && grid[curR][curC] !== word[i]) {
+          fits = false;
+          break;
+        }
+        cells.push({ r: curR, c: curC });
+      }
+
+      if (fits && cells.length === word.length) {
+        for (let i = 0; i < word.length; i++) {
+          grid[cells[i].r][cells[i].c] = word[i];
+        }
+        wordLocations.push({ word, cells });
+        placed = true;
+      }
+    }
+  }
+
+  // Fill empty cells with random uppercase Turkish letters
+  for (let r = 0; r < gridRows; r++) {
+    for (let c = 0; c < gridCols; c++) {
+      if (grid[r][c] === '') {
+        grid[r][c] = TURKISH_CHARS[Math.floor(Math.random() * TURKISH_CHARS.length)];
+      }
+    }
+  }
+
+  return { grid, wordLocations };
+}
+
 // =========================================================================
 // WEB AUDIO SYNTHESIZER FOR EXERCISES (WITH BOOSTED VOLUME CONTROL)
 // =========================================================================
@@ -1356,9 +1425,11 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                           onChange={(e) => setNewStudentClass(e.target.value)}
                           className="w-full px-3 py-2 bg-white border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none"
                         >
-                          <option value="4. Sınıf (İlkokul)">4. Sınıf (İlkokul)</option>
-                          <option value="8. Sınıf (LGS)">8. Sınıf (LGS)</option>
                           <option value="12. Sınıf (YKS)">12. Sınıf (YKS)</option>
+                          <option value="8. Sınıf (LGS)">8. Sınıf (LGS)</option>
+                          <option value="KPSS (Lisans / Ön Lisans)">KPSS (Lisans / Ön Lisans)</option>
+                          <option value="AGS (Akademi Giriş Sınavı)">AGS (Akademi Giriş Sınavı)</option>
+                          <option value="4. Sınıf (İlkokul)">4. Sınıf (İlkokul)</option>
                           <option value="Ortaokul">Ortaokul Genel</option>
                           <option value="Lise">Lise Genel</option>
                           <option value="Mezun">Mezun</option>
@@ -1526,9 +1597,11 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                   onChange={(e) => setEditingStudent({ ...editingStudent, studentClass: e.target.value })}
                   className="w-full px-3 py-2 bg-stone-50 border border-stone-300 text-xs font-medium focus:border-[#C5A059] focus:outline-none"
                 >
-                  <option value="4. Sınıf (İlkokul)">4. Sınıf (İlkokul)</option>
-                  <option value="8. Sınıf (LGS)">8. Sınıf (LGS)</option>
                   <option value="12. Sınıf (YKS)">12. Sınıf (YKS)</option>
+                  <option value="8. Sınıf (LGS)">8. Sınıf (LGS)</option>
+                  <option value="KPSS (Lisans / Ön Lisans)">KPSS (Lisans / Ön Lisans)</option>
+                  <option value="AGS (Akademi Giriş Sınavı)">AGS (Akademi Giriş Sınavı)</option>
+                  <option value="4. Sınıf (İlkokul)">4. Sınıf (İlkokul)</option>
                   <option value="Ortaokul">Ortaokul Genel</option>
                   <option value="Lise">Lise Genel</option>
                   <option value="Mezun">Mezun</option>
@@ -2398,79 +2471,202 @@ function HeceCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setS
 
 function SayiCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setSpeedBpm, isSoundEnabled, onCompleteResult }: any) {
   const [numIndex, setNumIndex] = useState(0);
-  const rawNumbers: string[] = exercise.data?.numbers || ['12', '458', '3091', '57124', '804913', '109', '74', '6251', '998421'];
+  const [flashDurationMs, setFlashDurationMs] = useState(150); // 150ms default tachistoscopic flash
+  const [isFlashed, setIsFlashed] = useState(true);
+  const [userRecall, setUserRecall] = useState('');
+  const [recallFeedback, setRecallFeedback] = useState<{ isCorrect: boolean; msg: string } | null>(null);
+  const [recallScore, setRecallScore] = useState(0);
+  const [recallTotal, setRecallTotal] = useState(0);
+
+  const rawNumbers: string[] = exercise.data?.numbers || ['1250', '4891', '7023', '9514', '12408', '56931', '80492', '31579', '99104'];
 
   useEffect(() => {
     let timer: any;
+    let flashTimeout: any;
+
     if (isPlaying && rawNumbers.length > 0) {
       const intervalMs = Math.max(80, Math.round(60000 / speedBpm));
+
       timer = setInterval(() => {
         setNumIndex(prev => (prev + 1) % rawNumbers.length);
+        setIsFlashed(true);
         playExerciseTickSound(isSoundEnabled);
-      }, intervalMs);
-    }
-    return () => clearInterval(timer);
-  }, [isPlaying, speedBpm, rawNumbers.length, isSoundEnabled]);
 
-  const activeNumber = rawNumbers[numIndex] || '1234';
+        if (flashDurationMs < 5000) {
+          flashTimeout = setTimeout(() => {
+            setIsFlashed(false);
+          }, flashDurationMs);
+        }
+      }, intervalMs);
+    } else {
+      setIsFlashed(true);
+    }
+
+    return () => {
+      clearInterval(timer);
+      clearTimeout(flashTimeout);
+    };
+  }, [isPlaying, speedBpm, rawNumbers.length, isSoundEnabled, flashDurationMs]);
+
+  const activeNumber = rawNumbers[numIndex] || '12345';
+
+  const handleCheckRecall = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userRecall.trim()) return;
+
+    const isMatch = userRecall.trim() === activeNumber.trim();
+    setRecallTotal(prev => prev + 1);
+    if (isMatch) {
+      setRecallScore(prev => prev + 1);
+      setRecallFeedback({ isCorrect: true, msg: `🎉 Tebrikler! Sayıyı tam yakaladınız: "${activeNumber}"` });
+      playExerciseSuccessSound(isSoundEnabled);
+    } else {
+      setRecallFeedback({ isCorrect: false, msg: `❌ Hatalı. Flaşörde Yanan Sayı: "${activeNumber}" (Yazdığınız: "${userRecall}")` });
+      playExerciseClickSound(isSoundEnabled);
+    }
+    setUserRecall('');
+  };
 
   return (
-    <div className="w-full max-w-xl space-y-6 text-center select-none py-4">
+    <div className="w-full max-w-4xl sm:max-w-5xl space-y-6 text-center select-none py-4 mx-auto">
       <div className="space-y-1">
-        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1 border border-blue-200 uppercase tracking-widest inline-block">
-          🔢 İlkokul Sayı Görüş Genişletme
+        <span className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-3 py-1 border border-blue-200 uppercase tracking-widest inline-block">
+          ⚡ SÜPER HIZLI SAYI DİZİSİ TAKİSTOSKOP FLAŞÖRÜ
         </span>
-        <h4 className="font-serif font-bold text-[#2D2D2D] text-lg">{exercise.title}</h4>
+        <h3 className="font-serif font-bold text-[#2D2D2D] text-2xl">{exercise.title}</h3>
+        <p className="text-xs text-stone-500">
+          Anlık çakan sayıları odak noktasında yakalayın ve flaş hafızanızı geliştirin.
+        </p>
       </div>
 
-      <div className="h-56 bg-blue-50/40 border-2 border-blue-300/60 relative flex flex-col items-center justify-center p-8 overflow-hidden shadow-inner">
-        <div className="text-center space-y-3">
-          <div className="w-3 h-3 rounded-full bg-blue-600 mx-auto animate-ping mb-2" />
-          <span className="font-mono font-black text-5xl sm:text-6xl text-blue-900 tracking-widest drop-shadow-sm">
-            {activeNumber}
-          </span>
-          <p className="text-xs text-blue-800 font-bold pt-2">
-            Basamak Sayısı: {activeNumber.length} Basamaklı • Adım: {numIndex + 1} / {rawNumbers.length}
-          </p>
+      {/* Main Flash Screen */}
+      <div className="h-64 sm:h-96 bg-[#FAF9F6] border-2 border-blue-400/80 relative flex flex-col items-center justify-center p-8 overflow-hidden shadow-lg transition-all">
+        {/* Flash Indicator Ring */}
+        {isFlashed && (
+          <div className="absolute inset-0 bg-blue-500/10 pointer-events-none animate-pulse" />
+        )}
+
+        <div className="text-center space-y-4 z-10">
+          <div className="flex items-center justify-center gap-2">
+            <Zap className={`w-5 h-5 ${isFlashed ? 'text-amber-500 animate-bounce' : 'text-stone-300'}`} />
+            <span className="text-xs font-mono font-bold text-stone-500">
+              Basamak: {activeNumber.length} Basamaklı • Adım {numIndex + 1} / {rawNumbers.length}
+            </span>
+          </div>
+
+          <div className="min-h-[120px] flex items-center justify-center">
+            {isFlashed ? (
+              <span className="font-mono font-black text-6xl sm:text-8xl lg:text-9xl text-blue-950 tracking-[0.2em] drop-shadow-md transition-all scale-105">
+                {activeNumber}
+              </span>
+            ) : (
+              <span className="font-mono text-5xl sm:text-7xl font-light text-stone-300 tracking-[0.25em] select-none opacity-40">
+                {'• '.repeat(activeNumber.length)}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="bg-white p-4 border border-stone-200 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+      {/* Controls Bar */}
+      <div className="bg-white p-4 sm:p-6 border border-stone-200 space-y-4 shadow-sm text-left">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <button
             onClick={() => {
               setIsPlaying(!isPlaying);
               playExerciseClickSound(isSoundEnabled);
             }}
-            className={`px-5 py-2 text-xs font-bold uppercase tracking-wider text-white transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-all cursor-pointer flex items-center gap-2 ${
               isPlaying ? 'bg-blue-600 hover:bg-blue-700' : 'bg-[#2D2D2D] hover:bg-[#C5A059]'
             }`}
           >
             {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
-            <span>{isPlaying ? 'Duraklat' : 'Başlat'}</span>
+            <span>{isPlaying ? 'Flaşörü Duraklat' : 'Flaşörü Başlat'}</span>
+          </button>
+
+          {/* Flash Duration Mode Selector */}
+          <div className="flex items-center gap-2 bg-stone-100 p-1.5 border border-stone-200 text-xs">
+            <span className="font-bold text-stone-600 text-[11px] px-2">Flaş Süresi:</span>
+            {[
+              { label: '100 ms', val: 100 },
+              { label: '150 ms', val: 150 },
+              { label: '250 ms', val: 250 },
+              { label: '500 ms', val: 500 },
+              { label: 'Sürekli', val: 9999 }
+            ].map(m => (
+              <button
+                key={m.val}
+                onClick={() => setFlashDurationMs(m.val)}
+                className={`px-2.5 py-1 text-[11px] font-bold font-mono transition-all cursor-pointer ${
+                  flashDurationMs === m.val
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-stone-700 hover:bg-stone-200'
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold text-stone-600">Tempo (BPM): <span className="font-mono font-black text-blue-600">{speedBpm}</span></span>
+            <input
+              type="range"
+              min={60}
+              max={350}
+              step={10}
+              value={speedBpm}
+              onChange={(e) => setSpeedBpm(Number(e.target.value))}
+              className="w-32 accent-blue-600 cursor-pointer"
+            />
+          </div>
+        </div>
+
+        {/* Flash Memory Recall Form */}
+        <div className="pt-4 border-t border-stone-200">
+          <form onSubmit={handleCheckRecall} className="flex flex-wrap items-center gap-3">
+            <span className="text-xs font-bold text-stone-700">Flaşörde Yakaladığınız Sayı:</span>
+            <input
+              type="text"
+              value={userRecall}
+              onChange={(e) => setUserRecall(e.target.value)}
+              placeholder="Gördüğünüz sayıyı yazın..."
+              className="px-4 py-2 border border-stone-300 text-sm font-mono font-bold focus:border-blue-600 focus:outline-none w-48 uppercase tracking-widest text-[#2D2D2D]"
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+            >
+              Cevabı Onayla
+            </button>
+
+            {recallTotal > 0 && (
+              <span className="text-xs font-mono font-bold text-stone-600 ml-auto">
+                Yakalama Skoru: <span className="text-emerald-600 font-black text-sm">{recallScore}</span> / {recallTotal} (%{Math.round((recallScore / recallTotal) * 100)})
+              </span>
+            )}
+          </form>
+
+          {recallFeedback && (
+            <div className={`mt-3 p-2.5 border text-xs font-bold ${
+              recallFeedback.isCorrect ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-rose-50 border-rose-300 text-rose-800'
+            }`}>
+              {recallFeedback.msg}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <button
+            onClick={() => {
+              const acc = recallTotal > 0 ? Math.round((recallScore / recallTotal) * 100) : 100;
+              onCompleteResult(220, acc, 25);
+            }}
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider cursor-pointer shadow"
+          >
+            Egzersizi Tamamla & Puanla
           </button>
         </div>
-
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-stone-600">Hız (BPM): <span className="font-mono font-black text-blue-600">{speedBpm}</span></span>
-          <input
-            type="range"
-            min={60}
-            max={350}
-            step={10}
-            value={speedBpm}
-            onChange={(e) => setSpeedBpm(Number(e.target.value))}
-            className="w-32 accent-blue-600 cursor-pointer"
-          />
-        </div>
-
-        <button
-          onClick={() => onCompleteResult(200, 100, 25)}
-          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider cursor-pointer"
-        >
-          Tamamla & Puanla
-        </button>
       </div>
     </div>
   );
@@ -3313,11 +3509,174 @@ function shuffleLetters(wordStr: string): string {
   return chars.join(' ');
 }
 
+// Component for Akademik Kelime Matris Bulmacası & Interactive Word Search Grid
+function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { targetWords: string[]; isSoundEnabled: boolean; onCompleteResult: any }) {
+  const [gridData, setGridData] = useState(() => generateWordSearchGrid(targetWords, 10, 10));
+  const [selectedCells, setSelectedCells] = useState<{ r: number; c: number }[]>([]);
+  const [foundWords, setFoundWords] = useState<string[]>([]);
+  const [foundCells, setFoundCells] = useState<Set<string>>(new Set());
+
+  const resetMatrix = () => {
+    setGridData(generateWordSearchGrid(targetWords, 10, 10));
+    setSelectedCells([]);
+    setFoundWords([]);
+    setFoundCells(new Set());
+  };
+
+  const handleCellClick = (r: number, c: number) => {
+    const key = `${r}-${c}`;
+    
+    // Toggle cell selection
+    const existingIndex = selectedCells.findIndex(cell => cell.r === r && cell.c === c);
+    let newSelected: { r: number; c: number }[];
+    
+    if (existingIndex >= 0) {
+      newSelected = selectedCells.filter((_, idx) => idx !== existingIndex);
+    } else {
+      newSelected = [...selectedCells, { r, c }];
+    }
+    setSelectedCells(newSelected);
+    playExerciseClickSound(isSoundEnabled);
+
+    // Form current string
+    const currentStr = newSelected.map(cell => gridData.grid[cell.r][cell.c]).join('');
+    
+    // Check if currentStr matches any unfound target word
+    const matchedWord = targetWords.find(w => {
+      const cleanW = w.toUpperCase().replace(/\s+/g, '');
+      return (cleanW === currentStr || cleanW.split('').reverse().join('') === currentStr) && !foundWords.includes(cleanW);
+    });
+
+    if (matchedWord) {
+      const cleanW = matchedWord.toUpperCase().replace(/\s+/g, '');
+      playExerciseSuccessSound(isSoundEnabled);
+      const updatedFoundWords = [...foundWords, cleanW];
+      setFoundWords(updatedFoundWords);
+
+      // Add cells to foundCells
+      const newFoundCells = new Set(foundCells);
+      newSelected.forEach(cell => newFoundCells.add(`${cell.r}-${cell.c}`));
+      setFoundCells(newFoundCells);
+      setSelectedCells([]);
+
+      if (updatedFoundWords.length >= targetWords.length) {
+        setTimeout(() => {
+          onCompleteResult(360, 100, 30);
+        }, 1200);
+      }
+    }
+  };
+
+  return (
+    <div className="w-full max-w-4xl sm:max-w-5xl lg:max-w-6xl mx-auto bg-white p-6 sm:p-8 border border-[#2D2D2D]/15 shadow-md space-y-6 text-center">
+      <div className="space-y-1">
+        <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#C5A059] bg-[#C5A059]/10 px-3 py-1 border border-[#C5A059]/30 inline-block">
+          AKADEMİK KELİME MATRİSİ & GİZLİ KELİME AVI
+        </span>
+        <h3 className="font-serif font-bold text-xl text-[#2D2D2D] pt-1">
+          Harf Matrisindeki Gizli Sözcükleri Seçin
+        </h3>
+        <p className="text-xs text-stone-500">
+          Matristeki harflere tıklayarak gizli akademik kelimeleri sırasıyla oluşturun ve tespit edin.
+        </p>
+      </div>
+
+      {/* Target Words Badges */}
+      <div className="bg-[#FAF9F6] p-4 border border-stone-200 space-y-2">
+        <div className="flex items-center justify-between text-xs font-bold text-stone-600 border-b pb-2">
+          <span>BULUNACAK HEDEF SÖZCÜKLER</span>
+          <span className="font-mono text-[#C5A059] font-black text-sm">
+            {foundWords.length} / {targetWords.length} Bulundu
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+          {targetWords.map((tw) => {
+            const cleanW = tw.toUpperCase().replace(/\s+/g, '');
+            const isFound = foundWords.includes(cleanW);
+            return (
+              <span
+                key={tw}
+                className={`px-3 py-1.5 text-xs font-bold font-mono tracking-wider transition-all border flex items-center gap-1.5 ${
+                  isFound
+                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm font-black scale-105'
+                    : 'bg-white text-stone-800 border-stone-300'
+                }`}
+              >
+                <span>{isFound ? '✅' : '🎯'}</span>
+                <span>{cleanW}</span>
+              </span>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Grid Display */}
+      <div className="grid grid-cols-10 gap-1 sm:gap-2 bg-[#FAF9F6] p-3 sm:p-6 border border-stone-300 max-w-2xl mx-auto shadow-inner">
+        {gridData.grid.map((row, r) =>
+          row.map((char, c) => {
+            const key = `${r}-${c}`;
+            const isSelected = selectedCells.some(cell => cell.r === r && cell.c === c);
+            const isFoundCell = foundCells.has(key);
+
+            return (
+              <button
+                key={key}
+                onClick={() => handleCellClick(r, c)}
+                className={`h-9 sm:h-12 w-full font-mono font-black text-sm sm:text-lg border transition-all cursor-pointer rounded-none select-none flex items-center justify-center ${
+                  isFoundCell
+                    ? 'bg-emerald-600 text-white border-emerald-700 font-extrabold shadow-sm'
+                    : isSelected
+                    ? 'bg-[#C5A059] text-white border-[#9A7B39] scale-105 shadow-md font-extrabold animate-pulse'
+                    : 'bg-white text-stone-800 border-stone-200 hover:border-[#C5A059] hover:bg-[#C5A059]/10'
+                }`}
+              >
+                {char}
+              </button>
+            );
+          })
+        )}
+      </div>
+
+      {/* Selected Sequence Status & Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-stone-200 text-xs font-bold">
+        <div className="text-stone-700 font-mono">
+          Seçilen Harfler: <span className="text-[#C5A059] font-black text-sm bg-stone-100 px-2.5 py-1 border">{selectedCells.map(c => gridData.grid[c.r][c.c]).join('') || '—'}</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSelectedCells([])}
+            className="px-3.5 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 uppercase text-[11px] tracking-wider transition-all cursor-pointer"
+          >
+            Seçimi Temizle
+          </button>
+          <button
+            onClick={resetMatrix}
+            className="px-3.5 py-2 bg-stone-800 hover:bg-stone-900 text-white uppercase text-[11px] tracking-wider transition-all cursor-pointer flex items-center gap-1"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Yeniden Karıştır</span>
+          </button>
+          <button
+            onClick={() => {
+              const acc = Math.round((foundWords.length / targetWords.length) * 100);
+              onCompleteResult(350, acc, 30);
+            }}
+            className="px-4 py-2 bg-[#C5A059] hover:bg-[#b08d4b] text-white uppercase text-[11px] tracking-wider shadow cursor-pointer"
+          >
+            Egzersizi Tamamla & Puanla
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // =========================================================================
-// 5. BULMACA RUNNER (ANAGRAM, EŞ ANLAM, ZİT ANLAM, EKSİK HARF)
+// 5. BULMACA RUNNER (ANAGRAM, EŞ ANLAM, ZİT ANLAM, EKSİK HARF, MATRİS AVI)
 // =========================================================================
 function BulmacaRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
-  const type = exercise.data?.type;
+  const type = exercise.data?.type || 'word-search';
 
   // ---------------- ANAGRAM ENGINE ----------------
   const anagramWords: { scrambled?: string; answer: string; hint: string }[] = exercise.data?.words || [
@@ -3477,8 +3836,18 @@ function BulmacaRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
     }
   };
 
+  if (type === 'word-search' || type === 'word-matrix') {
+    return (
+      <WordSearchGrid
+        targetWords={exercise.data?.targetWords || ['DERECE', 'PARAGRAF', 'YKS', 'ANALİZ', 'MANTIK', 'METOT', 'SENTEZ', 'ODAK']}
+        isSoundEnabled={isSoundEnabled}
+        onCompleteResult={onCompleteResult}
+      />
+    );
+  }
+
   return (
-    <div className="w-full max-w-lg bg-white p-6 sm:p-8 border border-[#2D2D2D]/15 text-center space-y-6 shadow-sm">
+    <div className="w-full max-w-4xl sm:max-w-5xl lg:max-w-6xl mx-auto bg-white p-6 sm:p-8 border border-[#2D2D2D]/15 text-center space-y-6 shadow-sm">
       
       {/* 1. ANAGRAM TEST */}
       {type === 'anagram' && anagramWords[anagramIndex] && (
@@ -3686,35 +4055,6 @@ function BulmacaRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
               </div>
             )}
           </form>
-        </div>
-      )}
-
-      {/* 4. DEFAULT SEARCH MATRIX PLACEHOLDER FOR OTHER TYPES */}
-      {type === 'word-search' && (
-        <div className="space-y-6">
-          <div className="space-y-1">
-            <span className="text-[10px] font-bold text-[#C5A059] uppercase tracking-widest block">
-              Sözcük Matrisi & Kelime Avı
-            </span>
-            <h4 className="font-serif font-bold text-base text-[#2D2D2D]">
-              Gizlenen Hedef Sözcükleri Gözünüzle Tarayın
-            </h4>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2 bg-[#FAF9F6] p-4 border border-stone-200">
-            {exercise.data?.targetWords?.map((w: string, i: number) => (
-              <div key={i} className="p-3 bg-white border border-stone-300 font-bold text-xs text-[#2D2D2D]">
-                🎯 {w}
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={() => onCompleteResult(350, 100, 20)}
-            className="w-full py-3.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow"
-          >
-            Tarama Tamamlandı & Değerlendir
-          </button>
         </div>
       )}
     </div>

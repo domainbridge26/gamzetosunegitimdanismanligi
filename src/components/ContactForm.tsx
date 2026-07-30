@@ -223,6 +223,8 @@ export default function ContactForm() {
                         >
                           <option value="12. Sınıf (YKS)">12. Sınıf (YKS Sınav Grubu)</option>
                           <option value="8. Sınıf (LGS)">8. Sınıf (LGS Sınav Grubu)</option>
+                          <option value="KPSS (Lisans / Ön Lisans)">KPSS Sınav Grubu (Lisans/Ön Lisans)</option>
+                          <option value="AGS (Akademi Giriş Sınavı)">AGS Sınav Grubu (Milli Eğitim Akademisi)</option>
                           <option value="Mezun (YKS)">Mezun (YKS Sınav Grubu)</option>
                           <option value="Ara Sınıf (9, 10, 11)">Ara Sınıf (9, 10, 11)</option>
                           <option value="Ortaokul Ara Sınıf">Ortaokul Ara Sınıf (5, 6, 7)</option>
