@@ -2720,6 +2720,22 @@ function GozTakipRunner({
   const activeWord = wordList[currentWordIndex] || 'Gelişim';
   const activeDotColor = exercise.data?.dotColor || '#C5A059';
 
+  // Exact shape vertices definitions in 0..100 coordinate space
+  const triangleVerts = direction === 'cw'
+    ? [{ x: 50, y: 14 }, { x: 85, y: 82 }, { x: 15, y: 82 }]
+    : [{ x: 50, y: 14 }, { x: 15, y: 82 }, { x: 85, y: 82 }];
+
+  const starBase = [
+    { x: 50, y: 14 }, { x: 59, y: 36 }, { x: 82, y: 36 }, { x: 63, y: 50 },
+    { x: 70, y: 74 }, { x: 50, y: 60 }, { x: 30, y: 74 }, { x: 37, y: 50 },
+    { x: 18, y: 36 }, { x: 41, y: 36 }
+  ];
+  const starVerts = direction === 'cw' ? starBase : [...starBase].reverse();
+
+  const squareVerts = direction === 'cw'
+    ? [{ x: 18, y: 18 }, { x: 82, y: 18 }, { x: 82, y: 82 }, { x: 18, y: 82 }]
+    : [{ x: 18, y: 18 }, { x: 18, y: 82 }, { x: 82, y: 82 }, { x: 82, y: 18 }];
+
   // Compute Active Focal Bead Position (x: %, y: %)
   let posX = 50;
   let posY = 50;
@@ -2727,56 +2743,40 @@ function GozTakipRunner({
   if (activeShape === 'circle') {
     const stepsPerLoop = 36;
     const t = ((stepIndex % stepsPerLoop) / stepsPerLoop) * Math.PI * 2 * (direction === 'cw' ? 1 : -1) - Math.PI / 2;
-    posX = 50 + 32 * Math.cos(t);
+    posX = 50 + 34 * Math.cos(t);
     posY = 50 + 32 * Math.sin(t);
   } else if (activeShape === 'triangle') {
-    const verts = [
-      { x: 50, y: 14 },
-      { x: 85, y: 82 },
-      { x: 15, y: 82 }
-    ];
-    if (direction === 'ccw') verts.reverse();
     const totalSteps = 30;
     const stepMod = stepIndex % totalSteps;
     const segIndex = Math.floor(stepMod / 10);
     const frac = (stepMod % 10) / 10;
-    const vCurr = verts[segIndex];
-    const vNext = verts[(segIndex + 1) % 3];
+    const vCurr = triangleVerts[segIndex];
+    const vNext = triangleVerts[(segIndex + 1) % 3];
     posX = vCurr.x + (vNext.x - vCurr.x) * frac;
     posY = vCurr.y + (vNext.y - vCurr.y) * frac;
   } else if (activeShape === 'star') {
-    const starPts = [
-      { x: 50, y: 14 }, { x: 59, y: 36 }, { x: 82, y: 36 }, { x: 63, y: 50 },
-      { x: 70, y: 74 }, { x: 50, y: 60 }, { x: 30, y: 74 }, { x: 37, y: 50 },
-      { x: 18, y: 36 }, { x: 41, y: 36 }
-    ];
-    if (direction === 'ccw') starPts.reverse();
     const totalSteps = 40;
     const stepMod = stepIndex % totalSteps;
     const segIndex = Math.floor(stepMod / 4);
     const frac = (stepMod % 4) / 4;
-    const pCurr = starPts[segIndex];
-    const pNext = starPts[(segIndex + 1) % 10];
+    const pCurr = starVerts[segIndex];
+    const pNext = starVerts[(segIndex + 1) % 10];
     posX = pCurr.x + (pNext.x - pCurr.x) * frac;
     posY = pCurr.y + (pNext.y - pCurr.y) * frac;
   } else if (activeShape === 'square') {
-    const sqVerts = [
-      { x: 18, y: 18 }, { x: 82, y: 18 }, { x: 82, y: 82 }, { x: 18, y: 82 }
-    ];
-    if (direction === 'ccw') sqVerts.reverse();
     const totalSteps = 32;
     const stepMod = stepIndex % totalSteps;
     const segIndex = Math.floor(stepMod / 8);
     const frac = (stepMod % 8) / 8;
-    const cCurr = sqVerts[segIndex];
-    const cNext = sqVerts[(segIndex + 1) % 4];
+    const cCurr = squareVerts[segIndex];
+    const cNext = squareVerts[(segIndex + 1) % 4];
     posX = cCurr.x + (cNext.x - cCurr.x) * frac;
     posY = cCurr.y + (cNext.y - cCurr.y) * frac;
   } else if (activeShape === 'infinity' || activeShape === 'infinity-loop') {
     const totalSteps = 36;
     const t = ((stepIndex % totalSteps) / totalSteps) * Math.PI * 2 * (direction === 'cw' ? 1 : -1);
     posX = 50 + 34 * Math.sin(t);
-    posY = 50 + 26 * Math.sin(t) * Math.cos(t);
+    posY = 50 + 22 * Math.sin(t) * Math.cos(t);
   } else if (activeShape === 'horizontal-dot') {
     posX = (stepIndex % 2 === 0) ? 15 : 85;
     posY = 50;
@@ -2806,19 +2806,28 @@ function GozTakipRunner({
     posY = Math.min(85, Math.max(15, 50 + (radius * 0.75) * Math.sin(angle)));
   }
 
-  // Star midpoints & angles for SVG arrow markers along 10 star edges
-  const starMidpoints = [
-    { x: 54.5, y: 25, rot: direction === 'cw' ? 68 : -112 },
-    { x: 70.5, y: 36, rot: direction === 'cw' ? 0 : 180 },
-    { x: 72.5, y: 43, rot: direction === 'cw' ? 144 : -36 },
-    { x: 66.5, y: 62, rot: direction === 'cw' ? 51 : -129 },
-    { x: 60, y: 67, rot: direction === 'cw' ? -145 : 35 },
-    { x: 40, y: 67, rot: direction === 'cw' ? -35 : 145 },
-    { x: 33.5, y: 62, rot: direction === 'cw' ? -129 : 51 },
-    { x: 27.5, y: 43, rot: direction === 'cw' ? 36 : -144 },
-    { x: 29.5, y: 36, rot: direction === 'cw' ? 0 : 180 },
-    { x: 45.5, y: 25, rot: direction === 'cw' ? -68 : 112 }
-  ];
+  // Pre-generate Infinity SVG path string
+  const infinityD = Array.from({ length: 60 }).map((_, i) => {
+    const t = (i / 60) * Math.PI * 2;
+    const x = (50 + 34 * Math.sin(t)).toFixed(1);
+    const y = (50 + 22 * Math.sin(t) * Math.cos(t)).toFixed(1);
+    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ') + ' Z';
+
+  // Helper to render edge arrows along polygon/star/square edges
+  const renderEdgeArrows = (verts: { x: number; y: number }[]) => {
+    return verts.map((vCurr, i) => {
+      const vNext = verts[(i + 1) % verts.length];
+      const mx = (vCurr.x + vNext.x) / 2;
+      const my = (vCurr.y + vNext.y) / 2;
+      const angle = Math.atan2(vNext.y - vCurr.y, vNext.x - vCurr.x) * (180 / Math.PI);
+      return (
+        <g key={i} transform={`translate(${mx}, ${my}) rotate(${angle})`}>
+          <polygon points="-2.5,-2 2.5,0 -2.5,2" fill={activeDotColor} />
+        </g>
+      );
+    });
+  };
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-4 text-center select-none flex-1 flex flex-col justify-center">
@@ -2865,19 +2874,23 @@ function GozTakipRunner({
       {/* Canvas Container */}
       <div className="h-[55vh] min-h-[360px] max-h-[600px] bg-[#FAF9F6] border border-stone-300 relative overflow-hidden shadow-inner rounded-none">
         {/* SVG Path & Arrow Visualization Layer */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40 overflow-visible">
+        <svg 
+          viewBox="0 0 100 100" 
+          preserveAspectRatio="none" 
+          className="absolute inset-0 w-full h-full pointer-events-none opacity-50 overflow-visible"
+        >
           {/* 1. Daire (Circle) */}
           {activeShape === 'circle' && (
             <g>
-              <circle cx="50%" cy="50%" r="32%" fill="none" stroke={activeDotColor} strokeWidth="3" strokeDasharray="8 6" />
+              <ellipse cx="50" cy="50" rx="34" ry="32" fill="none" stroke={activeDotColor} strokeWidth="0.8" strokeDasharray="2 1.5" />
               {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
                 const rad = (deg * Math.PI) / 180;
-                const arrowX = 50 + 32 * Math.cos(rad);
+                const arrowX = 50 + 34 * Math.cos(rad);
                 const arrowY = 50 + 32 * Math.sin(rad);
-                const rotDeg = direction === 'cw' ? deg + 90 : deg - 90;
+                const rotDeg = deg + (direction === 'cw' ? 90 : -90);
                 return (
-                  <g key={deg} transform={`translate(${arrowX}%, ${arrowY}%) rotate(${rotDeg})`}>
-                    <path d="M -7 -6 L 7 0 L -7 6 Z" fill={activeDotColor} />
+                  <g key={deg} transform={`translate(${arrowX}, ${arrowY}) rotate(${rotDeg})`}>
+                    <polygon points="-2.5,-2 2.5,0 -2.5,2" fill={activeDotColor} />
                   </g>
                 );
               })}
@@ -2887,16 +2900,14 @@ function GozTakipRunner({
           {/* 2. Üçgen (Triangle) */}
           {activeShape === 'triangle' && (
             <g>
-              <polygon points="50,14 85,82 15,82" fill="none" stroke={activeDotColor} strokeWidth="3" strokeDasharray="8 6" />
-              <g transform={`translate(67.5%, 48%) rotate(${direction === 'cw' ? 63 : -117})`}>
-                <path d="M -8 -6 L 8 0 L -8 6 Z" fill={activeDotColor} />
-              </g>
-              <g transform={`translate(50%, 82%) rotate(${direction === 'cw' ? 180 : 0})`}>
-                <path d="M -8 -6 L 8 0 L -8 6 Z" fill={activeDotColor} />
-              </g>
-              <g transform={`translate(32.5%, 48%) rotate(${direction === 'cw' ? -63 : 117})`}>
-                <path d="M -8 -6 L 8 0 L -8 6 Z" fill={activeDotColor} />
-              </g>
+              <polygon 
+                points={triangleVerts.map(v => `${v.x},${v.y}`).join(' ')} 
+                fill="none" 
+                stroke={activeDotColor} 
+                strokeWidth="0.8" 
+                strokeDasharray="2 1.5" 
+              />
+              {renderEdgeArrows(triangleVerts)}
             </g>
           )}
 
@@ -2904,28 +2915,27 @@ function GozTakipRunner({
           {activeShape === 'star' && (
             <g>
               <polygon 
-                points="50,14 59,36 82,36 63,50 70,74 50,60 30,74 37,50 18,36 41,36" 
+                points={starVerts.map(v => `${v.x},${v.y}`).join(' ')} 
                 fill="none" 
                 stroke={activeDotColor} 
-                strokeWidth="3" 
-                strokeDasharray="6 4" 
+                strokeWidth="0.8" 
+                strokeDasharray="1.5 1" 
               />
-              {starMidpoints.map((mp, idx) => (
-                <g key={idx} transform={`translate(${mp.x}%, ${mp.y}%) rotate(${mp.rot})`}>
-                  <path d="M -6 -5 L 6 0 L -6 5 Z" fill={activeDotColor} />
-                </g>
-              ))}
+              {renderEdgeArrows(starVerts)}
             </g>
           )}
 
           {/* 4. Kare (Square) */}
           {activeShape === 'square' && (
             <g>
-              <rect x="18%" y="18%" width="64%" height="64%" fill="none" stroke={activeDotColor} strokeWidth="3" strokeDasharray="8 6" />
-              <g transform={`translate(50%, 18%) rotate(${direction === 'cw' ? 0 : 180})`}><path d="M -8 -6 L 8 0 L -8 6 Z" fill={activeDotColor} /></g>
-              <g transform={`translate(82%, 50%) rotate(${direction === 'cw' ? 90 : -90})`}><path d="M -8 -6 L 8 0 L -8 6 Z" fill={activeDotColor} /></g>
-              <g transform={`translate(50%, 82%) rotate(${direction === 'cw' ? 180 : 0})`}><path d="M -8 -6 L 8 0 L -8 6 Z" fill={activeDotColor} /></g>
-              <g transform={`translate(18%, 50%) rotate(${direction === 'cw' ? -90 : 90})`}><path d="M -8 -6 L 8 0 L -8 6 Z" fill={activeDotColor} /></g>
+              <polygon 
+                points={squareVerts.map(v => `${v.x},${v.y}`).join(' ')} 
+                fill="none" 
+                stroke={activeDotColor} 
+                strokeWidth="0.8" 
+                strokeDasharray="2 1.5" 
+              />
+              {renderEdgeArrows(squareVerts)}
             </g>
           )}
 
@@ -2933,35 +2943,63 @@ function GozTakipRunner({
           {(activeShape === 'infinity' || activeShape === 'infinity-loop') && (
             <g>
               <path
-                d="M 120 144 C 120 70, 280 70, 280 144 C 280 218, 440 218, 440 144 C 440 70, 280 70, 280 144 C 280 218, 120 218, 120 144 Z"
+                d={infinityD}
                 fill="none"
                 stroke={activeDotColor}
-                strokeWidth="3"
-                strokeDasharray="6 4"
-                className="w-full h-full"
+                strokeWidth="0.8"
+                strokeDasharray="2 1.5"
               />
-              <g transform="translate(32%, 36%) rotate(-35)"><path d="M -7 -5 L 7 0 L -7 5 Z" fill={activeDotColor} /></g>
-              <g transform="translate(32%, 64%) rotate(35)"><path d="M -7 -5 L 7 0 L -7 5 Z" fill={activeDotColor} /></g>
-              <g transform="translate(68%, 36%) rotate(35)"><path d="M -7 -5 L 7 0 L -7 5 Z" fill={activeDotColor} /></g>
-              <g transform="translate(68%, 64%) rotate(-35)"><path d="M -7 -5 L 7 0 L -7 5 Z" fill={activeDotColor} /></g>
+              {[Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4, (7 * Math.PI) / 4].map((t, idx) => {
+                const ax = 50 + 34 * Math.sin(t);
+                const ay = 50 + 22 * Math.sin(t) * Math.cos(t);
+                const dir = direction === 'cw' ? 1 : -1;
+                const dx = 34 * Math.cos(t) * dir;
+                const dy = 22 * Math.cos(2 * t) * dir;
+                const rot = Math.atan2(dy, dx) * (180 / Math.PI);
+                return (
+                  <g key={idx} transform={`translate(${ax}, ${ay}) rotate(${rot})`}>
+                    <polygon points="-2.5,-2 2.5,0 -2.5,2" fill={activeDotColor} />
+                  </g>
+                );
+              })}
             </g>
           )}
 
-          {/* Fallback lines for old types */}
+          {/* 6. Yatay (Horizontal) */}
           {activeShape === 'horizontal-dot' && (
-            <line x1="15%" y1="50%" x2="85%" y2="50%" stroke={activeDotColor} strokeWidth="3" strokeDasharray="6 6" />
+            <g>
+              <line x1="15" y1="50" x2="85" y2="50" stroke={activeDotColor} strokeWidth="0.8" strokeDasharray="2 1.5" />
+              <g transform="translate(18, 50) rotate(180)"><polygon points="-2.5,-2 2.5,0 -2.5,2" fill={activeDotColor} /></g>
+              <g transform="translate(82, 50) rotate(0)"><polygon points="-2.5,-2 2.5,0 -2.5,2" fill={activeDotColor} /></g>
+            </g>
           )}
+
+          {/* 7. Dikey (Vertical) */}
           {activeShape === 'vertical-dot' && (
-            <line x1="50%" y1="18%" x2="50%" y2="82%" stroke={activeDotColor} strokeWidth="3" strokeDasharray="6 6" />
+            <g>
+              <line x1="50" y1="18" x2="50" y2="82" stroke={activeDotColor} strokeWidth="0.8" strokeDasharray="2 1.5" />
+              <g transform="translate(50, 20) rotate(-90)"><polygon points="-2.5,-2 2.5,0 -2.5,2" fill={activeDotColor} /></g>
+              <g transform="translate(50, 80) rotate(90)"><polygon points="-2.5,-2 2.5,0 -2.5,2" fill={activeDotColor} /></g>
+            </g>
           )}
+
+          {/* 8. Zikzak (Zigzag) */}
           {activeShape === 'zigzag' && (
-            <>
-              <line x1="15%" y1="18%" x2="85%" y2="18%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
-              <line x1="85%" y1="18%" x2="15%" y2="50%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
-              <line x1="15%" y1="50%" x2="85%" y2="50%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
-              <line x1="85%" y1="50%" x2="15%" y2="82%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
-              <line x1="15%" y1="82%" x2="85%" y2="82%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
-            </>
+            <g>
+              <polyline points="15,18 85,18 15,50 85,50 15,82 85,82" fill="none" stroke={activeDotColor} strokeWidth="0.8" strokeDasharray="2 1.5" />
+              {renderEdgeArrows([
+                { x: 15, y: 18 }, { x: 85, y: 18 }, { x: 15, y: 50 }, { x: 85, y: 50 }, { x: 15, y: 82 }, { x: 85, y: 82 }
+              ])}
+            </g>
+          )}
+
+          {/* 9. Köşeler (Corners) */}
+          {(activeShape === 'corner' || activeShape === 'corner-jump') && (
+            <g>
+              <rect x="15" y="18" width="70" height="64" fill="none" stroke={activeDotColor} strokeWidth="0.8" strokeDasharray="2 1.5" />
+              <line x1="15" y1="18" x2="85" y2="82" stroke={activeDotColor} strokeWidth="0.5" strokeDasharray="1 1" />
+              <line x1="85" y1="18" x2="15" y2="82" stroke={activeDotColor} strokeWidth="0.5" strokeDasharray="1 1" />
+            </g>
           )}
         </svg>
 
