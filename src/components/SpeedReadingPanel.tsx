@@ -2685,7 +2685,9 @@ function GozTakipRunner({
   soundVolume = 1.0, 
   onCompleteResult 
 }: any) {
-  const type = exercise.data?.type || 'horizontal-dot';
+  const defaultType = exercise.data?.initialShape || exercise.data?.type || 'circle';
+  const [activeShape, setActiveShape] = useState<string>(defaultType);
+  const [direction, setDirection] = useState<'cw' | 'ccw'>('cw');
 
   // Dynamic Word Generator with 40 words pool
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
@@ -2697,7 +2699,7 @@ function GozTakipRunner({
 
   useEffect(() => {
     if (!isPlaying) return;
-    const intervalMs = Math.max(80, Math.round((60 / speedBpm) * 1000));
+    const intervalMs = Math.max(70, Math.round((60 / speedBpm) * 1000));
 
     const timer = setInterval(() => {
       setStepIndex(prev => prev + 1);
@@ -2713,85 +2715,246 @@ function GozTakipRunner({
     }, intervalMs);
 
     return () => clearInterval(timer);
-  }, [isPlaying, speedBpm, type, wordList.length, isSoundEnabled, soundVolume, exercise.data?.words]);
+  }, [isPlaying, speedBpm, activeShape, wordList.length, isSoundEnabled, soundVolume, exercise.data?.words]);
 
   const activeWord = wordList[currentWordIndex] || 'Gelişim';
+  const activeDotColor = exercise.data?.dotColor || '#C5A059';
 
-  // Compute Active Position (x: %, y: %) based on trajectory type
+  // Compute Active Focal Bead Position (x: %, y: %)
   let posX = 50;
   let posY = 50;
-  let activeDotColor = exercise.data?.dotColor || '#C5A059';
 
-  if (type === 'horizontal-dot') {
+  if (activeShape === 'circle') {
+    const stepsPerLoop = 36;
+    const t = ((stepIndex % stepsPerLoop) / stepsPerLoop) * Math.PI * 2 * (direction === 'cw' ? 1 : -1) - Math.PI / 2;
+    posX = 50 + 32 * Math.cos(t);
+    posY = 50 + 32 * Math.sin(t);
+  } else if (activeShape === 'triangle') {
+    const verts = [
+      { x: 50, y: 14 },
+      { x: 85, y: 82 },
+      { x: 15, y: 82 }
+    ];
+    if (direction === 'ccw') verts.reverse();
+    const totalSteps = 30;
+    const stepMod = stepIndex % totalSteps;
+    const segIndex = Math.floor(stepMod / 10);
+    const frac = (stepMod % 10) / 10;
+    const vCurr = verts[segIndex];
+    const vNext = verts[(segIndex + 1) % 3];
+    posX = vCurr.x + (vNext.x - vCurr.x) * frac;
+    posY = vCurr.y + (vNext.y - vCurr.y) * frac;
+  } else if (activeShape === 'star') {
+    const starPts = [
+      { x: 50, y: 14 }, { x: 59, y: 36 }, { x: 82, y: 36 }, { x: 63, y: 50 },
+      { x: 70, y: 74 }, { x: 50, y: 60 }, { x: 30, y: 74 }, { x: 37, y: 50 },
+      { x: 18, y: 36 }, { x: 41, y: 36 }
+    ];
+    if (direction === 'ccw') starPts.reverse();
+    const totalSteps = 40;
+    const stepMod = stepIndex % totalSteps;
+    const segIndex = Math.floor(stepMod / 4);
+    const frac = (stepMod % 4) / 4;
+    const pCurr = starPts[segIndex];
+    const pNext = starPts[(segIndex + 1) % 10];
+    posX = pCurr.x + (pNext.x - pCurr.x) * frac;
+    posY = pCurr.y + (pNext.y - pCurr.y) * frac;
+  } else if (activeShape === 'square') {
+    const sqVerts = [
+      { x: 18, y: 18 }, { x: 82, y: 18 }, { x: 82, y: 82 }, { x: 18, y: 82 }
+    ];
+    if (direction === 'ccw') sqVerts.reverse();
+    const totalSteps = 32;
+    const stepMod = stepIndex % totalSteps;
+    const segIndex = Math.floor(stepMod / 8);
+    const frac = (stepMod % 8) / 8;
+    const cCurr = sqVerts[segIndex];
+    const cNext = sqVerts[(segIndex + 1) % 4];
+    posX = cCurr.x + (cNext.x - cCurr.x) * frac;
+    posY = cCurr.y + (cNext.y - cCurr.y) * frac;
+  } else if (activeShape === 'infinity' || activeShape === 'infinity-loop') {
+    const totalSteps = 36;
+    const t = ((stepIndex % totalSteps) / totalSteps) * Math.PI * 2 * (direction === 'cw' ? 1 : -1);
+    posX = 50 + 34 * Math.sin(t);
+    posY = 50 + 26 * Math.sin(t) * Math.cos(t);
+  } else if (activeShape === 'horizontal-dot') {
     posX = (stepIndex % 2 === 0) ? 15 : 85;
     posY = 50;
-  } else if (type === 'vertical-dot') {
+  } else if (activeShape === 'vertical-dot') {
     posX = 50;
     posY = (stepIndex % 2 === 0) ? 18 : 82;
-  } else if (type === 'corner-jump') {
+  } else if (activeShape === 'corner-jump' || activeShape === 'corner') {
     const corners = [
-      { x: 15, y: 18 }, // Sol Üst
-      { x: 85, y: 18 }, // Sağ Üst
-      { x: 85, y: 82 }, // Sağ Alt
-      { x: 15, y: 82 }, // Sol Alt
-      { x: 50, y: 50 }  // Merkez Sıçrama
+      { x: 15, y: 18 }, { x: 85, y: 18 }, { x: 85, y: 82 }, { x: 15, y: 82 }, { x: 50, y: 50 }
     ];
     const c = corners[stepIndex % 5];
     posX = c.x;
     posY = c.y;
-  } else if (type === 'zigzag') {
+  } else if (activeShape === 'zigzag') {
     const points = [
-      { x: 15, y: 18 },
-      { x: 85, y: 18 },
-      { x: 15, y: 50 },
-      { x: 85, y: 50 },
-      { x: 15, y: 82 },
-      { x: 85, y: 82 }
+      { x: 15, y: 18 }, { x: 85, y: 18 }, { x: 15, y: 50 }, { x: 85, y: 50 }, { x: 15, y: 82 }, { x: 85, y: 82 }
     ];
     const p = points[stepIndex % 6];
     posX = p.x;
     posY = p.y;
-  } else if (type === 'spiral') {
-    // 24-step continuous expanding & contracting Archimedean spiral
+  } else if (activeShape === 'spiral') {
     const stepMod = stepIndex % 24;
     const progress = stepMod < 12 ? stepMod / 12 : (24 - stepMod) / 12;
-    const radius = 6 + progress * 32; // Radius 6% to 38%
+    const radius = 6 + progress * 32;
     const angle = stepMod * (Math.PI / 3);
     posX = Math.min(88, Math.max(12, 50 + radius * Math.cos(angle)));
     posY = Math.min(85, Math.max(15, 50 + (radius * 0.75) * Math.sin(angle)));
-  } else if (type === 'infinity-loop') {
-    const t = ((stepIndex % 20) / 20) * Math.PI * 2;
-    posX = Math.min(88, Math.max(12, 50 + 36 * Math.sin(t)));
-    posY = Math.min(85, Math.max(15, 50 + 30 * Math.sin(t) * Math.cos(t)));
   }
+
+  // Star midpoints & angles for SVG arrow markers along 10 star edges
+  const starMidpoints = [
+    { x: 54.5, y: 25, rot: direction === 'cw' ? 68 : -112 },
+    { x: 70.5, y: 36, rot: direction === 'cw' ? 0 : 180 },
+    { x: 72.5, y: 43, rot: direction === 'cw' ? 144 : -36 },
+    { x: 66.5, y: 62, rot: direction === 'cw' ? 51 : -129 },
+    { x: 60, y: 67, rot: direction === 'cw' ? -145 : 35 },
+    { x: 40, y: 67, rot: direction === 'cw' ? -35 : 145 },
+    { x: 33.5, y: 62, rot: direction === 'cw' ? -129 : 51 },
+    { x: 27.5, y: 43, rot: direction === 'cw' ? 36 : -144 },
+    { x: 29.5, y: 36, rot: direction === 'cw' ? 0 : 180 },
+    { x: 45.5, y: 25, rot: direction === 'cw' ? -68 : 112 }
+  ];
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-4 text-center select-none flex-1 flex flex-col justify-center">
       <div className="space-y-1">
         <span className="text-[10px] font-bold text-[#C5A059] bg-[#FAF9F6] px-3 py-1 border border-[#C5A059]/30 uppercase tracking-widest inline-block">
-          👁️ Göz Takip Trajektör Egzersizi
+          👁️ ŞEKİLLER & OKLARLA GÖZ TAKİP EGZERSİZİ
         </span>
-        <h4 className="font-serif font-bold text-lg">{exercise.title}</h4>
+        <h4 className="font-serif font-bold text-lg text-[#2D2D2D]">{exercise.title}</h4>
+        <p className="text-xs text-stone-500">
+          Oklar yönünde harf/kelime noktasını gözlerinizle kesintisiz takip edin.
+        </p>
       </div>
 
-      {/* Canvas */}
-      <div className="h-[55vh] min-h-[360px] max-h-[600px] bg-[#FAF9F6] border border-stone-200 relative overflow-hidden shadow-inner rounded-none">
-        {/* SVG Guide Layer for background visualization */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-30">
-          {type === 'horizontal-dot' && (
-            <line x1="15%" y1="50%" x2="85%" y2="50%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="6 6" />
+      {/* Interactive Shape Selector Bar */}
+      <div className="flex flex-wrap items-center justify-center gap-1.5 bg-stone-100 p-2 border border-stone-200">
+        {[
+          { id: 'circle', label: '🔵 Daire' },
+          { id: 'triangle', label: '🔺 Üçgen' },
+          { id: 'star', label: '⭐ Yıldız' },
+          { id: 'square', label: '⬛ Kare' },
+          { id: 'infinity', label: '♾️ Sonsuzluk' },
+          { id: 'zigzag', label: '⚡ Zikzak' },
+          { id: 'corner', label: '📐 Köşeler' },
+          { id: 'horizontal-dot', label: '↔️ Yatay' },
+          { id: 'vertical-dot', label: '↕️ Dikey' }
+        ].map(s => (
+          <button
+            key={s.id}
+            onClick={() => {
+              setActiveShape(s.id);
+              playExerciseClickSound(isSoundEnabled);
+            }}
+            className={`px-3 py-1.5 text-xs font-bold transition-all border cursor-pointer ${
+              activeShape === s.id || (activeShape === 'infinity-loop' && s.id === 'infinity')
+                ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] shadow-sm font-black'
+                : 'bg-white text-stone-700 border-stone-300 hover:border-[#C5A059] hover:bg-stone-50'
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Canvas Container */}
+      <div className="h-[55vh] min-h-[360px] max-h-[600px] bg-[#FAF9F6] border border-stone-300 relative overflow-hidden shadow-inner rounded-none">
+        {/* SVG Path & Arrow Visualization Layer */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40 overflow-visible">
+          {/* 1. Daire (Circle) */}
+          {activeShape === 'circle' && (
+            <g>
+              <circle cx="50%" cy="50%" r="32%" fill="none" stroke={activeDotColor} strokeWidth="3" strokeDasharray="8 6" />
+              {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
+                const rad = (deg * Math.PI) / 180;
+                const arrowX = 50 + 32 * Math.cos(rad);
+                const arrowY = 50 + 32 * Math.sin(rad);
+                const rotDeg = direction === 'cw' ? deg + 90 : deg - 90;
+                return (
+                  <g key={deg} transform={`translate(${arrowX}%, ${arrowY}%) rotate(${rotDeg})`}>
+                    <path d="M -7 -6 L 7 0 L -7 6 Z" fill={activeDotColor} />
+                  </g>
+                );
+              })}
+            </g>
           )}
-          {type === 'vertical-dot' && (
-            <line x1="50%" y1="18%" x2="50%" y2="82%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="6 6" />
+
+          {/* 2. Üçgen (Triangle) */}
+          {activeShape === 'triangle' && (
+            <g>
+              <polygon points="50,14 85,82 15,82" fill="none" stroke={activeDotColor} strokeWidth="3" strokeDasharray="8 6" />
+              <g transform={`translate(67.5%, 48%) rotate(${direction === 'cw' ? 63 : -117})`}>
+                <path d="M -8 -6 L 8 0 L -8 6 Z" fill={activeDotColor} />
+              </g>
+              <g transform={`translate(50%, 82%) rotate(${direction === 'cw' ? 180 : 0})`}>
+                <path d="M -8 -6 L 8 0 L -8 6 Z" fill={activeDotColor} />
+              </g>
+              <g transform={`translate(32.5%, 48%) rotate(${direction === 'cw' ? -63 : 117})`}>
+                <path d="M -8 -6 L 8 0 L -8 6 Z" fill={activeDotColor} />
+              </g>
+            </g>
           )}
-          {type === 'corner-jump' && (
-            <>
-              <rect x="15%" y="18%" width="70%" height="64%" fill="none" stroke={activeDotColor} strokeWidth="2" strokeDasharray="6 6" />
-              <line x1="15%" y1="18%" x2="85%" y2="82%" stroke={activeDotColor} strokeWidth="1" strokeDasharray="3 3" />
-              <line x1="85%" y1="18%" x2="15%" y2="82%" stroke={activeDotColor} strokeWidth="1" strokeDasharray="3 3" />
-            </>
+
+          {/* 3. Yıldız (5-Point Star) */}
+          {activeShape === 'star' && (
+            <g>
+              <polygon 
+                points="50,14 59,36 82,36 63,50 70,74 50,60 30,74 37,50 18,36 41,36" 
+                fill="none" 
+                stroke={activeDotColor} 
+                strokeWidth="3" 
+                strokeDasharray="6 4" 
+              />
+              {starMidpoints.map((mp, idx) => (
+                <g key={idx} transform={`translate(${mp.x}%, ${mp.y}%) rotate(${mp.rot})`}>
+                  <path d="M -6 -5 L 6 0 L -6 5 Z" fill={activeDotColor} />
+                </g>
+              ))}
+            </g>
           )}
-          {type === 'zigzag' && (
+
+          {/* 4. Kare (Square) */}
+          {activeShape === 'square' && (
+            <g>
+              <rect x="18%" y="18%" width="64%" height="64%" fill="none" stroke={activeDotColor} strokeWidth="3" strokeDasharray="8 6" />
+              <g transform={`translate(50%, 18%) rotate(${direction === 'cw' ? 0 : 180})`}><path d="M -8 -6 L 8 0 L -8 6 Z" fill={activeDotColor} /></g>
+              <g transform={`translate(82%, 50%) rotate(${direction === 'cw' ? 90 : -90})`}><path d="M -8 -6 L 8 0 L -8 6 Z" fill={activeDotColor} /></g>
+              <g transform={`translate(50%, 82%) rotate(${direction === 'cw' ? 180 : 0})`}><path d="M -8 -6 L 8 0 L -8 6 Z" fill={activeDotColor} /></g>
+              <g transform={`translate(18%, 50%) rotate(${direction === 'cw' ? -90 : 90})`}><path d="M -8 -6 L 8 0 L -8 6 Z" fill={activeDotColor} /></g>
+            </g>
+          )}
+
+          {/* 5. Sonsuzluk (Infinity) */}
+          {(activeShape === 'infinity' || activeShape === 'infinity-loop') && (
+            <g>
+              <path
+                d="M 120 144 C 120 70, 280 70, 280 144 C 280 218, 440 218, 440 144 C 440 70, 280 70, 280 144 C 280 218, 120 218, 120 144 Z"
+                fill="none"
+                stroke={activeDotColor}
+                strokeWidth="3"
+                strokeDasharray="6 4"
+                className="w-full h-full"
+              />
+              <g transform="translate(32%, 36%) rotate(-35)"><path d="M -7 -5 L 7 0 L -7 5 Z" fill={activeDotColor} /></g>
+              <g transform="translate(32%, 64%) rotate(35)"><path d="M -7 -5 L 7 0 L -7 5 Z" fill={activeDotColor} /></g>
+              <g transform="translate(68%, 36%) rotate(35)"><path d="M -7 -5 L 7 0 L -7 5 Z" fill={activeDotColor} /></g>
+              <g transform="translate(68%, 64%) rotate(-35)"><path d="M -7 -5 L 7 0 L -7 5 Z" fill={activeDotColor} /></g>
+            </g>
+          )}
+
+          {/* Fallback lines for old types */}
+          {activeShape === 'horizontal-dot' && (
+            <line x1="15%" y1="50%" x2="85%" y2="50%" stroke={activeDotColor} strokeWidth="3" strokeDasharray="6 6" />
+          )}
+          {activeShape === 'vertical-dot' && (
+            <line x1="50%" y1="18%" x2="50%" y2="82%" stroke={activeDotColor} strokeWidth="3" strokeDasharray="6 6" />
+          )}
+          {activeShape === 'zigzag' && (
             <>
               <line x1="15%" y1="18%" x2="85%" y2="18%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
               <line x1="85%" y1="18%" x2="15%" y2="50%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
@@ -2800,54 +2963,26 @@ function GozTakipRunner({
               <line x1="15%" y1="82%" x2="85%" y2="82%" stroke={activeDotColor} strokeWidth="2" strokeDasharray="4 4" />
             </>
           )}
-          {type === 'infinity-loop' && (
-            <path
-              d="M 120 144 C 120 70, 280 70, 280 144 C 280 218, 440 218, 440 144 C 440 70, 280 70, 280 144 C 280 218, 120 218, 120 144 Z"
-              fill="none"
-              stroke={activeDotColor}
-              strokeWidth="2"
-              strokeDasharray="5 5"
-              className="w-full h-full"
-            />
-          )}
-          {type === 'spiral' && (
-            <>
-              <circle cx="50%" cy="50%" r="10%" fill="none" stroke={activeDotColor} strokeWidth="1.5" strokeDasharray="4 4" opacity="0.4" />
-              <circle cx="50%" cy="50%" r="22%" fill="none" stroke={activeDotColor} strokeWidth="1.5" strokeDasharray="4 4" opacity="0.6" />
-              <circle cx="50%" cy="50%" r="35%" fill="none" stroke={activeDotColor} strokeWidth="1.5" strokeDasharray="4 4" opacity="0.8" />
-            </>
-          )}
         </svg>
 
-        {/* Floating Active Target Dot & Word Badge */}
+        {/* Floating Active Target Bead & Word Badge */}
         <div 
-          className="absolute transition-all duration-150 ease-out -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center z-10"
+          className="absolute transition-all duration-150 ease-out -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center z-10 pointer-events-none"
           style={{ left: `${posX}%`, top: `${posY}%` }}
         >
           <div 
-            className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white ring-4 ring-amber-400/50 mb-1"
+            className="w-9 h-9 rounded-full flex items-center justify-center shadow-xl border-2 border-white ring-4 ring-amber-400/60 mb-1"
             style={{ backgroundColor: activeDotColor }}
           >
-            <div className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
+            <div className="w-3 h-3 rounded-full bg-white animate-ping" />
           </div>
-          <div 
-            className="bg-[#2D2D2D] text-white px-3 py-1 shadow-lg border border-[#C5A059] flex items-center gap-1.5 whitespace-nowrap"
-          >
+          <div className="bg-[#2D2D2D] text-white px-3.5 py-1 shadow-2xl border border-[#C5A059] flex items-center gap-1.5 whitespace-nowrap">
             <span className="font-serif font-black text-lg tracking-wide text-amber-300">{activeWord}</span>
           </div>
         </div>
-
-        {/* Corner labels for context */}
-        {type === 'corner-jump' && (
-          <div className="absolute inset-0 p-3 pointer-events-none text-[10px] text-stone-400 font-mono flex flex-col justify-between">
-            <div className="flex justify-between"><span>[Sol Üst]</span><span>[Sağ Üst]</span></div>
-            <div className="flex justify-center"><span>[Merkez]</span></div>
-            <div className="flex justify-between"><span>[Sol Alt]</span><span>[Sağ Alt]</span></div>
-          </div>
-        )}
       </div>
 
-      {/* Speed Controls */}
+      {/* Speed & Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-stone-50 p-4 border border-stone-200">
         <div className="flex items-center gap-2">
           <button
@@ -2861,6 +2996,17 @@ function GozTakipRunner({
           >
             {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
             <span>{isPlaying ? 'Duraklat' : 'Egzersizi Başlat'}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setDirection(prev => prev === 'cw' ? 'ccw' : 'cw');
+              playExerciseClickSound(isSoundEnabled);
+            }}
+            className="px-4 py-2.5 bg-white border border-stone-300 hover:border-[#C5A059] text-stone-800 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <RotateCw className={`w-3.5 h-3.5 ${direction === 'ccw' ? 'rotate-180' : ''}`} />
+            <span>{direction === 'cw' ? 'Saat Yönü 🔄' : 'Ters Yön ↩️'}</span>
           </button>
         </div>
 
@@ -3509,15 +3655,28 @@ function shuffleLetters(wordStr: string): string {
   return chars.join(' ');
 }
 
-// Component for Akademik Kelime Matris Bulmacası & Interactive Word Search Grid
+// Component for Akademik, Şehir & Hayvan Kelime Matris Bulmacası & Interactive Word Search Grid
 function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { targetWords: string[]; isSoundEnabled: boolean; onCompleteResult: any }) {
-  const [gridData, setGridData] = useState(() => generateWordSearchGrid(targetWords, 10, 10));
+  const [activeWords, setActiveWords] = useState<string[]>(targetWords && targetWords.length > 0 ? targetWords : ['ANKARA', 'İSTANBUL', 'İZMİR', 'BURSA', 'KONYA', 'ANTALYA']);
+  const [activeTheme, setActiveTheme] = useState<string>('custom');
+
+  const [gridData, setGridData] = useState(() => generateWordSearchGrid(activeWords, 10, 10));
   const [selectedCells, setSelectedCells] = useState<{ r: number; c: number }[]>([]);
   const [foundWords, setFoundWords] = useState<string[]>([]);
   const [foundCells, setFoundCells] = useState<Set<string>>(new Set());
 
+  const switchTheme = (themeId: string, wordList: string[]) => {
+    setActiveTheme(themeId);
+    setActiveWords(wordList);
+    setGridData(generateWordSearchGrid(wordList, 10, 10));
+    setSelectedCells([]);
+    setFoundWords([]);
+    setFoundCells(new Set());
+    playExerciseClickSound(isSoundEnabled);
+  };
+
   const resetMatrix = () => {
-    setGridData(generateWordSearchGrid(targetWords, 10, 10));
+    setGridData(generateWordSearchGrid(activeWords, 10, 10));
     setSelectedCells([]);
     setFoundWords([]);
     setFoundCells(new Set());
@@ -3542,7 +3701,7 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
     const currentStr = newSelected.map(cell => gridData.grid[cell.r][cell.c]).join('');
     
     // Check if currentStr matches any unfound target word
-    const matchedWord = targetWords.find(w => {
+    const matchedWord = activeWords.find(w => {
       const cleanW = w.toUpperCase().replace(/\s+/g, '');
       return (cleanW === currentStr || cleanW.split('').reverse().join('') === currentStr) && !foundWords.includes(cleanW);
     });
@@ -3559,7 +3718,7 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
       setFoundCells(newFoundCells);
       setSelectedCells([]);
 
-      if (updatedFoundWords.length >= targetWords.length) {
+      if (updatedFoundWords.length >= activeWords.length) {
         setTimeout(() => {
           onCompleteResult(360, 100, 30);
         }, 1200);
@@ -3571,14 +3730,62 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
     <div className="w-full max-w-4xl sm:max-w-5xl lg:max-w-6xl mx-auto bg-white p-6 sm:p-8 border border-[#2D2D2D]/15 shadow-md space-y-6 text-center">
       <div className="space-y-1">
         <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#C5A059] bg-[#C5A059]/10 px-3 py-1 border border-[#C5A059]/30 inline-block">
-          AKADEMİK KELİME MATRİSİ & GİZLİ KELİME AVI
+          🧩 ŞEHİR & HAYVAN KELİME MATRİS BULMACASI
         </span>
         <h3 className="font-serif font-bold text-xl text-[#2D2D2D] pt-1">
-          Harf Matrisindeki Gizli Sözcükleri Seçin
+          Harf Matrisindeki Gizli Sözcükleri Bulun
         </h3>
         <p className="text-xs text-stone-500">
-          Matristeki harflere tıklayarak gizli akademik kelimeleri sırasıyla oluşturun ve tespit edin.
+          Aşağıdaki temalardan dilediğinizi seçip matristeki gizli kelimeleri gözlerinizle tarayın.
         </p>
+      </div>
+
+      {/* Theme Selection Buttons */}
+      <div className="flex flex-wrap items-center justify-center gap-2 bg-stone-100 p-2.5 border border-stone-200">
+        <button
+          onClick={() => switchTheme('city-tr', ['ANKARA', 'İSTANBUL', 'İZMİR', 'BURSA', 'KONYA', 'ANTALYA', 'ADANA', 'TRABZON'])}
+          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
+            activeTheme === 'city-tr' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+          }`}
+        >
+          <span>🏙️ Türkiye Şehirleri</span>
+        </button>
+
+        <button
+          onClick={() => switchTheme('city-world', ['PARİS', 'LONDRA', 'TOKYO', 'ROMA', 'BERLİN', 'MADRİD', 'VİYANA', 'KAHİRE'])}
+          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
+            activeTheme === 'city-world' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+          }`}
+        >
+          <span>🌍 Dünya Şehirleri</span>
+        </button>
+
+        <button
+          onClick={() => switchTheme('animals-cute', ['KEDİ', 'KÖPEK', 'TAVŞAN', 'YUNUS', 'PENGUEN', 'KUNDUZ', 'KARTAL', 'KELEBEK'])}
+          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
+            activeTheme === 'animals-cute' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+          }`}
+        >
+          <span>🐾 Sevimli Hayvanlar</span>
+        </button>
+
+        <button
+          onClick={() => switchTheme('animals-wild', ['ASLAN', 'KAPLAN', 'ZÜRAFA', 'LEOPAR', 'BUFALO', 'FLAMİNGO', 'KANGURU', 'AHTAPOT'])}
+          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
+            activeTheme === 'animals-wild' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+          }`}
+        >
+          <span>🦁 Yabani Hayvanlar</span>
+        </button>
+
+        <button
+          onClick={() => switchTheme('academic', targetWords && targetWords.length > 0 ? targetWords : ['PARAGRAF', 'MUHAKEME', 'SENTEZ', 'ANALİZ', 'DERECE', 'AKIL'])}
+          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
+            activeTheme === 'academic' || activeTheme === 'custom' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+          }`}
+        >
+          <span>🎓 Akademik Sözcükler</span>
+        </button>
       </div>
 
       {/* Target Words Badges */}
@@ -3586,11 +3793,11 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
         <div className="flex items-center justify-between text-xs font-bold text-stone-600 border-b pb-2">
           <span>BULUNACAK HEDEF SÖZCÜKLER</span>
           <span className="font-mono text-[#C5A059] font-black text-sm">
-            {foundWords.length} / {targetWords.length} Bulundu
+            {foundWords.length} / {activeWords.length} Bulundu
           </span>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-          {targetWords.map((tw) => {
+          {activeWords.map((tw) => {
             const cleanW = tw.toUpperCase().replace(/\s+/g, '');
             const isFound = foundWords.includes(cleanW);
             return (

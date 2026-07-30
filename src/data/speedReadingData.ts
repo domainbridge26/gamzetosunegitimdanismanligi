@@ -584,6 +584,53 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
       ]
     }
   },
+  {
+    id: 'i-gt-shape',
+    title: 'Daire, Üçgen ve Yıldız Etrafında Oklarla Göz Takibi',
+    level: 'İlkokul',
+    category: 'goz-takip',
+    categoryLabel: 'Göz Takip & Şekiller',
+    iconName: 'Compass',
+    description: 'Daire, üçgen, yıldız ve kare etrafındaki okları takip ederek göz kaslarınızı güçlendirin.',
+    targetWpm: 250,
+    data: {
+      type: 'shape-arrows',
+      initialShape: 'star',
+      dotColor: '#E11D48',
+      defaultSpeedBpm: 120,
+      words: ['Güneş', 'Yıldız', 'Dünya', 'Deniz', 'Orman', 'Bulut', 'Nehir', 'Çiçek', 'Bahçe']
+    }
+  },
+  {
+    id: 'i-bm-sehir',
+    title: 'İlkokul Türkiye Şehirleri Kelime Avı Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Şehirler',
+    iconName: 'MapPin',
+    description: 'Matriste gizlenen Türkiye şehirlerini (Ankara, İstanbul, İzmir...) gözlerinizle tarayıp bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'city-tr',
+      targetWords: ['ANKARA', 'İSTANBUL', 'İZMİR', 'BURSA', 'KONYA', 'ANTALYA', 'ADANA', 'TRABZON']
+    }
+  },
+  {
+    id: 'i-bm-hayvan',
+    title: 'İlkokul Sevimli Hayvanlar Kelime Avı Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Hayvanlar',
+    iconName: 'Heart',
+    description: 'Sevimli hayvan isimlerini (Kedi, Köpek, Tavşan, Yunus...) matriste tarayıp keşfedin.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'animals-cute',
+      targetWords: ['KEDİ', 'KÖPEK', 'TAVŞAN', 'YUNUS', 'PENGUEN', 'KUNDUZ', 'KARTAL', 'KELEBEK']
+    }
+  },
 
   // =========================================================================
   // ==================== ORTAOKUL / LGS EGZERSİZLERİ (30 ADET) ====================
@@ -1104,6 +1151,53 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
       ]
     }
   },
+  {
+    id: 'o-gt-shape',
+    title: 'Daire, Üçgen ve Yıldız Etrafında Oklarla Göz Takibi (Ortaokul)',
+    level: 'Ortaokul',
+    category: 'goz-takip',
+    categoryLabel: 'Göz Takip & Şekiller',
+    iconName: 'Compass',
+    description: 'Daire, üçgen, yıldız ve sonsuzluk şekillerinde oklar yönünde ritmik göz takibi yapın.',
+    targetWpm: 280,
+    data: {
+      type: 'shape-arrows',
+      initialShape: 'triangle',
+      dotColor: '#2563EB',
+      defaultSpeedBpm: 140,
+      words: ['LGS', 'Mantık', 'Analiz', 'Hipotez', 'Kavram', 'Yöntem', 'Sentez', 'Paragraf']
+    }
+  },
+  {
+    id: 'o-bm-sehir',
+    title: 'Ortaokul Türkiye & Dünya Şehirleri Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Şehirler',
+    iconName: 'MapPin',
+    description: 'Şehir isimlerini matriste tarayarak dikkat ve okuma hızınızı ölçün.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'city-world',
+      targetWords: ['İSTANBUL', 'ESKİŞEHİR', 'GAZİANTEP', 'KAYSERİ', 'ERZURUM', 'PARİS', 'LONDRA', 'TOKYO']
+    }
+  },
+  {
+    id: 'o-bm-hayvan',
+    title: 'Ortaokul Hayvanlar Alemi Matris Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Hayvanlar',
+    iconName: 'Heart',
+    description: 'Hayvanlar alemi üyelerini (Kartal, Geyik, Kanguru...) matriste hızlıca bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'animals-wild',
+      targetWords: ['KARTAL', 'GEYİK', 'KUNDUZ', 'YUNUS', 'KANGURU', 'PENGUEN', 'LEOPAR', 'FLAMİNGO']
+    }
+  },
 
   // =========================================================================
   // ==================== LİSE & YKS EGZERSİZLERİ (30 ADET) ====================
@@ -1616,6 +1710,53 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
         { scrambled: 'O N T O L O J İ', answer: 'ONTOLOJİ', hint: 'Varlık Felsefesi' },
         { scrambled: 'A K S İ Y O L O J İ', answer: 'AKSİYOLOJİ', hint: 'Değer Felsefesi' }
       ]
+    }
+  },
+  {
+    id: 'l-gt-shape',
+    title: 'Daire, Üçgen, Yıldız ve Şekiller Etrafında Oklarla Göz Takibi (YKS, KPSS & AGS)',
+    level: 'Lise',
+    category: 'goz-takip',
+    categoryLabel: 'Göz Takip & Şekiller',
+    iconName: 'Compass',
+    description: 'Daire, üçgen, 5 kollu yıldız, kare ve sonsuzluk döngülerinde oklar yönünde yüksek odaklı göz takibi.',
+    targetWpm: 350,
+    data: {
+      type: 'shape-arrows',
+      initialShape: 'circle',
+      dotColor: '#C5A059',
+      defaultSpeedBpm: 160,
+      words: ['KPSS', 'AGS', 'YKS', 'Paragraf', 'Mantık', 'Derece', 'Disiplin', 'Analiz', 'Muhakeme']
+    }
+  },
+  {
+    id: 'l-bm-sehir',
+    title: 'KPSS & YKS Türkiye Şehirleri ve Coğrafya Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Şehirler',
+    iconName: 'MapPin',
+    description: 'KPSS ve YKS Coğrafya sınavlarında çıkan Türkiye şehirlerini matriste hızla tespit edin.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'city-tr',
+      targetWords: ['DİYARBAKIR', 'ŞANLIURFA', 'MARAŞ', 'ANTALYA', 'TRABZON', 'ERZURUM', 'KONYA', 'SİVAS']
+    }
+  },
+  {
+    id: 'l-bm-hayvan',
+    title: 'KPSS & YKS Yabani ve Deniz Hayvanları Matris Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Hayvanlar',
+    iconName: 'Heart',
+    description: 'Yabani ve deniz canlılarını matriste gözlerinizle tarayıp odak refleksinizi ölçün.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'animals-wild',
+      targetWords: ['ZÜRAFA', 'LEOPAR', 'BUFALO', 'FLAMİNGO', 'AHTAPOT', 'KANGURU', 'KARTAL', 'PENGUEN']
     }
   }
 ];

@@ -16,69 +16,704 @@ interface SubjectTemplate {
 
 const EXAM_SUBJECTS: Record<string, SubjectTemplate[]> = {
   'YKS Sayısal': [
-    { name: 'Matematik (AYT)', color: 'bg-indigo-50 border-indigo-200 text-indigo-800', focusTopics: ['Fonksiyonlar', 'Trigonometri', 'Limit ve Süreklilik', 'Türev', 'İntegral', 'Logaritma', 'Diziler'] },
-    { name: 'Matematik (TYT)', color: 'bg-blue-50 border-blue-200 text-blue-800', focusTopics: ['Sayı Basamakları', 'Rasyonel Sayılar', 'Üslü ve Köklü Sayılar', 'Çarpanlara Ayırma', 'Problemler', 'Kümeler', 'Olasılık'] },
-    { name: 'Geometri', color: 'bg-cyan-50 border-cyan-200 text-cyan-800', focusTopics: ['Üçgende Açılar ve Benzerlik', 'Çokgenler', 'Çember ve Daire', 'Katı Cisimler', 'Analitik Geometri'] },
-    { name: 'Fizik (AYT/TYT)', color: 'bg-rose-50 border-rose-200 text-rose-800', focusTopics: ['Kuvvet ve Hareket', 'Elektrik ve Manyetizma', 'Dalgalar', 'Optik', 'Modern Fizik', 'Madde ve Özellikleri'] },
-    { name: 'Kimya (AYT/TYT)', color: 'bg-emerald-50 border-emerald-200 text-emerald-800', focusTopics: ['Atom ve Periyodik Sistem', 'Kimyasal Türler Arası Etkileşimler', 'Mol Kavramı', 'Gazlar', 'Çözeltiler', 'Kimyasal Tepkimelerde Enerji'] },
-    { name: 'Biyoloji (AYT/TYT)', color: 'bg-teal-50 border-teal-200 text-teal-800', focusTopics: ['Hücre ve Organeller', 'Canlıların Temel Bileşenleri', 'Kalıtım', 'Sistemler (Sinir, Sindirim, Dolaşım)', 'Hücre Bölünmeleri'] },
-    { name: 'Türkçe & Paragraf', color: 'bg-amber-50 border-amber-200 text-amber-800', focusTopics: ['Sözcükte ve Cümlede Anlam', 'Paragrafta Yapı ve Ana Düşünce', 'Yazım Kuralları ve Noktalama', 'Dil Bilgisi'] }
+    { 
+      name: 'Matematik (AYT)', 
+      color: 'bg-indigo-50 border-indigo-200 text-indigo-800', 
+      focusTopics: [
+        'Fonksiyonlar II & Grafik Dönüşümleri (Öteleme, Simetri, Tek-Çift)',
+        'Polinomlar, İkinci Dereceden Denklemler & Karmaşık Sayılar',
+        'İkinci Dereceden Eşitsizlikler ve Parabol Grafikleri',
+        'Logaritma Fonksiyonu, Özellikleri ve Denklemler',
+        'Diziler (Aritmetik ve Geometrik Diziler, Toplam Sembolü)',
+        'Trigonometri I: Dik Üçgen, Birim Çember & Özdeşlikler',
+        'Trigonometri II: Toplam-Fark, Yarım Açı ve Trigonometrik Denklemler',
+        'Limit ve Süreklilik (Sağ-Sol Limit, 0/0 Belirsizlikleri)',
+        'Türev I: Türev Alma Kuralları ve Teğet-Normal Denklemleri',
+        'Türev II: Artan-Azalanlık, Ekstremum Noktalar ve Optimizasyon',
+        'İntegral I: Belirsiz İntegral ve Değişken Değiştirme Yöntemi',
+        'İntegral II: Belirli İntegral, Eğri Altında ve Arasında Kalan Alan',
+        'Permütasyon, Kombinasyon, Binom ve Olasılık Hesabı'
+      ] 
+    },
+    { 
+      name: 'Matematik (TYT)', 
+      color: 'bg-blue-50 border-blue-200 text-blue-800', 
+      focusTopics: [
+        'Sayı Kümeleri, Doğal Sayılar ve Bölme-Bölünebilme Kuralları',
+        'EBOB-EKOK ve Periyodik Tekrar Eden Problem Tipleri',
+        'Rasyonel ve Ondalık Sayılar, Basit Eşitsizlikler & Mutlak Değer',
+        'Üslü ve Köklü İfadeler (Kök Dışına Çıkarma, Eşlenik ve İşlemler)',
+        'Çarpanlara Ayırma Yöntemleri ve Özdeşlikler',
+        'Oran-Orantı ve Doğru-Ters Orantı Mantığı',
+        'Denklem Kurma ve Sayı-Kesir Problemleri',
+        'Yaş, Yüzde-Kâr-Zarar ve Karışım Problemleri',
+        'Hareket (Hız-Zaman) ve İşçi-Havuz Problemleri',
+        'Grafik Okuma ve Tablo Yorumlama Problemleri',
+        'Kümeler, Kartezyen Çarpım ve Mantık/Önermeler',
+        'Veri, İstatistik (Mod, Medyan, Aritmetik Ortalama) & Sayısal Mantık'
+      ] 
+    },
+    { 
+      name: 'Geometri', 
+      color: 'bg-cyan-50 border-cyan-200 text-cyan-800', 
+      focusTopics: [
+        'Doğruda ve Üçgende Açılar, Açı-Kenar Bağıntıları',
+        'Dik Üçgen, Pisagor & Öklid Bağıntıları (30-60-90, 45-45-90)',
+        'İkizkenar ve Eşkenar Üçgen Alan & Yükseklik Formülleri',
+        'Üçgende Açıortay, Kenarortay ve Ağırlık Merkezi',
+        'Üçgende Benzerlik (A.A.A, K.A.K) ve Benzerlik-Alan İlişkisi',
+        'Üçgende Alan Hesaplama Yöntemleri (Sinüslü Alan, Heron)',
+        'Çokgenler, Düzgün Beşgen ve Düzgün Altıgen Geometrisi',
+        'Dörtgenler: Paralelkenar, Eşkenar Dörtgen, Dikdörtgen ve Kare',
+        'Yamuk (Dik Yamuk, İkizkenar Yamuk) ve Deltoid Bağıntıları',
+        'Çemberde Açılar, Kiriş-Teğet Özellikleri ve Çemberde Uzunluk',
+        'Dairede Çevre, Daire Dilimi ve Daire Halkasının Alanı',
+        'Noktanın ve Doğrunun Analitik İncelenmesi (Eğim, Diklik, Paralellik)',
+        'Çemberin Analitik İncelenmesi ve Düzlemde Dönüşümler',
+        'Katı Cisimler (Prizma, Piramit, Silindir, Koni, Küre Hacmi ve Alanı)'
+      ] 
+    },
+    { 
+      name: 'Fizik (AYT/TYT)', 
+      color: 'bg-rose-50 border-rose-200 text-rose-800', 
+      focusTopics: [
+        'Fizik Bilimine Giriş, Madde ve Özellikleri (Özkütle, Yüzey Gerilimi)',
+        'Vektörler, Tork ve Kesişen Kuvvetlerin Dengesi (Kütle Merkezi)',
+        'Newton’ın Hareket Yasaları ve Sürtünme Kuvvetli Hareket',
+        'Bir ve İki Boyutta Sabit İvmeli Hareket (Serbest Düşme ve Atışlar)',
+        'İş, Güç, Enerji ve Mekanik Enerjinin Korunması Yasası',
+        'İtme ve Çizgisel Momentum (Momentumun Korunması, Esnek Çarpışmalar)',
+        'Düzgün Çembersel Hareket, Dönerek Öteleme ve Açısal Momentum',
+        'Basit Harmonik Hareket (Yaylı ve Basit Sarkaç Sistemleri)',
+        'Elektrostatik, Elektrik Alan, Elektriksel Potansiyel ve Sığaçlar',
+        'Elektrik Akımı, Dirençler, Ohm Yasası ve Üreteçlerin Bağlanması',
+        'Manyetik Alan, Manyetik Kuvvet, İndüksiyon Akımı & Alternatif Akım',
+        'Dalga Mekaniği: Su Dalgalarında Kırınım, Girişim ve Doppler',
+        'Optik: Aydınlanma, Düzlem-Küresel Aynalar, Kırılma ve Mercekler',
+        'Modern Fizik: Fotoelektrik Olay, Compton Saçılması & De Broglie',
+        'Büyük Patlama, Parçacık Fiziği ve Radyoaktivite (Işıma Türleri)'
+      ] 
+    },
+    { 
+      name: 'Kimya (AYT/TYT)', 
+      color: 'bg-emerald-50 border-emerald-200 text-emerald-800', 
+      focusTopics: [
+        'Kimya Bilimi, Kimyasal Türler Arası Etkileşimler (Güçlü ve Zayıf)',
+        'Atomun Yapısı, Periyodik Sistem ve Kuantum Model (Elektron Dizilimi)',
+        'Maddenin Halleri (Gazlar, Sıvılar, Katılar ve Viskozite)',
+        'Gaz Yasaları, İdeal Gaz Denklemi, Kısmi Basınç ve Gerçek Gazlar',
+        'Sıvı Çözeltiler ve Derişim Birimleri (Molarite, Molalite, Koligatif)',
+        'Kimyasal Tepkimelerde Enerji (Enthalpi Hesaplama, Hess Yasası)',
+        'Kimyasal Tepkimelerde Hız ve Hıza Etki Eden Faktörler',
+        'Kimyasal Denge, Denge Kesri ve Le Chatelier İlkesi',
+        'Sulu Çözelti Dengeleri (Asit-Baz Dengesi, pH/pOH, Tampon, KÇÇ)',
+        'Kimya ve Elektrik (Redoks, Aktiflik, Galvanik Hücre ve Elektroliz)',
+        'Karbon Kimyasına Giriş (Hibritleşme, VSEPR Gösterimi, Rezonans)',
+        'Organik Bileşikler I: Alkanlar, Alkenler ve Alkinler (Adlandırma)',
+        'Organik Bileşikler II: Alkol, Eter, Aldehit, Keton, Karboksilli Asit, Ester'
+      ] 
+    },
+    { 
+      name: 'Biyoloji (AYT/TYT)', 
+      color: 'bg-teal-50 border-teal-200 text-teal-800', 
+      focusTopics: [
+        'Canlıların Temel Bileşenleri (Karbonhidrat, Yağ, Protein, Enzim, ATP)',
+        'Hücre Yapısı, Organeller ve Zar Geçişleri (Osmoz, Difüzyon, Aktif Taşıma)',
+        'Canlıların Sınıflandırılması ve Biyoçeşitlilik Hiyerarşisi',
+        'Hücre Bölünmeleri (Mitoz, Mayoz) ve Eşeysiz-Eşeyli Üreme',
+        'Mendel Genetiği, Kan Grupları ve Cinsiyete Bağlı Kalıtım',
+        'Ekosistem Ekolojisi, Besin Piramidi ve Madde Döngüleri',
+        'İnsan Fizyolojisi: Sinir Sistemi, İmpuls İletimi ve Endokrin Sistem',
+        'Duyu Organları (Göz, Kulak, Deri, Dil, Burun Yapısı ve Bozuklukları)',
+        'Destek ve Hareket Sistemi (Kemik, Kıkırdak, Kas Kasılması)',
+        'Sindirim Sistemi (Organlar, Enzimler ve Kimyasal Sindirim)',
+        'Dolaşım ve Lenf Sistemi, Bağışıklık (Kalp, Kan Hücreleri, Aşı/Serum)',
+        'Solunum Sistemi (Akciğer Yapısı, Gaz Taşınması ve Hemoglobin)',
+        'Üriner (Boşaltım) Sistem (Böbrek Yapısı, Nefronlar ve İdrar)',
+        'Hücresel Solunum (Glikoliz, Krebs, ETS) ve Fotosentez-Kemosentez',
+        'Nükleik Asitler (DNA, RNA), Protein Sentezi & Genetik Mühendisliği'
+      ] 
+    },
+    { 
+      name: 'Türkçe & Paragraf', 
+      color: 'bg-amber-50 border-amber-200 text-amber-800', 
+      focusTopics: [
+        'Sözcükte Anlam, Gerçek-Mecaz Anlam, Deyim ve Atasözleri',
+        'Cümlede Anlam, Neden-Sonuç, Amaç-Sonuç ve Örtülü Anlam',
+        'Paragrafta Konu, Ana Düşünce ve Yardımcı Düşünce Çıkarımı',
+        'Paragrafta Yapı (Akışı Bozan Cümle, Paragraf Oluşturma/Bölme)',
+        'Paragrafta Anlatım Biçimleri ve Düşünceyi Geliştirme Yolları',
+        'Ses Bilgisi (Ünlü Düşmesi, Ünsüz Yumuşaması ve Benzeşme)',
+        'Yazım Kuralları (Büyük Harfler, De/Ki/Mi Yazımı, Birleşik Kelimeler)',
+        'Noktalama İşaretleri (Virgül, Noktalı Virgül, İki Nokta, Kesme)',
+        'Sözcükte Yapı ve Ekler (Kök, Yapım Eki, Çekim Eki)',
+        'Sözcük Türleri (İsim, Sıfat, Zamir, Zarf, Edat, Bağlaç, Ünlem)',
+        'Fiiller, Fiilimsiler ve Fiilde Çatı (Özne/Nesneye Göre Çatı)',
+        'Cümlenin Ögeleri (Yüklem, Özne, Nesne, Tümleçler) & Cümle Türleri'
+      ] 
+    }
   ],
   'YKS Eşit Ağırlık': [
-    { name: 'Matematik (AYT)', color: 'bg-indigo-50 border-indigo-200 text-indigo-800', focusTopics: ['Fonksiyonlar', 'Trigonometri', 'Limit ve Süreklilik', 'Türev', 'İntegral', 'Logaritma', 'Diziler'] },
-    { name: 'Matematik (TYT)', color: 'bg-blue-50 border-blue-200 text-blue-800', focusTopics: ['Sayı Basamakları', 'Rasyonel Sayılar', 'Üslü ve Köklü Sayılar', 'Problemler', 'Kümeler', 'Fonksiyon Giriş'] },
-    { name: 'Türk Dili ve Edebiyatı', color: 'bg-purple-50 border-purple-200 text-purple-800', focusTopics: ['Şiir Bilgisi', 'Divan Edebiyatı', 'Tanzimat ve Servet-i Fünun Edebiyatı', 'Cumhuriyet Dönemi Edebiyatı', 'Edebi Sanatlar'] },
-    { name: 'Tarih', color: 'bg-amber-50 border-amber-200 text-amber-800', focusTopics: ['İlk ve Orta Çağlarda Türk Dünyası', 'İslam Medeniyeti', 'Osmanlı Tarihi', 'Atatürkçülük ve İnkılap Tarihi'] },
-    { name: 'Coğrafya', color: 'bg-orange-50 border-orange-200 text-orange-800', focusTopics: ['Doğa ve İnsan', 'Dünyanın Şekli ve Hareketleri', 'Harita Bilgisi', 'İklim Bilgisi', 'Nüfus ve Göç'] },
-    { name: 'Geometri', color: 'bg-cyan-50 border-cyan-200 text-cyan-800', focusTopics: ['Üçgenler', 'Çokgenler ve Dörtgenler', 'Çember', 'Analitik Geometri'] },
-    { name: 'Türkçe & Paragraf', color: 'bg-rose-50 border-rose-200 text-rose-800', focusTopics: ['Sözcükte ve Cümlede Anlam', 'Paragrafta Yapı ve Ana Düşünce', 'Yazım Kuralları ve Noktalama'] }
+    { 
+      name: 'Matematik (AYT)', 
+      color: 'bg-indigo-50 border-indigo-200 text-indigo-800', 
+      focusTopics: [
+        'Fonksiyonlar II & Grafik Dönüşümleri (Öteleme, Simetri)',
+        'Polinomlar, İkinci Dereceden Denklemler & Karmaşık Sayılar',
+        'İkinci Dereceden Eşitsizlikler ve Parabol Grafikleri',
+        'Logaritma Fonksiyonu, Özellikleri ve Üslü-Logaritmik Denklemler',
+        'Diziler (Aritmetik ve Geometrik Diziler, Toplam Sembolü)',
+        'Trigonometri I: Dik Üçgen, Birim Çember & Özdeşlikler',
+        'Trigonometri II: Toplam-Fark, Yarım Açı ve Trigonometrik Denklemler',
+        'Limit ve Süreklilik (Sağ-Sol Limit, 0/0 Belirsizlikleri)',
+        'Türev I: Türev Alma Kuralları ve Teğet-Normal Denklemleri',
+        'Türev II: Artan-Azalanlık, Ekstremum Noktalar ve Optimizasyon',
+        'İntegral I: Belirsiz İntegral ve Değişken Değiştirme Yöntemi',
+        'İntegral II: Belirli İntegral ve Eğri Altında Kalan Alan',
+        'Permütasyon, Kombinasyon, Binom ve Olasılık Hesabı'
+      ] 
+    },
+    { 
+      name: 'Matematik (TYT)', 
+      color: 'bg-blue-50 border-blue-200 text-blue-800', 
+      focusTopics: [
+        'Sayı Kümeleri, Doğal Sayılar ve Bölme-Bölünebilme Kuralları',
+        'EBOB-EKOK ve Periyodik Tekrar Eden Problem Tipleri',
+        'Rasyonel Sayılar, Basit Eşitsizlikler & Mutlak Değer',
+        'Üslü ve Köklü İfadeler (Kök Dışına Çıkarma, Eşlenik)',
+        'Çarpanlara Ayırma Yöntemleri ve Özdeşlikler',
+        'Oran-Orantı ve Doğru-Ters Orantı Mantığı',
+        'Denklem Kurma ve Sayı-Kesir Problemleri',
+        'Yaş, Yüzde-Kâr-Zarar ve Karışım Problemleri',
+        'Hareket (Hız-Zaman) ve İşçi-Havuz Problemleri',
+        'Grafik Okuma ve Tablo Yorumlama Problemleri',
+        'Kümeler, Kartezyen Çarpım ve Mantık/Önermeler'
+      ] 
+    },
+    { 
+      name: 'Türk Dili ve Edebiyatı', 
+      color: 'bg-purple-50 border-purple-200 text-purple-800', 
+      focusTopics: [
+        'Metinlerin Sınıflandırılması, Söz Sanatları ve Şiir Bilgisi',
+        'İslamiyet Öncesi Türk Edebiyatı ve Geçiş Dönemi Eserleri',
+        'Halk Edebiyatı (Anonim, Aşık, Tekke-Tasavvuf Edebiyatı)',
+        'Divan Edebiyatı (Nazım Şekilleri, Şairler ve Mesneviler)',
+        'Tanzimat Edebiyatı (1. ve 2. Dönem Şair ve Yazarları)',
+        'Servet-i Fünun ve Fecr-i Ati Edebiyatı Dönemi',
+        'Milli Edebiyat Dönemi ve Beş Hececiler',
+        'Cumhuriyet Dönemi Şiir Anlayışları (Mavi, Garip, II. Yeni)',
+        'Cumhuriyet Dönemi Roman, Hikaye ve Tiyatro Yazarları',
+        'Dünya Edebiyatı, Edebi Akımlar (Klasisizm, Romantizm, Realizm)'
+      ] 
+    },
+    { 
+      name: 'Tarih', 
+      color: 'bg-amber-50 border-amber-200 text-amber-800', 
+      focusTopics: [
+        'Tarih Bilimine Giriş, Zaman ve Takvim Sistemleri',
+        'İlk ve Orta Çağlarda Türk Dünyası (Kültür ve Uygarlık)',
+        'İslam Medeniyetinin Doğuşu ve İlk Türk-İslam Devletleri',
+        'Osmanlı Devlet Anlayışı, Kuruluş ve Yükselme Dönemi',
+        'Dünya Gücü Osmanlı, Arayış Yılları ve Osmanlı Diplomasisi',
+        'En Uzun Yüzyıl (19. Yüzyıl Osmanlı Islahatları ve Dağılma)',
+        '20. Yüzyıl Başlarında Osmanlı (Trablusgarp, Balkan ve I. Dünya Savaşı)',
+        'Milli Mücadele Hazırlık Dönemi (Genelgeler ve Kongreler)',
+        'TBMM’nin Açılması, Doğu, Güney ve Batı Cepheleri',
+        'Atatürk İnkılapları (Siyasi, Toplumsal, Hukuk, Eğitim) & İlkeler',
+        'İki Dünya Savaşı Arasındaki Dönem ve II. Dünya Savaşı Tarihi'
+      ] 
+    },
+    { 
+      name: 'Coğrafya', 
+      color: 'bg-orange-50 border-orange-200 text-orange-800', 
+      focusTopics: [
+        'Doğa ve İnsan Etkileşimi, Coğrafi Konum ve Paralel-Meridyenler',
+        'Dünyanın Şekli, Günlük-Yıllık Hareketleri ve Eksen Eğikliği',
+        'Harita Bilgisi, Ölçek Türleri ve İzohips Yöntemleri',
+        'İklim Bilgisi: Sıcaklık, Basınç, Rüzgarlar, Nem ve Yağış',
+        'Dünyadaki Büyük İklim Tipleri ve Türkiye İklimi',
+        'İç ve Dış Kuvvetler (Dağlar, Platolar, Akarsular, Karstik Şekiller)',
+        'Nüfusun Özellikleri, Dağılışı, Piramitler ve Göç Türleri',
+        'Türkiye’nin Yer Şekilleri, Su, Toprak ve Bitki Varlığı',
+        'Ekonomik Faaliyet Türleri, Tarım, Hayvancılık ve Sanayi',
+        'Küresel Ortam: Bölgeler, Ulaşım Hatları ve Çevre Sorunları'
+      ] 
+    },
+    { 
+      name: 'Geometri', 
+      color: 'bg-cyan-50 border-cyan-200 text-cyan-800', 
+      focusTopics: [
+        'Doğruda ve Üçgende Açılar, Açı-Kenar Bağıntıları',
+        'Dik Üçgen, Pisagor & Öklid Bağıntıları',
+        'İkizkenar, Eşkenar Üçgen ve Üçgende Alan Formülleri',
+        'Üçgende Açıortay, Kenarortay ve Benzerlik Kuralları',
+        'Çokgenler, Düzgün Beşgen, Düzgün Altıgen ve Dörtgenler',
+        'Paralelkenar, Eşkenar Dörtgen, Dikdörtgen ve Kare',
+        'Yamuk ve Deltoid Özellikleri ve Alanları',
+        'Çemberde Açılar, Kiriş-Teğet Özellikleri ve Çevre/Alan',
+        'Noktanın ve Doğrunun Analitik İncelenmesi (Eğim ve Denklemler)',
+        'Katı Cisimler (Prizma, Silindir, Konik, Küre Hacmi)'
+      ] 
+    },
+    { 
+      name: 'Türkçe & Paragraf', 
+      color: 'bg-rose-50 border-rose-200 text-rose-800', 
+      focusTopics: [
+        'Sözcükte ve Cümlede Anlam Detay Çalışması',
+        'Paragrafta Yapı, Akışı Bozan Cümle ve Ana Düşünce',
+        'Ses Bilgisi, Yazım Kuralları ve Noktalama İşaretleri',
+        'Dil Bilgisi Karma Soru Çözümü ve Anlatım Bozuklukları'
+      ] 
+    }
   ],
   'YKS Sözel': [
-    { name: 'Türk Dili ve Edebiyatı', color: 'bg-purple-50 border-purple-200 text-purple-800', focusTopics: ['Şiir Bilgisi', 'Halk Edebiyatı', 'Divan Edebiyatı', 'Cumhuriyet Dönemi Romanı', 'Edebi Sanatlar'] },
-    { name: 'Tarih-1 & Tarih-2', color: 'bg-amber-50 border-amber-200 text-amber-800', focusTopics: ['Tarih Bilimine Giriş', 'İlk Türk Devletleri', 'Osmanlı Kuruluş ve Yükselme', 'Milli Mücadele Dönemi'] },
-    { name: 'Coğrafya-1 & Coğrafya-2', color: 'bg-orange-50 border-orange-200 text-orange-800', focusTopics: ['Ekosistem ve Madde Döngüsü', 'Türkiye’de Tarım ve Hayvancılık', 'Küresel Ortam ve Bölgeler', 'Çevre ve Toplum'] },
-    { name: 'Felsefe Grubu', color: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-800', focusTopics: ['Felsefeye Giriş', 'Bilgi Felsefesi', 'Ahlak Felsefesi', 'Siyaset Felsefesi', 'Mantık', 'Sosyoloji', 'Psikoloji'] },
-    { name: 'Din Kültürü ve Ahlak Bilgisi', color: 'bg-emerald-50 border-emerald-200 text-emerald-800', focusTopics: ['Kur’an’da Bazı Kavramlar', 'İslam ve Bilim', 'Dünya ve Ahiret', 'İnanç ve İbadetler'] },
-    { name: 'Türkçe & Paragraf', color: 'bg-rose-50 border-rose-200 text-rose-800', focusTopics: ['Paragrafta Ana Düşünce', 'Paragrafta Yardımcı Düşünce', 'Sözcükte Anlam'] },
-    { name: 'Temel Matematik', color: 'bg-slate-100 border-slate-300 text-slate-700', focusTopics: ['Temel Kavramlar', 'Bölme-Bölünebilme', 'Rasyonel Sayılar', 'Basit Denklemler'] }
+    { 
+      name: 'Türk Dili ve Edebiyatı', 
+      color: 'bg-purple-50 border-purple-200 text-purple-800', 
+      focusTopics: [
+        'Şiir Bilgisi, Nazım Biçimleri, Ahenk Unsurları ve Edebi Sanatlar',
+        'İslamiyet Öncesi ve Geçiş Dönemi Eserleri (Kutadgu Bilig, Divan-ı Lugatit Türk)',
+        'Halk Edebiyatı Şairleri (Aşık Veysel, Karacaoğlan, Yunus Emre)',
+        'Divan Edebiyatı Şairleri (Fuzuli, Baki, Nedim, Şeyhi, Nef’i)',
+        'Tanzimat Edebiyatı Roman ve Tiyatro Yazarları',
+        'Servet-i Fünun ve Fecr-i Ati Edebiyatı Temsilcileri',
+        'Milli Edebiyat ve Cumhuriyet Dönemi Roman/Hikaye',
+        'Cumhuriyet Şiir Grupları (Garip, İkinci Yeni, Mavi, Toplumcular)',
+        'Batı Edebiyatı Akımları ve Dünya Edebiyatı Klasikleri'
+      ] 
+    },
+    { 
+      name: 'Tarih-1 & Tarih-2', 
+      color: 'bg-amber-50 border-amber-200 text-amber-800', 
+      focusTopics: [
+        'Tarih Bilimi, İlk Çağ Uygarlıkları ve Türk Devletleri',
+        'İslam Tarihi, Emeviler, Abbasiler ve Büyük Selçuklu Devleti',
+        'Osmanlı Devleti Kuruluş, Yükselme ve Teşkilat Yapısı',
+        'Osmanlı Kültür ve Medeniyeti, Eyalet ve Tımar Sistemi',
+        '19. Yüzyıl Osmanlı Siyasi Gelişmeleri ve Islahatlar',
+        'I. Dünya Savaşı, Cepheler ve Mondros Mütarekesi',
+        'Milli Mücadele Dönemi, Erzurum-Sivas Kongreleri ve Amasya Genelgesi',
+        'Atatürk İnkılapları, Dış Politika ve Çağdaş Türk/Dünya Tarihi'
+      ] 
+    },
+    { 
+      name: 'Coğrafya-1 & Coğrafya-2', 
+      color: 'bg-orange-50 border-orange-200 text-orange-800', 
+      focusTopics: [
+        'Ekosistemler, Madde Döngüleri ve Biyoçeşitlilik',
+        'Nüfus Politikaları, Şehirlerin Fonksiyonları ve Etki Alanları',
+        'Türkiye’de Tarım, Hayvancılık, Madencilik ve Enerji',
+        'Türkiye’de Sanayi, Ulaşım, Ticaret ve Turizm Sektörleri',
+        'Küresel ve Bölgesel Örgütler (Birleşmiş Milletler, NATO, AB)',
+        'Çevresel Örgütler, Doğal Afetler ve Sürdürülebilir Çevre'
+      ] 
+    },
+    { 
+      name: 'Felsefe Grubu', 
+      color: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-800', 
+      focusTopics: [
+        'Felsefeye Giriş, Bilgi Felsefesi (Epistemoloji) ve Varlık Felsefesi (Ontoloji)',
+        'Ahlak, Siyaset, Sanat ve Din Felsefesi Doktrinleri',
+        'Psikolojinin Konusu, Duyum, Algı, Öğrenme ve Bellek',
+        'Sosyolojiye Giriş, Toplumsal Yapı, Değişme ve Kültür',
+        'Klasik Mantık: Kavram, Önerme ve Çıkarım Kuralları',
+        'Sembolik Mantık: Önermeler Mantığı ve Doğruluk Çizelgesi'
+      ] 
+    },
+    { 
+      name: 'Din Kültürü ve Ahlak Bilgisi', 
+      color: 'bg-emerald-50 border-emerald-200 text-emerald-800', 
+      focusTopics: [
+        'Kur’an’da Bazı Kavramlar (İhlas, Takva, Hidayet, İhsan)',
+        'İslam ve Bilim, Düşüncede Mezhepler ve Yorumlar',
+        'İnanç Esasları, İbadetler, Dünya ve Ahiret Hayatı',
+        'Hz. Muhammed’in Şahsiyeti ve Örnekliği'
+      ] 
+    },
+    { 
+      name: 'Türkçe & Paragraf', 
+      color: 'bg-rose-50 border-rose-200 text-rose-800', 
+      focusTopics: [
+        'Sözcük ve Cümlede Anlam Analizi',
+        'Paragrafta Yapı, Ana Düşünce ve Sözel Akıl Yürütme',
+        'Yazım Kuralları, Noktalama ve Dil Bilgisi Tekrarı'
+      ] 
+    },
+    { 
+      name: 'Temel Matematik', 
+      color: 'bg-slate-100 border-slate-300 text-slate-700', 
+      focusTopics: [
+        'Temel Sayı Kavramları ve Bölünebilme',
+        'Rasyonel Sayılar, Basit Denklemler ve Sayı Problemleri'
+      ] 
+    }
   ],
   'KPSS Genel Kültür & Genel Yetenek': [
-    { name: 'Türkçe & Sözel Mantık (KPSS)', color: 'bg-rose-50 border-rose-200 text-rose-800', focusTopics: ['Sözcükte ve Cümlede Anlam', 'Paragrafta Yapı ve Ana Düşünce', 'Sözel Mantık ve Akıl Yürütme', 'Dil Bilgisi (Ses, Yapı, Cümle)', 'Yazım Kuralları ve Noktalama'] },
-    { name: 'Matematik & Geometri (KPSS)', color: 'bg-indigo-50 border-indigo-200 text-indigo-800', focusTopics: ['Temel Kavramlar ve Sayılar', 'Rasyonel ve Üslü-Köklü Sayılar', 'Sayısal Mantık ve Problemler', 'Oran-Orantı ve Yüzde-Kâr', 'Kümeler ve Fonksiyonlar', 'Geometri (Açılar, Üçgen, Analitik)'] },
-    { name: 'Tarih (KPSS)', color: 'bg-amber-50 border-amber-200 text-amber-800', focusTopics: ['İslamiyet Öncesi Türk Tarihi', 'İlk Türk-İslam Devletleri', 'Osmanlı Siyasi ve Teşkilat Tarihi', 'Atatürk İnkılapları ve Milli Mücadele', 'Çağdaş Türk ve Dünya Tarihi'] },
-    { name: 'Coğrafya (KPSS)', color: 'bg-orange-50 border-orange-200 text-orange-800', focusTopics: ['Türkiye’nin Coğrafi Konumu ve Yer Şekilleri', 'Türkiye İklimi ve Bitki Örtüsü', 'Nüfus, Yerleşme ve Göç', 'Tarım, Hayvancılık ve Sanayi', 'Madenler, Enerji Kaynakları ve Ulaşım'] },
-    { name: 'Vatandaşlık & Anayasa (KPSS)', color: 'bg-emerald-50 border-emerald-200 text-emerald-800', focusTopics: ['Temel Hukuk Kavramları', 'Anayasa Tarihi ve 1982 Anayasası', 'Devlet Organları (Yasama, Yürütme, Yargı)', 'İdare Hukuku ve Temel Haklar', 'Güncel Bilgiler ve Uluslararası Örgütler'] }
+    { 
+      name: 'Türkçe & Sözel Mantık (KPSS)', 
+      color: 'bg-rose-50 border-rose-200 text-rose-800', 
+      focusTopics: [
+        'Sözcükte Anlam, Deyimler, Atasözleri ve Örtülü Anlam',
+        'Cümlede Anlam, Kesin Çıkarım Soruları ve Anlam İlişkileri',
+        'Paragrafta Yapı, Ana Düşünce, Düşünceyi Geliştirme Yolları',
+        'Sözel Mantık: Tablo Oluşturma, İki/Üç Değişkenli Sıralama Soruları',
+        'Dil Bilgisi: Ses Bilgisi, Sözcükte Yapı ve Ekler',
+        'Dil Bilgisi: İsim, Sıfat, Zamir, Zarf, Edat-Bağlaç ve Fiiller',
+        'Cümlenin Ögeleri, Çatı Özellikleri ve Anlatım Bozuklukları',
+        'Yazım Kuralları ve Noktalama İşaretleri Detaylı Çalışma'
+      ] 
+    },
+    { 
+      name: 'Matematik & Geometri (KPSS)', 
+      color: 'bg-indigo-50 border-indigo-200 text-indigo-800', 
+      focusTopics: [
+        'Temel Kavramlar, Tek-Çift Sayılar, Pozitif-Negatif Sayılar',
+        'Asal Sayılar, Faktöriyel ve Bölme-Bölünebilme Kuralları',
+        'EBOB-EKOK ve Periyodik Tekrar Eden Problemler',
+        'Rasyonel-Ondalık Sayılar, Basit Eşitsizlikler ve Mutlak Değer',
+        'Üslü ve Köklü Sayılar, Çarpanlara Ayırma ve Özdeşlikler',
+        'Oran-Orantı, Sayı-Kesir ve Yaş Problemleri',
+        'Yüzde, Kâr-Zarar, Faiz ve Karışım Problemleri',
+        'Hareket (Hız-Zaman) ve İşçi-Havuz Problemleri',
+        'Kümeler, Fonksiyonlar, Permütasyon-Kombinasyon ve Olasılık',
+        'Sayısal Mantık: Grafik Yorumlama, Tablo Okuma ve Şekil Dizileri',
+        'Geometri: Açılar, Üçgende Benzerlik/Alan, Çokgenler ve Analitik'
+      ] 
+    },
+    { 
+      name: 'Tarih (KPSS)', 
+      color: 'bg-amber-50 border-amber-200 text-amber-800', 
+      focusTopics: [
+        'İslamiyet Öncesi Türk Tarihi (Devlet Teşkilatı, Siyasi Yapı, Kültür)',
+        'İlk Türk-İslam Devletleri (Karahanlı, Gazneli, Büyük Selçuklu)',
+        'Osmanlı Devleti Kuruluş ve Yükselme Dönemi Siyasi Olayları',
+        'Osmanlı Kültür ve Medeniyeti (Saray, Divan, Tımar, Askeri Sistem)',
+        '17. ve 18. Yüzyıl Osmanlı Islahatları ve Duraklama/Gerileme',
+        '19. Yüzyıl Osmanlı Devleti Islahatları (Tanzimat, Meşrutiyet)',
+        '20. Yüzyıl Başlarında Osmanlı (Trablusgarp, Balkan, I. Dünya Savaşı)',
+        'Milli Mücadele Hazırlık Dönemi (Genelgeler, Kongreler, Amasya)',
+        'I. TBMM Dönemi, Ayaklanmalar ve Cepheler (Doğu, Güney, Batı)',
+        'Atatürk İnkılapları (Siyasi, Toplumsal, Hukuk, Ekonomi, Eğitim)',
+        'Atatürk Dönemi Türk Dış Politikası ve Atatürk İlkeleri',
+        'Çağdaş Türk ve Dünya Tarihi (Soğuk Savaş, Yumuşama, Küreselleşme)'
+      ] 
+    },
+    { 
+      name: 'Coğrafya (KPSS)', 
+      color: 'bg-orange-50 border-orange-200 text-orange-800', 
+      focusTopics: [
+        'Türkiye’nin Coğrafi Konumu, Matematik ve Özel Konum Sonuçları',
+        'Türkiye’nin Fiziki Yapısı: Dağlar, Platolar, Ovalar ve Akarsular',
+        'Türkiye’de Dış Kuvvetler: Karstik, Buzul, Rüzgar ve Kıyı Şekilleri',
+        'Türkiye’nin İklimi, Sıcaklık, Basınç, Rüzgarlar ve İklim Tipleri',
+        'Türkiye’nin Su, Toprak ve Bitki Örtüsü Dağılışı',
+        'Türkiye’de Nüfusun Özellikleri, Dağılışı, Yoğunluğu ve Göçler',
+        'Türkiye’de Yerleşme Tipleri ve Kır-Kent Yerleşmeleri',
+        'Türkiye’de Tarım ve Hayvancılık (Ürünlerin Dağılışı ve Politikalar)',
+        'Türkiye’de Madenler ve Enerji Kaynakları (Petrol, Doğalgaz, Bor, Güneş)',
+        'Türkiye’de Sanayi, Ulaşım, Ticaret ve Turizm Coğrafyası',
+        'Türkiye’nin Coğrafi Bölgeleri ve Bölgesel Kalkınma Projeleri (GAP, DAP, ZBK)'
+      ] 
+    },
+    { 
+      name: 'Vatandaşlık & Anayasa (KPSS)', 
+      color: 'bg-emerald-50 border-emerald-200 text-emerald-800', 
+      focusTopics: [
+        'Temel Hukuk Kavramları (Hukuk Kuralları, Haklar, Ehliyet Türleri)',
+        'Devlet Biçimleri, Hükümet Sistemleri ve Demokrasi Modelleri',
+        'Anayasa Tarihi (1876, 1921, 1924, 1961 ve 1982 Anayasaları)',
+        '1982 Anayasası Temel İlkeleri ve Devletin Genel Esasları',
+        'Temel Hak ve Hürriyetler (Kişi, Sosyal-Ekonomik, Siyasi Haklar)',
+        'Yasama Organı: TBMM’nin Yapısı, Görevleri ve Kanun Yapım Süreci',
+        'Yürütme Organı: Cumhurbaşkanlığı Teşkilatı ve Cumhurbaşkanlığı Kararnameleri',
+        'Yargı Organı: Anayasa Mahkemesi, Yargıtay, Danıştay, Sayıştay',
+        'İdare Hukuku: Merkezden ve Yerinden Yönetim, İdari Teşkilat',
+        'Memurluk Hukuku (657 Sayılı Kanun: Atanma, Disiplin, Haklar)',
+        'Güncel Bilgiler, Türkiye ve Dünya Gündemi, Uluslararası Örgütler (BM, NATO, AB)'
+      ] 
+    }
   ],
   'KPSS Eğitim Bilimleri & ÖABT': [
-    { name: 'Gelişim ve Öğrenme Psikolojisi', color: 'bg-purple-50 border-purple-200 text-purple-800', focusTopics: ['Bilişsel ve Kişilik Gelişimi', 'Ahlak ve Dil Gelişimi', 'Davranışçı Öğrenme Kuramları', 'Bilişsel Öğrenme ve Hafıza', 'Gelişim Psikolojisi Soru Çözümü'] },
-    { name: 'Öğretim Yöntem ve Teknikleri (ÖYT)', color: 'bg-blue-50 border-blue-200 text-blue-800', focusTopics: ['Öğretim İlkeleri ve Stratejileri', 'Öğretim Yöntemleri ve Modelleri', 'Kavram Öğretimi ve İşbirlikli Öğrenme', 'Düşünme Becerileri'] },
-    { name: 'Ölçme, Değerlendirme & Program', color: 'bg-cyan-50 border-cyan-200 text-cyan-800', focusTopics: ['Ölçmede Temel Kavramlar ve Hata', 'Güvenirlik ve Geçerlik', 'Test ve Madde İstatistiği', 'Program Geliştirme Yaklaşımları', 'Sınıf Yönetimi ve Materyal Tasarımı'] },
-    { name: 'Rehberlik ve Özel Eğitim', color: 'bg-teal-50 border-teal-200 text-teal-800', focusTopics: ['Rehberlik Hizmet Türleri', 'Bireyi Tanıma Teknikleri', 'Özel Eğitim ve BİLSEM', 'Mesleki Rehberlik Kuramları'] },
-    { name: 'ÖABT / Öğretmenlik Alan Bilgisi', color: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-800', focusTopics: ['Alan Eğitimi ve Metodoloji', 'Müfredat ve Öğretim Programları', 'Alan Alan Soru Çözümü', 'Özel Öğretim Yöntemleri'] },
-    { name: 'KPSS GK-GY Genel Tekrar', color: 'bg-amber-50 border-amber-200 text-amber-800', focusTopics: ['Tarih & Coğrafya Karma Soru Çözümü', 'Sözel Mantık & Güncel Bilgiler Tekrarı'] }
+    { 
+      name: 'Gelişim Psikolojisi', 
+      color: 'bg-purple-50 border-purple-200 text-purple-800', 
+      focusTopics: [
+        'Gelişimin Temel İlkeleri ve Gelişimi Etkileyen Faktörler',
+        'Fiziksel, Psiko-Motor ve Bilişsel Gelişim (Piaget & Vygotsky)',
+        'Kişilik Gelişimi Kuramları (Freud & Erikson Psikososyal Evreler)',
+        'Ahlak Gelişimi Kuramları (Piaget, Kohlberg & Gilligan)',
+        'Dil Gelişimi Kuramları (Chomsky, Skinner, Piaget)',
+        'Gelişim Psikolojisi Çıkmış Soru Analizleri ve Kavram Haritaları'
+      ] 
+    },
+    { 
+      name: 'Öğrenme Psikolojisi', 
+      color: 'bg-indigo-50 border-indigo-200 text-indigo-800', 
+      focusTopics: [
+        'Öğrenmeyi Etkileyen Faktörler (Öğrenen, Malzeme, Yöntem)',
+        'Klasik Koşullanma (Pavlov) ve Temel Kavramlar (Pekiştireç, Sönme)',
+        'Edimsel Koşullanma (Skinner) ve Pekiştirme Tarifeleri',
+        'Bitkisel/Bitişiklik Kuramları (Watson & Guthrie)',
+        'Sosyal Öğrenme Kuramı (Bandura - Dolaylı Öğrenme, Öz Yeterlik)',
+        'Gestalt Kuramı ve Bilişsel Ağırlıklı Öğrenme Yaklaşımları',
+        'Bilgi İşleme Kuramı (Hafıza Türleri, Unutma ve Kodlama)'
+      ] 
+    },
+    { 
+      name: 'Öğretim Yöntem ve Teknikleri (ÖYT)', 
+      color: 'bg-blue-50 border-blue-200 text-blue-800', 
+      focusTopics: [
+        'Öğretim İlkeleri (Öğrenciye Görelik, Hayatilik, Somuttan Soyuta)',
+        'Öğretim Stratejileri (Sunuş, Buluş, Araştırma-İnceleme)',
+        'Öğretim Modelleri (Tam Öğrenme, Çoklu Zeka, Yapılandırmacılık, Gagne)',
+        'Öğretim Yöntemleri (Anlatım, Tartışma, Örnek Olay, Problem Çözme)',
+        'Öğretim Teknikleri (Beyin Fırtınası, Altı Şapka, İstasyon, Akvaryum)',
+        'Düşünme Becerileri (Yaratıcı, Eleştirel, Yansıtıcı, Metakognitif)'
+      ] 
+    },
+    { 
+      name: 'Ölçme ve Değerlendirme', 
+      color: 'bg-cyan-50 border-cyan-200 text-cyan-800', 
+      focusTopics: [
+        'Ölçme ve Değerlendirmede Temel Kavramlar (Ölçek Türleri, Değerlendirme Çeşitleri)',
+        'Bir Ölçme Aracında Bulunması Gereken Nitelikler (Güvenirlik, Geçerlik, Kullanışlılık)',
+        'Ölçmede Hata Türleri (Sabit, Sistematik, Tesadüfi Hata)',
+        'Ölçme Araçları (Yazılı, Sözlü, Çoktan Seçmeli, Portfolyo, Rubrik)',
+        'Test ve Madde İstatistiği (Madde Güçlüğü, Ayırt Edicilik, Z ve T Puanları)'
+      ] 
+    },
+    { 
+      name: 'Program Geliştirme & Sınıf Yönetimi', 
+      color: 'bg-teal-50 border-teal-200 text-teal-800', 
+      focusTopics: [
+        'Eğitim Programı Türleri ve Program Geliştirme Modelleri',
+        'Hedef Taksonomileri (Bloom Yenilenmiş Taksonomi, Duyuşsal, Devinişsel)',
+        'İçerik Düzenleme Yaklaşımları (Sarmal, Modüler, Piramitsel)',
+        'Sınıf Yönetimi Boyutları, Oturma Düzenleri ve İletişim',
+        'İstenmeyen Davranışları Önleme ve Yönetme Stratejileri',
+        'Öğretim Materyallerinin Tasarlanması ve Hazırlanması'
+      ] 
+    },
+    { 
+      name: 'Rehberlik ve Özel Eğitim', 
+      color: 'bg-emerald-50 border-emerald-200 text-emerald-800', 
+      focusTopics: [
+        'Rehberlik Hizmet Türleri (Problem Alanlarına, İşlevlerine Göre)',
+        'Okul Rehberlik Örgütlenmesi ve Psikolojik Danışmanın Görevleri',
+        'Bireyi Tanıma Teknikleri (Testler ve Test Dışı Teknikler)',
+        'Mesleki Rehberlik Kuramları (Parsons, Holland, Super, Roe)',
+        'Özel Eğitim, BEP (Bireyselleştirilmiş Eğitim Programı) ve BİLSEM'
+      ] 
+    },
+    { 
+      name: 'ÖABT / Alan Bilgisi', 
+      color: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-800', 
+      focusTopics: [
+        'Alan Eğitimi ve Branş Metodolojisi',
+        'MEB Güncel Müfredat ve Ders Kitabı Analizi',
+        'Branşa Özel Öğretim Yöntem ve Teknikleri',
+        'ÖABT Çıkmış Soru Çözümleri ve Konu Detaylandırma'
+      ] 
+    }
   ],
   'AGS (Akademi Giriş Sınavı)': [
-    { name: 'AGS Sözel Yetenek & Türkçe', color: 'bg-rose-50 border-rose-200 text-rose-800', focusTopics: ['Sözcük, Cümle ve Paragrafta Anlam', 'Sözel Akıl Yürütme ve Sözel Mantık', 'Dil Bilgisi ve Metin Çözümleme', 'Paragrafta Yapı ve Ana Düşünce'] },
-    { name: 'AGS Sayısal Yetenek & Matematik', color: 'bg-indigo-50 border-indigo-200 text-indigo-800', focusTopics: ['Temel Kavramlar ve Bölünebilme', 'Oran-Orantı ve Problem Çözme', 'Sayısal Mantık ve Veri Analizi', 'Grafik Okuma ve Tablo Yorumlama'] },
-    { name: 'AGS Tarih & Türk Kültürü', color: 'bg-amber-50 border-amber-200 text-amber-800', focusTopics: ['Türk Tarihi ve Medeniyeti', 'Osmanlı Eğitim ve Kültür Sistemi', 'Atatürk İlke ve İnkılapları', 'Milli Mücadele Tarihi'] },
-    { name: 'AGS Türkiye Coğrafyası & Jeopolitiği', color: 'bg-orange-50 border-orange-200 text-orange-800', focusTopics: ['Türkiye Coğrafyası ve Fiziki Yapısı', 'Türkiye Ekonomik Coğrafyası ve Bölgeler', 'Türkiye Jeopolitiği ve Stratejik Konumu'] },
-    { name: 'AGS Eğitim Teorileri & Mevzuat', color: 'bg-emerald-50 border-emerald-200 text-emerald-800', focusTopics: ['Türk Milli Eğitim Sistemi ve Temel Kanunlar', 'Eğitim Öğretim İlke ve Yaklaşımları', 'Anayasa ve Devlet Teşkilatı', 'Öğretmenlik Meslek Kanunu'] },
-    { name: 'AGS Öğretmenlik Alan Bilgisi (ÖABT)', color: 'bg-purple-50 border-purple-200 text-purple-800', focusTopics: ['Alan Eğitimi ve Yöntemleri', 'Müfredat Okuryazarlığı', 'Alan Özel Öğretim Yaklaşımları', 'Ölçme ve Değerlendirme Esasları'] }
+    { 
+      name: 'AGS Sözel Yetenek & Türkçe', 
+      color: 'bg-rose-50 border-rose-200 text-rose-800', 
+      focusTopics: [
+        'Sözcük ve Cümlede Anlam Analizi, Mantıksal Çıkarım',
+        'Paragrafta Yapı, Akışı Bozan Cümle ve Metin Çözümleme',
+        'Sözel Akıl Yürütme ve Sözel Mantık Bulmacaları',
+        'Dil Bilgisi, Yazım Kuralları ve Noktalama Standartları'
+      ] 
+    },
+    { 
+      name: 'AGS Sayısal Yetenek & Matematik', 
+      color: 'bg-indigo-50 border-indigo-200 text-indigo-800', 
+      focusTopics: [
+        'Temel Sayı Kavramları, Bölünebilme ve EBOB-EKOK',
+        'Oran-Orantı, Yüzde, Kâr-Zarar ve Denklem Kurma Problemleri',
+        'Sayısal Mantık, Grafik Yorumlama ve Veri Analitiği',
+        'Tablo Okuma ve Şekil-Uzay İlişkisi Problemleri'
+      ] 
+    },
+    { 
+      name: 'AGS Tarih & Türk Kültürü', 
+      color: 'bg-amber-50 border-amber-200 text-amber-800', 
+      focusTopics: [
+        'Türk Tarihi, Medeniyeti ve Devlet Geleneği',
+        'Osmanlı Eğitim, Kültür ve Bilim Sistemi',
+        'Milli Mücadele Tarihi ve Türkiye Cumhuriyeti İnkılapları',
+        'Atatürk İlkeleri ve Türk Dış Politikası Esasları'
+      ] 
+    },
+    { 
+      name: 'AGS Türkiye Coğrafyası & Jeopolitiği', 
+      color: 'bg-orange-50 border-orange-200 text-orange-800', 
+      focusTopics: [
+        'Türkiye Coğrafyası, Fiziki Şekiller ve İklim Yapısı',
+        'Türkiye Ekonomik Coğrafyası, Tarım, Sanayi ve Ulaşım',
+        'Türkiye Jeopolitiği, Bölgesel Güç Statüsü ve Stratejik Konumu'
+      ] 
+    },
+    { 
+      name: 'AGS Eğitim Teorileri & Mevzuat', 
+      color: 'bg-emerald-50 border-emerald-200 text-emerald-800', 
+      focusTopics: [
+        'Türk Milli Eğitim Sistemi ve 1739 Sayılı Milli Eğitim Temel Kanunu',
+        '7528 Sayılı Öğretmenlik Meslek Kanunu (ÖMK) ve Haklar',
+        'Anayasal İlkeler, Kamu Yönetimi ve Devlet Teşkilatı',
+        'Eğitim Öğretim Kuramları, Öğretim İlkeleri ve Yaklaşımlar'
+      ] 
+    },
+    { 
+      name: 'AGS Öğretmenlik Alan Bilgisi (ÖABT)', 
+      color: 'bg-purple-50 border-purple-200 text-purple-800', 
+      focusTopics: [
+        'Alan Eğitimi, Pedagojik İçerik Bilgisi ve Metodoloji',
+        'MEB Müfredat Okuryazarlığı ve Ders İzlencesi Tasarımı',
+        'Özel Öğretim Yöntemleri ve Ölçme-Değerlendirme Esasları'
+      ] 
+    }
   ],
   'LGS (8. Sınıf)': [
-    { name: 'Matematik', color: 'bg-blue-50 border-blue-200 text-blue-800', focusTopics: ['Çarpanlar ve Katlar', 'Üslü İfadeler', 'Kareköklü İfadeler', 'Veri Analizi', 'Basit Olayların Olma Olasılığı', 'Cebirsel İfadeler'] },
-    { name: 'Fen Bilimleri', color: 'bg-emerald-50 border-emerald-200 text-emerald-800', focusTopics: ['Mevsimler ve İklim', 'DNA ve Genetik Kod', 'Basınç', 'Madde ve Endüstri', 'Basit Makineler', 'Enerji Dönüşümleri'] },
-    { name: 'Türkçe', color: 'bg-rose-50 border-rose-200 text-rose-800', focusTopics: ['Sözcükte ve Cümlede Anlam', 'Paragrafta Anlam', 'Fiilimsiler', 'Cümlenin Ögeleri', 'Yazım ve Noktalama', 'Sözel Mantık'] },
-    { name: 'T.C. İnkılap Tarihi', color: 'bg-amber-50 border-amber-200 text-amber-800', focusTopics: ['Bir Kahraman Doğuyor', 'Milli Uyanış', 'Ya İstiklal Ya Ölüm', 'Atatürkçülük ve Çağdaşlaşan Türkiye'] },
-    { name: 'Din Kültürü ve Ahlak Bilgisi', color: 'bg-teal-50 border-teal-200 text-teal-800', focusTopics: ['Kader İnancı', 'Zekat ve Sadaka', 'Din ve Hayat', 'Hz. Muhammed’in Örnekliği'] },
-    { name: 'İngilizce', color: 'bg-purple-50 border-purple-200 text-purple-800', focusTopics: ['Friendship', 'Teen Life', 'In The Kitchen', 'On The Phone', 'The Internet', 'Adventures'] }
+    { 
+      name: 'Matematik', 
+      color: 'bg-blue-50 border-blue-200 text-blue-800', 
+      focusTopics: [
+        '1. Ünite: Çarpanlar ve Katlar, EBOB-EKOK Problemleri',
+        '1. Ünite: Üslü İfadeler, Ondalık Gösterimlerin Çözümlenmesi ve Bilimsel Gösterim',
+        '2. Ünite: Kareköklü İfadeler, Tam Kare Sayılar ve İşlemler',
+        '2. Ünite: Veri Analizi, Çizgi ve Daire Grafiği Yorumlama',
+        '3. Ünite: Basit Olayların Olma Olasılığı ve Olasılık Hesabı',
+        '3. Ünite: Cebirsel İfadeler ve Özdeşlikler (İki Kare Farkı, Tam Kare)',
+        '4. Ünite: Doğrusal Denklemler, Eğim ve Grafik Çizimi',
+        '4. Ünite: Eşitsizlikler ve Birinci Dereceden Eşitsizlik Çözümü',
+        '5. Ünite: Üçgenler (Açı-Kenar Bağıntıları, Yardımcı Elemanlar, Pisagor)',
+        '5. Ünite: Eşlik ve Benzerlik, Benzerlik Oranı',
+        '6. Ünite: Dönüşüm Geometrisi (Yansıma, Öteleme) & Katı Cisimler (Prizma, Silindir, Dik Piramit, Konik)'
+      ] 
+    },
+    { 
+      name: 'Fen Bilimleri', 
+      color: 'bg-emerald-50 border-emerald-200 text-emerald-800', 
+      focusTopics: [
+        '1. Ünite: Mevsimlerin Oluşumu, Eksen Eğikliği ve İklim-Hava Hareketleri',
+        '2. Ünite: DNA ve Genetik Kod, Nükleotidler, Gen, Kromozom',
+        '2. Ünite: Mitoz-Mayoz Tekrarı, Kalıtım, Çaprazlamalar ve Akraba Evliliği',
+        '2. Ünite: Mutasyon, Modifikasyon, Adaptasyon, Biyoteknoloji ve Genetik Mühendisliği',
+        '3. Ünite: Katı, Sıvı ve Gaz Basıncı (Pascal Prensibi ve Açık Hava Basıncı)',
+        '4. Ünite: Periyodik Sistem, Elementlerin Sınıflandırılması',
+        '4. Ünite: Fiziksel ve Kimyasal Değişimler, Kimyasal Tepkimeler ve Kütlenin Korunması',
+        '4. Ünite: Asitler ve Bazlar, pH Cetveli, Nötralleşme ve Asit Yağmurları',
+        '4. Ünite: Maddenin Isı ile Etkileşimi, Özısı ve Hal Değişim Grafikleri',
+        '5. Ünite: Basit Makineler (Kaldıraçlar, Makaralar, Eğik Düzlem, Çıkrık)',
+        '6. Ünite: Besin Zinciri, Enerji Akışı, Fotosentez ve Solunum',
+        '7. Ünite: Elektrik Yükleri ve Elektrik Enerjisi (Topraklama, Elektroskop)'
+      ] 
+    },
+    { 
+      name: 'Türkçe', 
+      color: 'bg-rose-50 border-rose-200 text-rose-800', 
+      focusTopics: [
+        'Sözcükte ve Cümlede Anlam, Deyimler, Atasözleri ve Özdeyişler',
+        'Fiilimsiler (İsim-Fiil, Sıfat-Fiil, Zarf-Fiil) ve Cümlede Kullanımı',
+        'Paragrafta Konu, Ana Fikir, Yardımcı Fikir ve Başlık Çıkarımı',
+        'Paragrafta Yapı, Metin Tamamlama ve Akışı Bozan Cümle',
+        'Sözel Mantık, Akıl Yürütme ve Grafik/Tablo Okuma',
+        'Cümlenin Ögeleri (Yüklem, Özne, Nesne, Dolaylı Tümleç, Zarf Tümleci)',
+        'Fiilde Çatı (Etken, Edilgen, Geçişli, Geçişsiz Fiiller)',
+        'Cümle Türleri (Fiil/İsim Cümlesi, Kurallı/Devrik, Basit/Birleşik Cümle)',
+        'Yazım Kuralları, Noktalama İşaretleri ve Anlatım Bozuklukları',
+        'Metin Türleri (Makale, Deneme, Anı, Biyografi, Söyleşi) ve Söz Sanatları'
+      ] 
+    },
+    { 
+      name: 'T.C. İnkılap Tarihi', 
+      color: 'bg-amber-50 border-amber-200 text-amber-800', 
+      focusTopics: [
+        '1. Ünite: Bir Kahraman Doğuyor (Mustafa Kemal’in Öğrenim ve Askerlik Hayatı)',
+        '2. Ünite: Milli Uyanış: Bağımsızlık Yolunda Atılan Adımlar (I. Dünya Savaşı, Cepheler)',
+        '2. Ünite: Mondros Ateşkes Antlaşması, Cemiyetler ve Kuva-yı Milliye',
+        '2. Ünite: Kongreler Dönemi, Amasya Genelgesi, Mebusan Meclisi ve Misakımilli',
+        '3. Ünite: Ya İstiklal Ya Ölüm! (Doğu, Güney ve Batı Cepheleri, Mudanya, Lozan)',
+        '4. Ünite: Atatürkçülük ve Çağdaşlaşan Türkiye (Siyasi, Toplumsal, Hukuk, Eğitim İnkılapları)',
+        '5. Ünite: Demokratikleşme Çabaları (Çok Partili Hayat Denemeleri)',
+        '6. Ünite: Atatürk Dönemi Türk Dış Politikası ve 7. Ünite: Atatürk’ün Ölümü ve Sonrası'
+      ] 
+    },
+    { 
+      name: 'Din Kültürü ve Ahlak Bilgisi', 
+      color: 'bg-teal-50 border-teal-200 text-teal-800', 
+      focusTopics: [
+        '1. Ünite: Kader ve Kaza İnancı, İnsanın İradesi, Ayete’l Kursi ve Anlamı',
+        '2. Ünite: Zekât ve Sadaka İbadeti, Nisap Miktarı, İnfak ve Asr Suresi',
+        '3. Ünite: Din ve Hayat (Toplum, Aile, Can, Mal, Akıl, Nesil ve Din Emniyeti)',
+        '4. Ünite: Hz. Muhammed’in (s.a.v.) Örnekliği (Doğruluğu, Merhameti, Danışarak İş Yapması)',
+        '5. Ünite: Kur’an-ı Kerim ve Özellikleri (Ana Konuları, Okunması ve Anlaşılması)'
+      ] 
+    },
+    { 
+      name: 'İngilizce', 
+      color: 'bg-purple-50 border-purple-200 text-purple-800', 
+      focusTopics: [
+        'Unit 1: Friendship (Accepting/Refusing Invitations, Personal Qualities)',
+        'Unit 2: Teen Life (Daily Routines, Preferences, Music/Sports Types)',
+        'Unit 3: In The Kitchen (Cooking Processes, Ingredients, Recipes)',
+        'Unit 4: On The Phone (Communication Ways, Making Phone Calls)',
+        'Unit 5: The Internet (Internet Habits, Safety Rules, Vocabulary)',
+        'Unit 6: Adventures (Extreme Sports, Comparisons, Equipment)',
+        'Unit 7: Tourism, Unit 8: Chores, Unit 9: Science, Unit 10: Natural Forces'
+      ] 
+    }
   ],
   'Ara Sınıf (9, 10, 11)': [
-    { name: 'Matematik', color: 'bg-blue-50 border-blue-200 text-blue-800', focusTopics: ['Müfredat Konu Tekrarı', 'Haftalık Ödev Çözümleri', 'Yazılı Sınav Hazırlığı', 'Temel Formül Çalışması'] },
-    { name: 'Fizik / Kimya / Biyoloji', color: 'bg-emerald-50 border-emerald-200 text-emerald-800', focusTopics: ['Fen Bilimleri Temelleri', 'Yazılıya Hazırlık', 'Konu Özet Çıkarma'] },
-    { name: 'Edebiyat ve Tarih', color: 'bg-amber-50 border-amber-200 text-amber-800', focusTopics: ['Edebi Türler Çalışması', 'Tarih Özet Okuma', 'Sözlü Sınav Çalışmaları'] },
-    { name: 'Kitap Okuma & Analiz', color: 'bg-purple-50 border-purple-200 text-purple-800', focusTopics: ['Haftalık Belirlenen Kitabın Okunması', 'Okuma Notları Alma', 'Kelime Dağarcığı Geliştirme'] },
-    { name: 'Ödev ve Tekrar Saati', color: 'bg-stone-50 border-stone-200 text-stone-700', focusTopics: ['Haftalık Ödevlerin Tamamlanması', 'Eksik Konuların Defterden Okunması'] }
+    { 
+      name: 'Matematik', 
+      color: 'bg-blue-50 border-blue-200 text-blue-800', 
+      focusTopics: [
+        '9. Sınıf: Mantık, Kümeler, Denklem ve Eşitsizlikler, Üçgenler',
+        '10. Sınıf: Sayma ve Olasılık, Fonksiyonlar, Polinomlar, Dörtgenler ve Çokgenler',
+        '11. Sınıf: Trigonometri, Analitik Geometri, Fonksiyonlarda Uygulamalar, Çember-Daire',
+        'Haftalık Konu Tekrarı, Okul Ödevleri ve Yazılı Sınav Provaları'
+      ] 
+    },
+    { 
+      name: 'Fizik / Kimya / Biyoloji', 
+      color: 'bg-emerald-50 border-emerald-200 text-emerald-800', 
+      focusTopics: [
+        'Fizik: Madde Özellikleri, Kuvvet-Hareket, Elektrik, İş-Enerji, Optik',
+        'Kimya: Atom ve Periyodik Sistem, Kimyasal Türler, Mol Kavramı, Çözeltiler',
+        'Biyoloji: Hücre, Canlıların Sınıflandırılması, Kalıtım, İnsan Fizyolojisi',
+        'Yazılıya Hazırlık Soru Çözümü ve Okul Deney-Ödev Takibi'
+      ] 
+    },
+    { 
+      name: 'Edebiyat ve Tarih', 
+      color: 'bg-amber-50 border-amber-200 text-amber-800', 
+      focusTopics: [
+        'Türk Dili ve Edebiyatı: Edebi Türler, Şiir Analizi, Dil Bilgisi ve Yazım Kuralları',
+        'Tarih: Dünya ve Türk Tarihi Üniteleri, Kronoloji Çalışması, Yazılı Notları',
+        'Sözlü Çalışmaları ve Ünite Sonu Değerlendirme Soruları'
+      ] 
+    },
+    { 
+      name: 'Kitap Okuma & Analiz', 
+      color: 'bg-purple-50 border-purple-200 text-purple-800', 
+      focusTopics: [
+        'Dünya ve Türk Klasiklerinden Haftalık Belirlenen Eserin Okunması',
+        'Okunan Kitabın Karakter, Zaman, Mekan ve TEMA Analizinin Yapılması',
+        'Okuma Hızı ve Anlama Kabiliyetini Artırıcı Metin Özetleme'
+      ] 
+    },
+    { 
+      name: 'Ödev ve Tekrar Saati', 
+      color: 'bg-stone-50 border-stone-200 text-stone-700', 
+      focusTopics: [
+        'Okul Öğretmenlerinin Verdiği Haftalık Ödevlerin Tamamlanması',
+        'Hafta Boyunca İşlenen Konuların Defter ve Kaynak Kitaplardan Tekrarı'
+      ] 
+    }
   ]
 };
 
