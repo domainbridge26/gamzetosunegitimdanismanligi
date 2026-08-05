@@ -13,9 +13,11 @@ import {
   dbGetStudentLogs, dbDeleteStudentLog,
   dbGetDailyStudyLogs, dbAddDailyStudyLog, dbUpdateDailyStudyLog, dbDeleteDailyStudyLog,
   dbGetMockExamLogs, dbAddMockExamLog, dbUpdateMockExamLog, dbDeleteMockExamLog,
-  dbGetCurriculumProgress, dbSaveCurriculumProgress, dbAddStudentLog
+  dbGetCurriculumProgress, dbSaveCurriculumProgress, dbAddStudentLog,
+  dbGetStudentSchedule, dbMarkScheduleAsRead, StudentScheduleRecord
 } from '../lib/firebase';
 import AnxietyControlPanel from './AnxietyControlPanel';
+import SchedulePlanner from './SchedulePlanner';
 
 interface CoachingPanelProps {
   isOpen: boolean;
@@ -268,8 +270,12 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
   const [rememberMe, setRememberMe] = useState(true);
 
   // Active Main Tabs
-  const [studentActiveTab, setStudentActiveTab] = useState<'kaygi' | 'gunluk' | 'deneme' | 'mufredat'>('kaygi');
-  const [coachActiveTab, setCoachActiveTab] = useState<'ogrenciler' | 'egzersiz_raporu' | 'gunluk_rapor' | 'deneme_rapor' | 'mufredat_rapor'>('ogrenciler');
+  const [studentActiveTab, setStudentActiveTab] = useState<'program' | 'kaygi' | 'gunluk' | 'deneme' | 'mufredat'>('program');
+  const [coachActiveTab, setCoachActiveTab] = useState<'ogrenciler' | 'ders_programi' | 'egzersiz_raporu' | 'gunluk_rapor' | 'deneme_rapor' | 'mufredat_rapor'>('ogrenciler');
+
+  // Student Schedule State
+  const [studentSchedule, setStudentSchedule] = useState<StudentScheduleRecord | null>(null);
+  const [selectedScheduleDay, setSelectedScheduleDay] = useState<string>('Pazartesi');
 
   // Database State Collections
   const [studentsList, setStudentsList] = useState<StudentAccount[]>([]);
@@ -360,11 +366,14 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
     }
   }, [isOpen]);
 
-  // Load student progress when logged in as student
+  // Load student progress and schedule when logged in as student
   useEffect(() => {
     if (currentStudent) {
       dbGetCurriculumProgress(currentStudent.username).then((topics) => {
         setCompletedTopics(topics);
+      });
+      dbGetStudentSchedule(currentStudent.username).then((sch) => {
+        setStudentSchedule(sch);
       });
       // Set default selected subject for daily study form
       const groupKey = getGroupKey(currentStudent.studentClass);
@@ -377,6 +386,22 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
         }));
       }
     }
+  }, [currentStudent]);
+
+  // Real-time listener for schedule updates
+  useEffect(() => {
+    const handleScheduleUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<{ studentUsername: string }>;
+      if (currentStudent && customEvent.detail?.studentUsername === currentStudent.username.toLowerCase()) {
+        dbGetStudentSchedule(currentStudent.username).then((sch) => {
+          setStudentSchedule(sch);
+        });
+      }
+    };
+    window.addEventListener('gamze-schedule-updated', handleScheduleUpdate);
+    return () => {
+      window.removeEventListener('gamze-schedule-updated', handleScheduleUpdate);
+    };
   }, [currentStudent]);
 
   if (!isOpen) return null;
@@ -807,6 +832,30 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
               {/* Student Nav Tabs */}
               <div className="flex flex-wrap bg-white p-1.5 rounded-xl shadow border border-stone-200 gap-1">
                 <button
+                  onClick={async () => {
+                    setStudentActiveTab('program');
+                    if (currentStudent && studentSchedule?.hasUnreadNotification) {
+                      await dbMarkScheduleAsRead(currentStudent.username);
+                      setStudentSchedule(prev => prev ? { ...prev, hasUnreadNotification: false } : null);
+                    }
+                  }}
+                  className={`flex-1 py-3 px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 relative ${
+                    studentActiveTab === 'program'
+                      ? 'bg-[#C5A059] text-slate-950 shadow-md'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4 text-amber-800" />
+                  <span>Ders Programım</span>
+                  {studentSchedule?.hasUnreadNotification && (
+                    <span className="flex items-center gap-1 bg-rose-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-bounce shadow-md">
+                      <span className="w-2 h-2 bg-white rounded-full animate-ping" />
+                      YENİ!
+                    </span>
+                  )}
+                </button>
+
+                <button
                   onClick={() => setStudentActiveTab('kaygi')}
                   className={`flex-1 py-3 px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     studentActiveTab === 'kaygi'
@@ -854,6 +903,140 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                   <span>Müfredat & Konu Takibi</span>
                 </button>
               </div>
+
+              {/* TAB: DERS PROGRAMIM */}
+              {studentActiveTab === 'program' && (
+                <div className="space-y-6">
+                  {studentSchedule && studentSchedule.schedule ? (
+                    <div className="bg-white rounded-2xl shadow-lg border border-stone-200 overflow-hidden">
+                      {/* Banner */}
+                      <div className="bg-slate-900 text-white p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="bg-[#C5A059] text-slate-950 text-[10px] font-extrabold px-2.5 py-0.5 rounded-md uppercase">
+                              Gamze Tosun Tarafından Hazırlandı
+                            </span>
+                            <span className="text-xs text-stone-400">{studentSchedule.createdAt}</span>
+                          </div>
+                          <h3 className="font-serif text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+                            <GraduationCap className="w-6 h-6 text-[#C5A059]" />
+                            {studentSchedule.studentName} - Haftalık Ders Programı
+                          </h3>
+                          <p className="text-stone-300 text-xs">
+                            <span className="font-bold text-[#C5A059]">Sınav Grubu:</span> {studentSchedule.examGroup} &bull; <span className="font-bold text-[#C5A059]">Hedef:</span> {studentSchedule.targetGoal}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => window.print()}
+                            className="px-3.5 py-2 bg-stone-800 hover:bg-stone-700 text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <FileText className="w-4 h-4 text-[#C5A059]" />
+                            <span>Yazdır / PDF</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Days Tab Selector */}
+                      <div className="bg-stone-100 p-3 border-b border-stone-200 flex flex-wrap gap-1.5 justify-center">
+                        {['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'].map((day) => {
+                          const slots = studentSchedule.schedule[day] || [];
+                          const hasSlots = slots.length > 0;
+                          return (
+                            <button
+                              key={day}
+                              onClick={() => setSelectedScheduleDay(day)}
+                              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                                selectedScheduleDay === day
+                                  ? 'bg-[#2D2D2D] text-[#C5A059] shadow-md scale-105 font-extrabold'
+                                  : 'bg-white text-slate-700 hover:bg-stone-200 border border-stone-200/80'
+                              }`}
+                            >
+                              <span>{day}</span>
+                              {hasSlots && (
+                                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                                  selectedScheduleDay === day ? 'bg-[#C5A059] text-slate-950' : 'bg-stone-200 text-slate-600'
+                                }`}>
+                                  {slots.length} etüt
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Schedule Table for Selected Day */}
+                      <div className="p-4 sm:p-6">
+                        <div className="mb-4 flex items-center justify-between">
+                          <h4 className="font-serif font-bold text-lg text-slate-900 flex items-center gap-2">
+                            <Calendar className="w-5 h-5 text-[#C5A059]" />
+                            {selectedScheduleDay} Etüt & Çalışma Akışı
+                          </h4>
+                          <span className="text-xs text-stone-500">
+                            {(studentSchedule.schedule[selectedScheduleDay] || []).length} Çalışma Bloğu
+                          </span>
+                        </div>
+
+                        {(studentSchedule.schedule[selectedScheduleDay] || []).length > 0 ? (
+                          <div className="overflow-x-auto rounded-xl border border-stone-200 shadow-sm">
+                            <table className="w-full text-left border-collapse min-w-[600px]">
+                              <thead>
+                                <tr className="bg-slate-900 text-white text-xs font-bold uppercase tracking-wider">
+                                  <th className="p-3.5 w-32">Saat</th>
+                                  <th className="p-3.5 w-44">Ders / Alan</th>
+                                  <th className="p-3.5">Odak & Konu Başlığı</th>
+                                  <th className="p-3.5 w-72">Gamze Hoca'nın Notu</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-stone-200 text-xs">
+                                {studentSchedule.schedule[selectedScheduleDay].map((item: any, idx: number) => (
+                                  <tr key={idx} className="hover:bg-amber-50/40 transition-colors">
+                                    <td className="p-3.5 font-bold text-slate-800 bg-stone-50 font-mono">
+                                      <div className="flex items-center gap-1.5">
+                                        <Clock className="w-3.5 h-3.5 text-[#C5A059]" />
+                                        <span>{item.time}</span>
+                                      </div>
+                                    </td>
+                                    <td className="p-3.5">
+                                      <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold border ${item.color || 'bg-blue-50 text-blue-800 border-blue-200'}`}>
+                                        {item.subject}
+                                      </span>
+                                    </td>
+                                    <td className="p-3.5 font-semibold text-slate-800">
+                                      {item.focus}
+                                    </td>
+                                    <td className="p-3.5 italic text-amber-900 bg-amber-50/60 rounded-lg border-l-2 border-[#C5A059]">
+                                      💡 {item.advice}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <div className="p-12 text-center bg-stone-50 rounded-xl border border-dashed border-stone-300 space-y-2">
+                            <Calendar className="w-10 h-10 text-stone-300 mx-auto" />
+                            <p className="text-xs text-slate-500 font-medium">{selectedScheduleDay} günü için belirlenmiş serbest çalışma veya dinlenme zamanı.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-2xl p-12 text-center border border-stone-200 shadow-sm space-y-4">
+                      <div className="w-16 h-16 bg-amber-50 text-[#C5A059] rounded-2xl flex items-center justify-center mx-auto border border-amber-200">
+                        <Sparkles className="w-8 h-8" />
+                      </div>
+                      <div className="space-y-1.5 max-w-md mx-auto">
+                        <h4 className="font-serif text-lg font-bold text-slate-900">Henüz Ders Programınız Eklenmedi</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          Eğitmeniniz Gamze Tosun sizin için haftalık özel ders programınızı hazırladığında burada detaylı tablo olarak görüntülenecektir.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* TAB 1: KAYGI YÖNETİMİ EGZERSİZLERİ */}
               {studentActiveTab === 'kaygi' && (
@@ -1427,6 +1610,18 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                 </button>
 
                 <button
+                  onClick={() => setCoachActiveTab('ders_programi')}
+                  className={`flex-1 py-3 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    coachActiveTab === 'ders_programi'
+                      ? 'bg-slate-900 text-white shadow'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4 text-[#C5A059]" />
+                  <span>Ders Programı Robotu</span>
+                </button>
+
+                <button
                   onClick={() => setCoachActiveTab('egzersiz_raporu')}
                   className={`flex-1 py-3 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     coachActiveTab === 'egzersiz_raporu'
@@ -1462,6 +1657,21 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                   <span>Deneme Sınavı Raporları</span>
                 </button>
               </div>
+
+              {/* COACH TAB: DERS PROGRAMI ROBOTU */}
+              {coachActiveTab === 'ders_programi' && (
+                <div className="bg-white p-6 rounded-2xl shadow-md border border-stone-200">
+                  <SchedulePlanner 
+                    studentsList={studentsList}
+                    onScheduleSavedForStudent={async (username) => {
+                      if (currentStudent && currentStudent.username === username) {
+                        const sch = await dbGetStudentSchedule(username);
+                        setStudentSchedule(sch);
+                      }
+                    }}
+                  />
+                </div>
+              )}
 
               {/* COACH TAB 1: ÖĞRENCİ HESAP YÖNETİMİ */}
               {coachActiveTab === 'ogrenciler' && (

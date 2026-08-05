@@ -1181,5 +1181,83 @@ export async function dbSaveCurriculumProgress(studentUsername: string, complete
   localStorage.setItem(`gamze_curriculum_${usernameKey}`, JSON.stringify(completedTopics));
 }
 
+// ==========================================
+// COACHING STUDENT SCHEDULE SERVICES
+// ==========================================
+
+export interface StudentScheduleRecord {
+  studentUsername: string;
+  studentName: string;
+  examGroup: string;
+  targetGoal: string;
+  createdAt: string;
+  schedule: Record<string, any>;
+  hasUnreadNotification?: boolean;
+}
+
+export async function dbSaveStudentSchedule(studentUsername: string, record: Omit<StudentScheduleRecord, 'studentUsername'>): Promise<void> {
+  const usernameKey = studentUsername.toLowerCase();
+  const scheduleData: StudentScheduleRecord = {
+    ...record,
+    studentUsername: usernameKey,
+    hasUnreadNotification: true
+  };
+
+  try {
+    const ref = doc(db, 'coaching_student_schedules', usernameKey);
+    await setDoc(ref, scheduleData);
+  } catch (error) {
+    console.error('Failed to save student schedule in Firestore:', error);
+  }
+
+  try {
+    localStorage.setItem(`gamze_student_schedule_${usernameKey}`, JSON.stringify(scheduleData));
+    // Also dispatch custom event for real-time notification in open tabs
+    window.dispatchEvent(new CustomEvent('gamze-schedule-updated', { detail: { studentUsername: usernameKey } }));
+  } catch (e) {}
+}
+
+export async function dbGetStudentSchedule(studentUsername: string): Promise<StudentScheduleRecord | null> {
+  const usernameKey = studentUsername.toLowerCase();
+  try {
+    const ref = doc(db, 'coaching_student_schedules', usernameKey);
+    const docSnap = await getDoc(ref);
+    if (docSnap.exists()) {
+      const data = docSnap.data() as StudentScheduleRecord;
+      localStorage.setItem(`gamze_student_schedule_${usernameKey}`, JSON.stringify(data));
+      return data;
+    }
+  } catch (error) {
+    console.error('Failed to fetch student schedule from Firestore:', error);
+  }
+
+  try {
+    const raw = localStorage.getItem(`gamze_student_schedule_${usernameKey}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function dbMarkScheduleAsRead(studentUsername: string): Promise<void> {
+  const usernameKey = studentUsername.toLowerCase();
+  try {
+    const ref = doc(db, 'coaching_student_schedules', usernameKey);
+    await updateDoc(ref, { hasUnreadNotification: false });
+  } catch (error) {
+    console.error('Failed to mark schedule as read in Firestore:', error);
+  }
+
+  try {
+    const raw = localStorage.getItem(`gamze_student_schedule_${usernameKey}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      parsed.hasUnreadNotification = false;
+      localStorage.setItem(`gamze_student_schedule_${usernameKey}`, JSON.stringify(parsed));
+    }
+  } catch (e) {}
+}
+
+
 
 

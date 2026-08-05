@@ -282,6 +282,7 @@ export default function App() {
         isOpen={isAdminOpen} 
         onClose={() => setIsAdminOpen(false)} 
         onOpenSpeedReading={() => setIsSpeedReadingOpen(true)}
+        onOpenCoaching={() => setIsCoachingOpen(true)}
       />
 
       {/* SPEED READING EXERCISE PANEL DIALOG */}

@@ -3,9 +3,16 @@ import {
   Sparkles, Calendar, Plus, Trash2, Edit2, Copy, Download, Save, 
   RefreshCw, Printer, BookOpen, Clock, AlertCircle, CheckCircle, 
   FileText, Share2, Send, ChevronRight, GraduationCap, X, Check,
-  FileSpreadsheet
+  FileSpreadsheet, UserCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { StudentAccount } from '../types';
+import { dbSaveStudentSchedule } from '../lib/firebase';
+
+interface SchedulePlannerProps {
+  studentsList?: StudentAccount[];
+  onScheduleSavedForStudent?: (username: string) => void;
+}
 
 // Subject database based on Turkish curriculum
 interface SubjectTemplate {
@@ -775,8 +782,9 @@ const sortScheduleSlots = (slots: ScheduleItem[]): ScheduleItem[] => {
   });
 };
 
-export default function SchedulePlanner() {
+export default function SchedulePlanner({ studentsList = [], onScheduleSavedForStudent }: SchedulePlannerProps) {
   // Wizard Input States
+  const [selectedStudentUsername, setSelectedStudentUsername] = useState('');
   const [studentName, setStudentName] = useState('');
   const [examGroup, setExamGroup] = useState('YKS Sayısal');
   const [targetGoal, setTargetGoal] = useState('');
@@ -1070,23 +1078,49 @@ export default function SchedulePlanner() {
     setSelectedDay('Pazartesi');
   };
 
-  // Save Schedule to Local Storage
-  const handleSaveSchedule = () => {
+  // Save Schedule to Local Storage & Student Firestore Record
+  const handleSaveSchedule = async () => {
     if (!isGenerated) return;
+
+    const createdAt = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
     const newSave: SavedSchedule = {
       id: `sch-${Date.now()}`,
       studentName,
       examGroup,
       targetGoal: targetGoal || 'Yüksek Başarı',
-      createdAt: new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      createdAt,
       schedule
     };
 
     const updated = [newSave, ...savedSchedules];
     setSavedSchedules(updated);
     localStorage.setItem('gamze_tosun_saved_schedules', JSON.stringify(updated));
-    alert(`${studentName} isimli öğrencinin ders programı başarıyla kaydedildi!`);
+
+    // Find target student username
+    let targetUsername = selectedStudentUsername;
+    if (!targetUsername && studentName.trim() && studentsList.length > 0) {
+      const matched = studentsList.find(s => s.fullName.toLowerCase().includes(studentName.toLowerCase()) || studentName.toLowerCase().includes(s.fullName.toLowerCase()));
+      if (matched) {
+        targetUsername = matched.username;
+      }
+    }
+
+    if (targetUsername) {
+      await dbSaveStudentSchedule(targetUsername, {
+        studentName: studentName || 'Öğrenci',
+        examGroup,
+        targetGoal: targetGoal || 'Yüksek Başarı',
+        createdAt,
+        schedule
+      });
+      if (onScheduleSavedForStudent) {
+        onScheduleSavedForStudent(targetUsername);
+      }
+      alert(`${studentName} isimli öğrencinin ders programı kaydedildi ve öğrencinin koçluk paneline gönderildi! 📩`);
+    } else {
+      alert(`${studentName} isimli öğrencinin ders programı başarıyla kaydedildi!`);
+    }
   };
 
   // Load a Saved Schedule
@@ -1413,6 +1447,38 @@ export default function SchedulePlanner() {
           </div>
 
           <div className="space-y-4">
+            {/* Student Quick Selector */}
+            {studentsList.length > 0 && (
+              <div className="space-y-1 bg-amber-50/60 p-2.5 rounded-xl border border-amber-200/60">
+                <label className="text-[10px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-[#C5A059]" />
+                  <span>Kayıtlı Öğrenci Seçin (Otomatik Eşleşme)</span>
+                </label>
+                <select
+                  value={selectedStudentUsername}
+                  onChange={(e) => {
+                    const un = e.target.value;
+                    setSelectedStudentUsername(un);
+                    const found = studentsList.find(s => s.username === un);
+                    if (found) {
+                      setStudentName(found.fullName);
+                      if (found.studentClass.includes('LGS')) setExamGroup('LGS (8. Sınıf)');
+                      else if (found.studentClass.includes('YKS')) setExamGroup('YKS Sayısal');
+                      else if (found.studentClass.includes('KPSS')) setExamGroup('KPSS Lisans & Ön Lisans');
+                    }
+                  }}
+                  className="w-full px-2.5 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none"
+                >
+                  <option value="">-- Yeni Öğrenci Yazın veya Seçin --</option>
+                  {studentsList.map(st => (
+                    <option key={st.id} value={st.username}>
+                      {st.fullName} ({st.studentClass}) - [{st.username}]
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Student Name */}
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Öğrenci Ad Soyad</label>

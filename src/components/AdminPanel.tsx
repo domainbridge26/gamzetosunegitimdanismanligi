@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { ContactSubmission, Testimonial } from '../types';
 import { TESTIMONIALS_DATA } from '../data';
-import SchedulePlanner from './SchedulePlanner';
 import AnxietyControlPanel from './AnxietyControlPanel';
 import { 
   dbGetInquiries, 
@@ -29,15 +28,16 @@ interface AdminPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenSpeedReading?: () => void;
+  onOpenCoaching?: () => void;
 }
 
-export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading }: AdminPanelProps) {
+export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading, onOpenCoaching }: AdminPanelProps) {
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('gamze_admin_remember') === 'true');
   const [loginError, setLoginError] = useState('');
-  const [activeTab, setActiveTab] = useState<'requests' | 'planner' | 'comments' | 'anxiety'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'comments' | 'anxiety'>('requests');
 
   const [inquiries, setInquiries] = useState<ContactSubmission[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -462,17 +462,6 @@ export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading }: Admi
               )}
             </button>
             <button
-              onClick={() => setActiveTab('planner')}
-              className={`px-4 py-2 text-xs font-bold transition-all rounded-lg flex items-center gap-2 cursor-pointer ${
-                activeTab === 'planner'
-                  ? 'bg-[#C5A059] text-slate-950 shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Ders Programı Robotu</span>
-            </button>
-            <button
               onClick={() => setActiveTab('anxiety')}
               className={`px-4 py-2 text-xs font-bold transition-all rounded-lg flex items-center gap-2 cursor-pointer ${
                 activeTab === 'anxiety'
@@ -483,6 +472,19 @@ export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading }: Admi
               <HeartPulse className="w-4 h-4 text-rose-400" />
               <span>Kaygını Kontrol Et</span>
             </button>
+
+            {onOpenCoaching && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenCoaching();
+                }}
+                className="px-4 py-2 text-xs font-extrabold transition-all rounded-lg flex items-center gap-2 cursor-pointer bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm"
+              >
+                <Users className="w-4 h-4" />
+                <span>Koçluk Panelini Aç 🎓</span>
+              </button>
+            )}
 
             {onOpenSpeedReading && (
               <button
@@ -1143,10 +1145,8 @@ export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading }: Admi
                 </div>
               )}
             </div>
-          ) : activeTab === 'anxiety' ? (
-            <AnxietyControlPanel />
           ) : (
-            <SchedulePlanner />
+            <AnxietyControlPanel />
           )}
 
         </div>
