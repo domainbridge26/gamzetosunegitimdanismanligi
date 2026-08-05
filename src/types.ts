@@ -104,3 +104,44 @@ export interface ExerciseResult {
   timeSeconds: number;
   date: string;
 }
+
+export interface DailyStudyLog {
+  id: string;
+  studentUsername: string;
+  studentFullName: string;
+  studentClass: 'İLOKUL' | 'LGS' | 'YKS' | string;
+  date: string; // Turkish formatted date "29.07.2026"
+  subject: string; // e.g. "Matematik", "Türkçe"
+  topic: string; // e.g. "Paragrafta Anlama", "Üslü Sayılar"
+  solvedQuestions: number; // e.g. 80
+  correctCount?: number;
+  wrongCount?: number;
+  emptyCount?: number;
+  studyDurationMinutes: number; // e.g. 60
+  notes?: string;
+  createdAt?: string;
+}
+
+export interface MockExamLog {
+  id: string;
+  studentUsername: string;
+  studentFullName: string;
+  studentClass: 'İLKOKUL' | 'LGS' | 'YKS' | string;
+  examName: string; // e.g. "Özdebir Türkiye Geneli LGS-1"
+  date: string; // "29.07.2026"
+  groupType: 'İLKOKUL' | 'LGS' | 'YKS';
+  // Subject net scores stored dynamically as object key-value pair e.g. { "Türkçe": 18.5, "Matematik": 15.0 }
+  subjectNets: Record<string, number>;
+  totalNet: number;
+  score: number; // Final score e.g. 465.50
+  targetScore?: number;
+  notes?: string;
+  createdAt?: string;
+}
+
+export interface CurriculumProgress {
+  studentUsername: string;
+  completedTopics: string[]; // List of topic keys/IDs completed by the student
+  updatedAt: string;
+}
+

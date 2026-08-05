@@ -9,10 +9,11 @@ interface NavbarProps {
   setActiveSection: (section: string) => void;
   onOpenAdmin: () => void;
   onOpenSpeedReading?: () => void;
+  onOpenCoaching?: () => void;
   notifCount?: number;
 }
 
-export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, onOpenSpeedReading, notifCount = 0 }: NavbarProps) {
+export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, onOpenSpeedReading, onOpenCoaching, notifCount = 0 }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [pageViews, setPageViews] = useState<PageViews>({ todayViews: 0, totalViews: 0 });
@@ -141,6 +142,16 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, o
                 <span className="text-xs font-black text-[#2D2D2D] leading-none mt-1 font-mono">{pageViews.totalViews}</span>
               </div>
             </div>
+
+            <button
+              id="btn-coaching-portal"
+              onClick={onOpenCoaching}
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#C5A059] text-stone-950 font-black text-[10px] uppercase tracking-widest hover:bg-[#b08d4b] transition-all cursor-pointer shadow-sm"
+              title="Koçluk Özel Paneli"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Koçluk Özel Paneli</span>
+            </button>
 
             <button
               id="btn-speed-reading-portal"

@@ -502,7 +502,7 @@ export function dbSubscribeToPageViews(callback: (views: PageViews) => void): ()
 // STUDENT ACCOUNTS MANAGEMENT SERVICES
 // ==========================================
 
-import { StudentAccount, StudentExerciseLog } from '../types';
+import { StudentAccount, StudentExerciseLog, DailyStudyLog, MockExamLog, CurriculumProgress } from '../types';
 
 export const DEFAULT_STUDENT_LOGS: StudentExerciseLog[] = [
   {
@@ -925,5 +925,261 @@ export async function dbClearStudentLogs(studentUsername: string): Promise<void>
     console.error(e);
   }
 }
+
+// ==========================================
+// COACHING DAILY STUDY LOGS SERVICES
+// ==========================================
+
+export async function dbGetDailyStudyLogs(targetUsername?: string): Promise<DailyStudyLog[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'coaching_daily_logs'));
+    let result: DailyStudyLog[] = [];
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      result.push({
+        id: docSnap.id,
+        studentUsername: data.studentUsername || '',
+        studentFullName: data.studentFullName || '',
+        studentClass: data.studentClass || 'LGS',
+        date: data.date || new Date().toLocaleDateString('tr-TR'),
+        subject: data.subject || '',
+        topic: data.topic || '',
+        solvedQuestions: Number(data.solvedQuestions || 0),
+        correctCount: data.correctCount !== undefined ? Number(data.correctCount) : undefined,
+        wrongCount: data.wrongCount !== undefined ? Number(data.wrongCount) : undefined,
+        emptyCount: data.emptyCount !== undefined ? Number(data.emptyCount) : undefined,
+        studyDurationMinutes: Number(data.studyDurationMinutes || 0),
+        notes: data.notes || '',
+        createdAt: data.createdAt || new Date().toISOString()
+      });
+    });
+
+    if (targetUsername) {
+      result = result.filter(log => log.studentUsername.toLowerCase() === targetUsername.toLowerCase());
+    }
+
+    result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    localStorage.setItem('gamze_daily_logs', JSON.stringify(result));
+    return result;
+  } catch (error) {
+    console.error('Failed to fetch daily study logs from Firestore, falling back to local storage:', error);
+    const raw = localStorage.getItem('gamze_daily_logs');
+    let local: DailyStudyLog[] = raw ? JSON.parse(raw) : [];
+    if (targetUsername) {
+      local = local.filter(log => log.studentUsername.toLowerCase() === targetUsername.toLowerCase());
+    }
+    return local;
+  }
+}
+
+export async function dbAddDailyStudyLog(logData: Omit<DailyStudyLog, 'id'>): Promise<DailyStudyLog> {
+  const fullLog = {
+    ...logData,
+    createdAt: logData.createdAt || new Date().toISOString()
+  };
+  try {
+    const docRef = await addDoc(collection(db, 'coaching_daily_logs'), fullLog);
+    const created: DailyStudyLog = { ...fullLog, id: docRef.id };
+
+    try {
+      const raw = localStorage.getItem('gamze_daily_logs');
+      const local: DailyStudyLog[] = raw ? JSON.parse(raw) : [];
+      local.unshift(created);
+      localStorage.setItem('gamze_daily_logs', JSON.stringify(local));
+    } catch(e) {}
+
+    return created;
+  } catch (error) {
+    console.error('Failed to add daily study log to Firestore:', error);
+    const id = 'dlog-' + Math.random().toString(36).substring(2, 8);
+    const created: DailyStudyLog = { ...fullLog, id };
+    const raw = localStorage.getItem('gamze_daily_logs');
+    const local: DailyStudyLog[] = raw ? JSON.parse(raw) : [];
+    local.unshift(created);
+    localStorage.setItem('gamze_daily_logs', JSON.stringify(local));
+    return created;
+  }
+}
+
+export async function dbUpdateDailyStudyLog(id: string, updates: Partial<DailyStudyLog>): Promise<void> {
+  try {
+    const ref = doc(db, 'coaching_daily_logs', id);
+    await updateDoc(ref, updates);
+  } catch (error) {
+    console.error(`Failed to update daily study log ${id} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_daily_logs');
+    if (raw) {
+      const local: DailyStudyLog[] = JSON.parse(raw);
+      const updated = local.map(item => item.id === id ? { ...item, ...updates } : item);
+      localStorage.setItem('gamze_daily_logs', JSON.stringify(updated));
+    }
+  } catch (e) {}
+}
+
+export async function dbDeleteDailyStudyLog(id: string): Promise<void> {
+  try {
+    const ref = doc(db, 'coaching_daily_logs', id);
+    await deleteDoc(ref);
+  } catch (error) {
+    console.error(`Failed to delete daily study log ${id} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_daily_logs');
+    if (raw) {
+      const local: DailyStudyLog[] = JSON.parse(raw);
+      const updated = local.filter(item => item.id !== id);
+      localStorage.setItem('gamze_daily_logs', JSON.stringify(updated));
+    }
+  } catch (e) {}
+}
+
+// ==========================================
+// COACHING MOCK EXAM LOGS SERVICES
+// ==========================================
+
+export async function dbGetMockExamLogs(targetUsername?: string): Promise<MockExamLog[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'coaching_mock_exams'));
+    let result: MockExamLog[] = [];
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      result.push({
+        id: docSnap.id,
+        studentUsername: data.studentUsername || '',
+        studentFullName: data.studentFullName || '',
+        studentClass: data.studentClass || 'LGS',
+        examName: data.examName || '',
+        date: data.date || new Date().toLocaleDateString('tr-TR'),
+        groupType: data.groupType || 'LGS',
+        subjectNets: data.subjectNets || {},
+        totalNet: Number(data.totalNet || 0),
+        score: Number(data.score || 0),
+        targetScore: data.targetScore ? Number(data.targetScore) : undefined,
+        notes: data.notes || '',
+        createdAt: data.createdAt || new Date().toISOString()
+      });
+    });
+
+    if (targetUsername) {
+      result = result.filter(log => log.studentUsername.toLowerCase() === targetUsername.toLowerCase());
+    }
+
+    result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    localStorage.setItem('gamze_mock_exams', JSON.stringify(result));
+    return result;
+  } catch (error) {
+    console.error('Failed to fetch mock exam logs from Firestore:', error);
+    const raw = localStorage.getItem('gamze_mock_exams');
+    let local: MockExamLog[] = raw ? JSON.parse(raw) : [];
+    if (targetUsername) {
+      local = local.filter(log => log.studentUsername.toLowerCase() === targetUsername.toLowerCase());
+    }
+    return local;
+  }
+}
+
+export async function dbAddMockExamLog(logData: Omit<MockExamLog, 'id'>): Promise<MockExamLog> {
+  const fullLog = {
+    ...logData,
+    createdAt: logData.createdAt || new Date().toISOString()
+  };
+  try {
+    const docRef = await addDoc(collection(db, 'coaching_mock_exams'), fullLog);
+    const created: MockExamLog = { ...fullLog, id: docRef.id };
+
+    try {
+      const raw = localStorage.getItem('gamze_mock_exams');
+      const local: MockExamLog[] = raw ? JSON.parse(raw) : [];
+      local.unshift(created);
+      localStorage.setItem('gamze_mock_exams', JSON.stringify(local));
+    } catch(e) {}
+
+    return created;
+  } catch (error) {
+    console.error('Failed to add mock exam log to Firestore:', error);
+    const id = 'mock-' + Math.random().toString(36).substring(2, 8);
+    const created: MockExamLog = { ...fullLog, id };
+    const raw = localStorage.getItem('gamze_mock_exams');
+    const local: MockExamLog[] = raw ? JSON.parse(raw) : [];
+    local.unshift(created);
+    localStorage.setItem('gamze_mock_exams', JSON.stringify(local));
+    return created;
+  }
+}
+
+export async function dbUpdateMockExamLog(id: string, updates: Partial<MockExamLog>): Promise<void> {
+  try {
+    const ref = doc(db, 'coaching_mock_exams', id);
+    await updateDoc(ref, updates);
+  } catch (error) {
+    console.error(`Failed to update mock exam log ${id} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_mock_exams');
+    if (raw) {
+      const local: MockExamLog[] = JSON.parse(raw);
+      const updated = local.map(item => item.id === id ? { ...item, ...updates } : item);
+      localStorage.setItem('gamze_mock_exams', JSON.stringify(updated));
+    }
+  } catch (e) {}
+}
+
+export async function dbDeleteMockExamLog(id: string): Promise<void> {
+  try {
+    const ref = doc(db, 'coaching_mock_exams', id);
+    await deleteDoc(ref);
+  } catch (error) {
+    console.error(`Failed to delete mock exam log ${id} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_mock_exams');
+    if (raw) {
+      const local: MockExamLog[] = JSON.parse(raw);
+      const updated = local.filter(item => item.id !== id);
+      localStorage.setItem('gamze_mock_exams', JSON.stringify(updated));
+    }
+  } catch (e) {}
+}
+
+// ==========================================
+// COACHING CURRICULUM PROGRESS SERVICES
+// ==========================================
+
+export async function dbGetCurriculumProgress(studentUsername: string): Promise<string[]> {
+  try {
+    const ref = doc(db, 'coaching_curriculum', studentUsername.toLowerCase());
+    const docSnap = await getDoc(ref);
+    if (docSnap.exists()) {
+      return docSnap.data().completedTopics || [];
+    }
+    return [];
+  } catch (error) {
+    console.error('Failed to fetch curriculum progress from Firestore:', error);
+    const raw = localStorage.getItem(`gamze_curriculum_${studentUsername.toLowerCase()}`);
+    return raw ? JSON.parse(raw) : [];
+  }
+}
+
+export async function dbSaveCurriculumProgress(studentUsername: string, completedTopics: string[]): Promise<void> {
+  const usernameKey = studentUsername.toLowerCase();
+  try {
+    const ref = doc(db, 'coaching_curriculum', usernameKey);
+    await setDoc(ref, {
+      studentUsername: usernameKey,
+      completedTopics,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  } catch (error) {
+    console.error('Failed to save curriculum progress in Firestore:', error);
+  }
+  localStorage.setItem(`gamze_curriculum_${usernameKey}`, JSON.stringify(completedTopics));
+}
+
 
 

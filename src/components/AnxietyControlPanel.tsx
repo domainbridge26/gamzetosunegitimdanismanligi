@@ -6,7 +6,13 @@ import {
   Maximize2, Minimize2, Grid, ChevronRight, X, Award
 } from 'lucide-react';
 
-export default function AnxietyControlPanel() {
+interface AnxietyControlPanelProps {
+  onSaveExerciseLog?: (log: { exerciseTitle: string; durationSeconds: number; score: number; details?: string }) => void;
+  studentName?: string;
+  onClose?: () => void;
+}
+
+export default function AnxietyControlPanel({ onSaveExerciseLog, studentName, onClose }: AnxietyControlPanelProps) {
   const [activeTab, setActiveTab] = useState<
     | '54321' 
     | 'box-breathing' 
@@ -14,10 +20,8 @@ export default function AnxietyControlPanel() {
     | 'muscle-relaxation' 
     | 'color-game' 
     | 'countdown' 
-    | 'mandala' 
     | 'focal-point'
     | 'butterfly-hug'
-    | 'worry-balloon'
   >('54321');
 
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -100,20 +104,20 @@ export default function AnxietyControlPanel() {
   };
 
   /* ========================================================================= */
-  /* 1. 5-4-3-2-1 DUYU EGZERSİZİ STATE (Görsel & Sesli Çoktan Seçmeli)        */
+  /* 1. 5-4-3-2-1 DUYU EGZERSİZİ STATE (Görsel & Geometrik Çoktan Seçmeli)      */
   /* ========================================================================= */
   const [senseStep, setSenseStep] = useState<0 | 1 | 2 | 3 | 4 | 5>(0); // 0: Gör (5), 1: Dokun (4), 2: Duy (3), 3: Koku (2), 4: Tat (1), 5: Bitti
   const [senseSubIndex, setSenseSubIndex] = useState(0);
   const [senseScore, setSenseScore] = useState(0);
   const [senseFeedback, setSenseFeedback] = useState<{ isCorrect: boolean; msg: string } | null>(null);
 
-  // 5 ŞEY GÖR Data
+  // 5 ŞEY GÖR Data (Geometrik Şekiller ve Renkler)
   const seeItems = [
-    { title: '1. Görsel: Sakin Dağ Gölü ve Yansıma', q: 'Bu görselde zihninizi ilk dindiren odak noktası hangisidir?', options: ['Berrak Gökyüzü', 'Göl Yansıması', 'Yüksek Dağ Zirveleri', 'Kıyı Taşları'], correct: 'Göl Yansıması', hint: 'Mavi ve yeşil tonların harmanlandığı su yüzeyi' },
-    { title: '2. Görsel: Kitaplık ve Sıcak Kahve', q: 'Ahşap masadaki detaylardan hangisi odağınızı çeker?', options: ['Sıcak Kahve Buharı', 'Eski Kitap Ciltleri', 'Pencereden Gelen Işık', 'Ahşap Doku'], correct: 'Sıcak Kahve Buharı', hint: 'Duyuları ısıtan taze buhar' },
-    { title: '3. Görsel: Gece Gökyüzü ve Yıldızlar', q: 'Karanlık gökyüzündeki hangi detay dikkatinizi çeker?', options: ['Parlak Kutup Yıldızı', 'Süt Yolu Samanyolu', 'Hilal Ay', 'Ufuk Çizgisi'], correct: 'Parlak Kutup Yıldızı', hint: 'Gökyüzündeki sabit rehber ışık' },
-    { title: '4. Görsel: Mum Alevi ve Yumuşak Gölge', q: 'Titreyen mum alevinde hangi renk odağı öne çıkar?', options: ['Sıcak Altın Sarısı', 'Turuncu Çekirdek', 'Mavi Alev Tabanı', 'Gölge Halesi'], correct: 'Sıcak Altın Sarısı', hint: 'Odayı aydınlatan huzurlu sıcak ton' },
-    { title: '5. Görsel: Çiçek Açan Nilüfer', q: 'Su üzerindeki nilüfer çiçeğinin hangi özelliği zihni dinlendirir?', options: ['Pembe Taç Yapraklar', 'Yeşil Lotus Yaprağı', 'Su Damlaları', 'Su Yüzeyi'], correct: 'Pembe Taç Yapraklar', hint: 'Zarafetle açılan taç yapraklar' }
+    { title: '1. Geometrik Görsel: Mavi Altıgen & Yeşil Daire', q: 'Ekranda yer alan MAVİ ALTIGEN simgesinin yanındaki geometrik şekil hangisidir?', options: ['Yeşil Daire', 'Kırmızı Kare', 'Sarı Üçgen', 'Mor Yıldız'], correct: 'Yeşil Daire', hint: 'Sol taraftaki Mavi Altıgen ve sağındaki Yeşil Daire' },
+    { title: '2. Geometrik Görsel: Kırmızı Kare & Sarı Üçgen', q: 'KIRMIZI KARE içerisinde konumlandırılmış ana geometrik simge hangisidir?', options: ['Sarı Üçgen', 'Mavi Daire', 'Turuncu Yıldız', 'Yeşil Beşgen'], correct: 'Sarı Üçgen', hint: 'Kırmızı karenin tam merkezindeki Sarı Üçgen' },
+    { title: '3. Geometrik Görsel: Altın Yıldız & Mor Halka', q: 'Işıldayan ALTIN YILDIZ figürünü çevreleyen halkanın rengi nedir?', options: ['Mor Halka', 'Yeşil Kare', 'Mavi Altıgen', 'Siyah Üçgen'], correct: 'Mor Halka', hint: 'Merkezdeki Altın Yıldız ve dışındaki Mor Halka' },
+    { title: '4. Geometrik Görsel: Turuncu Beşgen & Turkuaz Çizgi', q: 'TURUNCU BEŞGEN geometrik formunun kesişim noktasındaki detay hangisidir?', options: ['Turkuaz Çizgi', 'Beyaz Daire', 'Gri Dikdörtgen', 'Pembe Yıldız'], correct: 'Turkuaz Çizgi', hint: 'Beşgenin ortasından geçen Turkuaz Çizgi' },
+    { title: '5. Geometrik Görsel: Zümrüt Yeşil Baklava & Pembe Küre', q: 'ZÜMRÜT YEŞİLİ BAKLAVA DİLİMİ figürünü tamamlayan geometrik cisim hangisidir?', options: ['Pembe Küre', 'Mavi Kare', 'Sarı Üçgen', 'Kırmızı Çember'], correct: 'Pembe Küre', hint: 'Baklava diliminin altındaki Pembe Küre' }
   ];
 
   // 4 ŞEYE DOKUN Data
@@ -553,16 +557,14 @@ export default function AnxietyControlPanel() {
   };
 
   const exerciseList = [
-    { id: '54321', title: '1. 5-4-3-2-1 Duyu Egzersizi', desc: 'Görsel, işitsel, dokunsal çoktan seçmeli topraklanma', icon: Eye, color: 'text-amber-500', cat: 'Çoklu Duyu' },
+    { id: '54321', title: '1. 5-4-3-2-1 Duyu Egzersizi', desc: 'Geometrik görsel, işitsel, dokunsal çoktan seçmeli topraklanma', icon: Eye, color: 'text-amber-500', cat: 'Çoklu Duyu' },
     { id: 'box-breathing', title: '2. Kutu Nefesi (Box Breathing)', desc: '4x4x4x4 ritmi ile nabzı yavaşlatma', icon: Wind, color: 'text-blue-500', cat: 'Nefes' },
     { id: 'long-exhale', title: '3. Uzun Nefes Verme', desc: 'Parasempatik sinir sistemini aktif eden gevşeme', icon: Activity, color: 'text-emerald-500', cat: 'Nefes' },
     { id: 'muscle-relaxation', title: '4. Kas Gevşetme (PMR)', desc: 'Fiziksel gerginliği sırayla serbest bırakma', icon: Flame, color: 'text-rose-500', cat: 'Beden' },
-    { id: 'color-game', title: '5. Renk & Görsel Bulma Oyunu', desc: 'Tablolardaki detayları çoktan seçmeli teşhis etme', icon: Palette, color: 'text-purple-500', cat: 'Görsel Odak' },
+    { id: 'color-game', title: '5. Renk & Görsel Bulma Oyunu', desc: 'Geometrik görsellerdeki detayları çoktan seçmeli teşhis etme', icon: Palette, color: 'text-purple-500', cat: 'Görsel Odak' },
     { id: 'countdown', title: '6. 100’den Geri Sayma (3, 5, 7)', desc: 'Ekrandaki sayılara tıklayarak zihinsel odaklanma', icon: Brain, color: 'text-teal-500', cat: 'Zihin' },
-    { id: 'mandala', title: '7. Mandala & Simetrik Çizim', desc: 'Sağ ve sol beyni dengeleyen çizim terapisi', icon: Sparkles, color: 'text-[#C5A059]', cat: 'Sanat' },
-    { id: 'focal-point', title: '8. Dikkat Noktası', desc: 'Zihinsel dalgalanmaları durduran odak küresi', icon: Target, color: 'text-indigo-500', cat: 'Meditasyon' },
-    { id: 'butterfly-hug', title: '9. Kelebek Kucaklaşması', desc: 'EMDR duyusal omurga & omuz dokunuşu', icon: Feather, color: 'text-[#C5A059]', cat: 'Dokunsal' },
-    { id: 'worry-balloon', title: '10. Kaygı Balonu Uçurma', desc: 'Zihni kurcalayan düşünceleri gökyüzüne salma', icon: Send, color: 'text-sky-500', cat: 'Düşünce' },
+    { id: 'focal-point', title: '7. Dikkat Noktası', desc: 'Zihinsel dalgalanmaları durduran odak küresi', icon: Target, color: 'text-indigo-500', cat: 'Meditasyon' },
+    { id: 'butterfly-hug', title: '8. Kelebek Kucaklaşması', desc: 'EMDR duyusal omurga & omuz dokunuşu', icon: Feather, color: 'text-[#C5A059]', cat: 'Dokunsal' },
   ];
 
   return (
