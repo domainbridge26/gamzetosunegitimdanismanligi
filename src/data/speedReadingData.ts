@@ -59,13 +59,49 @@ export function generateFreshExerciseData(exercise: SpeedExercise): SpeedExercis
   if (cloned.data.type === 'number-flash' || cloned.category === 'sayi-calismasi') {
     const freshNums: string[] = [];
     const count = 15;
-    for (let i = 0; i < count; i++) {
-      const len = 2 + (i % 6);
-      let num = '';
-      for (let d = 0; d < len; d++) {
-        num += Math.floor(Math.random() * 9 + (d === 0 ? 1 : 0)).toString();
+
+    if (cloned.id?.includes('-sc-1') || cloned.title?.includes('2-3 Basamaklı')) {
+      for (let i = 0; i < count; i++) {
+        const len = Math.random() > 0.5 ? 2 : 3;
+        let num = '';
+        for (let d = 0; d < len; d++) {
+          num += Math.floor(Math.random() * 9 + (d === 0 ? 1 : 0)).toString();
+        }
+        freshNums.push(num);
       }
-      freshNums.push(num);
+    } else if (cloned.id?.includes('-sc-2') || cloned.title?.includes('4-5 Basamaklı')) {
+      for (let i = 0; i < count; i++) {
+        const len = Math.random() > 0.5 ? 4 : 5;
+        let num = '';
+        for (let d = 0; d < len; d++) {
+          num += Math.floor(Math.random() * 9 + (d === 0 ? 1 : 0)).toString();
+        }
+        freshNums.push(num);
+      }
+    } else if (cloned.id?.includes('-sc-3') || cloned.title?.includes('Ritmik')) {
+      const step = Math.random() > 0.5 ? 5 : 10;
+      const start = Math.floor(Math.random() * 5 + 1) * step;
+      for (let i = 0; i < count; i++) {
+        freshNums.push((start + i * step).toString());
+      }
+    } else if (cloned.id?.includes('-sc-5') || cloned.title?.includes('Açı Genişletme')) {
+      for (let i = 0; i < count; i++) {
+        const len = 2 + Math.floor(i / 3); // 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6...
+        let num = '';
+        for (let d = 0; d < len; d++) {
+          num += Math.floor(Math.random() * 9 + (d === 0 ? 1 : 0)).toString();
+        }
+        freshNums.push(num);
+      }
+    } else {
+      for (let i = 0; i < count; i++) {
+        const len = 2 + (i % 5);
+        let num = '';
+        for (let d = 0; d < len; d++) {
+          num += Math.floor(Math.random() * 9 + (d === 0 ? 1 : 0)).toString();
+        }
+        freshNums.push(num);
+      }
     }
     cloned.data.numbers = freshNums;
   }
@@ -631,11 +667,268 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
       targetWords: ['KEDİ', 'KÖPEK', 'TAVŞAN', 'YUNUS', 'PENGUEN', 'KUNDUZ', 'KARTAL', 'KELEBEK']
     }
   },
+  {
+    id: 'i-bm-meyve-sebze',
+    title: 'İlkokul Meyve ve Sebzeler Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Meyveler',
+    iconName: 'Apple',
+    description: 'Lezzetli meyve ve sebze isimlerini (Elma, Armut, Muz, Çilek, Kiraz, Domates...) harf matrisinde bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'fruits-veg',
+      targetWords: ['ELMA', 'ARMUT', 'MUZ', 'ÇİLEK', 'KİRAZ', 'DOMATES', 'HAVUÇ', 'BİBER']
+    }
+  },
+  {
+    id: 'i-bm-renkler',
+    title: 'İlkokul Renkler Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Renkler',
+    iconName: 'Palette',
+    description: 'Rengarenk renk isimlerini (Kırmızı, Mavi, Sarı, Yeşil, Turuncu...) matriste tarayıp keşfedin.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'colors',
+      targetWords: ['KIRMIZI', 'MAVİ', 'SARI', 'YEŞİL', 'TURUNCU', 'MOR', 'BEYAZ', 'SİYAH']
+    }
+  },
+  {
+    id: 'i-bm-tasitlar',
+    title: 'İlkokul Taşıtlar & Ulaşım Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Taşıtlar',
+    iconName: 'Truck',
+    description: 'Kara, hava ve deniz taşıtlarını (Araba, Otobüs, Tren, Uçak, Gemi...) kelime avında yakalayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'vehicles',
+      targetWords: ['ARABA', 'OTOBÜS', 'TREN', 'UÇAK', 'GEMİ', 'HELİKOPTER', 'BİSİKLET', 'ROKET']
+    }
+  },
+  {
+    id: 'i-bm-duygular',
+    title: 'İlkokul Duygular & Hissiyat Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Duygular',
+    iconName: 'Smile',
+    description: 'Duygu isimlerini (Mutluluk, Sevinç, Heyecan, Neşe, Korku...) matriste gözlerinizle tarayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'emotions',
+      targetWords: ['MUTLULUK', 'SEVİNÇ', 'HEYECAN', 'NEŞE', 'KORKU', 'ÜZÜNTÜ', 'SEVGİ', 'MERAK']
+    }
+  },
+  {
+    id: 'i-bm-mevsimler',
+    title: 'İlkokul Mevsimler & İklim Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Mevsimler',
+    iconName: 'Sun',
+    description: 'Dört mevsimi ve iklim kelimelerini (İlkbahar, Yaz, Sonbahar, Kış...) matriste bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'seasons',
+      targetWords: ['İLKBAHAR', 'YAZ', 'SONBAHAR', 'KIŞ', 'RÜZGAR', 'BULUT', 'YAĞMUR', 'GÜNEŞ']
+    }
+  },
+  {
+    id: 'i-bm-aylar',
+    title: 'İlkokul Aylar & Takvim Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Aylar',
+    iconName: 'Calendar',
+    description: 'Yılın aylarını (Ocak, Şubat, Mart, Nisan, Mayıs...) kelime matrisinde bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'months',
+      targetWords: ['OCAK', 'ŞUBAT', 'MART', 'NİSAN', 'MAYIS', 'HAZİRAN', 'TEMMUZ', 'AĞUSTOS']
+    }
+  },
+  {
+    id: 'i-bm-haftanin-gunleri',
+    title: 'İlkokul Haftanın Günleri Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Günler',
+    iconName: 'Clock',
+    description: 'Haftanın 7 gününü (Pazartesi, Salı, Çarşamba, Perşembe...) matriste hızlıca tarayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'weekdays',
+      targetWords: ['PAZARTESİ', 'SALI', 'ÇARŞAMBA', 'PERŞEMBE', 'CUMA', 'CUMARTESİ', 'PAZAR']
+    }
+  },
+  {
+    id: 'i-bm-ev-esyalari',
+    title: 'İlkokul Ev Eşyaları Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Ev Eşyaları',
+    iconName: 'Home',
+    description: 'Evimizdeki eşyaların isimlerini (Koltuk, Masa, Sandalye, Yatak, Dolap...) kelime avında yakalayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'home-items',
+      targetWords: ['KOLTUK', 'MASA', 'SANDALYE', 'YATAK', 'DOLAP', 'LAMBA', 'HALI', 'AYNA']
+    }
+  },
+  {
+    id: 'i-bm-okul-araclari',
+    title: 'İlkokul Okul Araç Gereçleri Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Okul',
+    iconName: 'PenTool',
+    description: 'Sınıfta kullandığımız araç gereçleri (Kalem, Defter, Kitap, Silgi, Cetvel...) matriste bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'school-supplies',
+      targetWords: ['KALEM', 'DEFTER', 'KİTAP', 'SİLGİ', 'CETVEL', 'ÇANTA', 'BOYA', 'MAKAS']
+    }
+  },
+  {
+    id: 'i-bm-cicekler',
+    title: 'İlkokul Çiçekler & Bitkiler Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Çiçekler',
+    iconName: 'Flower2',
+    description: 'Rengarenk çiçek isimlerini (Gül, Lale, Papatya, Menekşe, Nergis...) matriste bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'flowers',
+      targetWords: ['GÜL', 'LALE', 'PAPATYA', 'MENEKŞE', 'NERGİS', 'SÜMBÜL', 'ORKİDE', 'KARANFİL']
+    }
+  },
+  {
+    id: 'i-bm-kuslar',
+    title: 'İlkokul Kuşlar & Gökyüzü Canlıları Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Kuşlar',
+    iconName: 'Feather',
+    description: 'Kuş türlerinin isimlerini (Güvercin, Serçe, Kartal, Şahin, Papağan...) matriste keşfedin.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'birds',
+      targetWords: ['GÜVERCİN', 'SERÇE', 'KARTAL', 'ŞAHİN', 'PAPAĞAN', 'KANARYA', 'BAYKUŞ', 'LEYLEK']
+    }
+  },
+  {
+    id: 'i-bm-deniz-canlilari',
+    title: 'İlkokul Deniz Canlıları Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Deniz',
+    iconName: 'Fish',
+    description: 'Mavi denizlerde yaşayan canlıları (Balık, Balina, Yunus, Ahtapot...) matriste tarayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'sea-creatures',
+      targetWords: ['BALIK', 'BALİNA', 'YUNUS', 'AHTAPOT', 'İSTAKOZ', 'YENGEÇ', 'MERCAN', 'DENİZAYISI']
+    }
+  },
 
   // =========================================================================
-  // ==================== ORTAOKUL / LGS EGZERSİZLERİ (30 ADET) ====================
+  // ==================== ORTAOKUL / LGS EGZERSİZLERİ ====================
   // =========================================================================
   
+  // 0. Sayı Çalışmaları (5 Adet - Ortaokul / LGS)
+  {
+    id: 'o-sc-1',
+    title: '2-3 Basamaklı Sayı Görüş Genişletme (LGS)',
+    level: 'Ortaokul',
+    category: 'sayi-calismasi',
+    categoryLabel: 'Sayı Çalışması',
+    iconName: 'Hash',
+    description: '2 ve 3 basamaklı sayıları ekranda anlık görerek algılama ve refleks hızınızı ölçün.',
+    targetWpm: 250,
+    data: {
+      type: 'number-flash',
+      defaultSpeedBpm: 120,
+      numbers: ['24', '57', '89', '104', '352', '681', '905', '412', '773', '890', '156', '999']
+    }
+  },
+  {
+    id: 'o-sc-2',
+    title: '4-5 Basamaklı Sayı Flaşör Egzersizi (LGS)',
+    level: 'Ortaokul',
+    category: 'sayi-calismasi',
+    categoryLabel: 'Sayı Çalışması',
+    iconName: 'Zap',
+    description: '4 ve 5 basamaklı sayıları tek odak noktasıyla hafızaya alma ve şıklardan seçme çalışması.',
+    targetWpm: 280,
+    data: {
+      type: 'number-flash',
+      defaultSpeedBpm: 130,
+      numbers: ['1420', '5891', '7034', '9812', '15409', '67931', '80214', '39571', '99304', '48012']
+    }
+  },
+  {
+    id: 'o-sc-3',
+    title: 'Sayama & Ritmik Sayı Odaklanma (LGS)',
+    level: 'Ortaokul',
+    category: 'sayi-calismasi',
+    categoryLabel: 'Sayı Çalışması',
+    iconName: 'TrendingUp',
+    description: '10’ar ve 25’er artan ritmik sayılar üzerinden LGS sayısal odak geliştirme.',
+    targetWpm: 300,
+    data: {
+      type: 'number-flash',
+      defaultSpeedBpm: 140,
+      numbers: ['10', '20', '30', '40', '50', '75', '100', '125', '150', '200', '250', '300']
+    }
+  },
+  {
+    id: 'o-sc-4',
+    title: 'Karışık Sayı Dizisi Yakalama (LGS)',
+    level: 'Ortaokul',
+    category: 'sayi-calismasi',
+    categoryLabel: 'Sayı Çalışması',
+    iconName: 'Grid',
+    description: 'Farklı basamak sayılarıyla dikkati odak noktasında toplama egzersizi.',
+    targetWpm: 320,
+    data: {
+      type: 'number-flash',
+      defaultSpeedBpm: 150,
+      numbers: ['15', '308', '4912', '80124', '7', '62', '994', '2048', '71039', '88501']
+    }
+  },
+  {
+    id: 'o-sc-5',
+    title: 'Sayı Açı Genişletme Maratonu (LGS)',
+    level: 'Ortaokul',
+    category: 'sayi-calismasi',
+    categoryLabel: 'Sayı Çalışması',
+    iconName: 'Maximize2',
+    description: 'Sayıların basamakları genişledikçe açısal görme kapasitenizi ve odaklanmanızı test edin.',
+    targetWpm: 340,
+    data: {
+      type: 'number-flash',
+      defaultSpeedBpm: 160,
+      numbers: ['88', '102', '666', '1204', '5555', '14208', '78901', '99999', '104928']
+    }
+  },
+
   // 1. Göz Takip (6 Adet)
   {
     id: 'o-gt-1',
@@ -1198,11 +1491,238 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
       targetWords: ['KARTAL', 'GEYİK', 'KUNDUZ', 'YUNUS', 'KANGURU', 'PENGUEN', 'LEOPAR', 'FLAMİNGO']
     }
   },
+  {
+    id: 'o-bm-fen-bilimleri',
+    title: 'LGS Fen Bilimleri Terimleri Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Fen',
+    iconName: 'Atom',
+    description: 'LGS Fen bilimleri terimlerini (Hücre, Doku, Organ, Atom, Molekül, Kuvvet...) harf matrisinde tarayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'science-terms',
+      targetWords: ['HÜCRE', 'DOKU', 'ORGAN', 'ATOM', 'MOLEKÜL', 'KUVVET', 'ENERJİ', 'SÜRTÜNME']
+    }
+  },
+  {
+    id: 'o-bm-bilim-insanlari',
+    title: 'LGS Bilim İnsanları Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Bilim',
+    iconName: 'Award',
+    description: 'Dünyayı değiştiren bilim insanlarını (Aziz Sancar, Ali Kuşçu, Edison, Tesla, Newton...) matriste bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'scientists',
+      targetWords: ['SANCAR', 'KUŞÇU', 'EDISON', 'TESLA', 'NEWTON', 'EINSTEIN', 'GALILEO', 'ARŞİMET']
+    }
+  },
+  {
+    id: 'o-bm-gezegenler',
+    title: 'LGS Gezegenler & Uzay Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Uzay',
+    iconName: 'Globe',
+    description: 'Güneş sistemindeki gezegenleri (Merkür, Venüs, Dünya, Mars, Jüpiter...) matriste tarayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'planets',
+      targetWords: ['MERKÜR', 'VENÜS', 'DÜNYA', 'MARS', 'JÜPİTER', 'SATÜRN', 'URANÜS', 'NEPTÜN']
+    }
+  },
+  {
+    id: 'o-bm-elementler',
+    title: 'LGS Kimyasal Elementler Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Kimya',
+    iconName: 'Zap',
+    description: 'Temel kimyasal elementleri (Hidrojen, Oksijen, Azot, Karbon, Demir...) harf matrisinde bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'elements',
+      targetWords: ['HİDROJEN', 'OKSİJEN', 'AZOT', 'KARBON', 'DEMİR', 'ALTIN', 'GÜMÜŞ', 'BAKIR']
+    }
+  },
+  {
+    id: 'o-bm-spor-dallari',
+    title: 'LGS Spor Dalları & Branşlar Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Spor',
+    iconName: 'Activity',
+    description: 'Popüler spor branşlarını (Futbol, Basketbol, Voleybol, Hentbol, Tenis, Yüzme...) matriste keşfedin.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'sports',
+      targetWords: ['FUTBOL', 'BASKETBOL', 'VOLEYBOL', 'HENTBOL', 'TENİS', 'YÜZME', 'GÜREŞ', 'OKÇULUK']
+    }
+  },
+  {
+    id: 'o-bm-kitap-turleri',
+    title: 'LGS Edebiyat & Kitap Türleri Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Edebiyat',
+    iconName: 'BookOpen',
+    description: 'Edebi metin ve kitap türlerini (Roman, Hikaye, Şiir, Masal, Fabl, Tiyatro...) matriste tarayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'book-genres',
+      targetWords: ['ROMAN', 'HİKAYE', 'ŞİİR', 'MASAL', 'FABL', 'TİYATRO', 'GEZİ', 'ANI']
+    }
+  },
+  {
+    id: 'o-bm-deyimler',
+    title: 'LGS Türkçe Deyimler Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Türkçe',
+    iconName: 'MessageSquare',
+    description: 'Sıkça kullanılan deyim anahtar kelimelerini matriste tarayarak bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'idioms',
+      targetWords: ['GÖZEGİRMEK', 'ETEKBASTI', 'İÇİAÇILMAK', 'CANATMAK', 'DİLDÖKMEK', 'ELVERMEK']
+    }
+  },
+  {
+    id: 'o-bm-atasozleri',
+    title: 'LGS Türkçe Atasözleri Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Atasözleri',
+    iconName: 'Bookmark',
+    description: 'Atasözlerimizin özünü oluşturan kavramları (Damla, Akıl, Emek, Güneş, Birlik...) bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'proverbs',
+      targetWords: ['DAMLAYA', 'SAKLA', 'AKIL', 'EMEK', 'DOST', 'GÜNEŞ', 'BİRLİK', 'KISMET']
+    }
+  },
+  {
+    id: 'o-bm-turkce-dilbilgisi',
+    title: 'LGS Türkçe Dil Bilgisi Kavramları Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Dilbilgisi',
+    iconName: 'FileText',
+    description: 'LGS Türkçe dil bilgisi terimlerini (İsim, Fiil, Sıfat, Zarf, Zamir, Edat...) matriste yakalayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'turkish-grammar',
+      targetWords: ['İSİM', 'FİİL', 'SIFAT', 'ZARF', 'ZAMİR', 'EDAT', 'BAĞLAÇ', 'ÜNLEM']
+    }
+  },
+  {
+    id: 'o-bm-ingilizce-kelimeler',
+    title: 'LGS İngilizce Kelime Avı Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & İngilizce',
+    iconName: 'Languages',
+    description: 'LGS müfredatına uygun İngilizce kelimeleri (School, Student, Teacher, Book, Apple...) matriste bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'english-words',
+      targetWords: ['SCHOOL', 'STUDENT', 'TEACHER', 'BOOK', 'APPLE', 'SUN', 'FRIEND', 'HAPPY']
+    }
+  },
 
   // =========================================================================
-  // ==================== LİSE & YKS EGZERSİZLERİ (30 ADET) ====================
+  // ==================== LİSE & YKS EGZERSİZLERİ ====================
   // =========================================================================
   
+  // 0. Sayı Çalışmaları (5 Adet - Lise / YKS)
+  {
+    id: 'l-sc-1',
+    title: '2-3 Basamaklı Sayı Görüş Genişletme (YKS)',
+    level: 'Lise',
+    category: 'sayi-calismasi',
+    categoryLabel: 'Sayı Çalışması',
+    iconName: 'Hash',
+    description: '2 ve 3 basamaklı sayıları ekranda mikrosaniyelik hızda görerek algılama refleksini test edin.',
+    targetWpm: 350,
+    data: {
+      type: 'number-flash',
+      defaultSpeedBpm: 150,
+      numbers: ['38', '71', '94', '215', '480', '602', '899', '140', '523', '901', '612', '784']
+    }
+  },
+  {
+    id: 'l-sc-2',
+    title: '4-5 Basamaklı Sayı Flaşör Egzersizi (YKS)',
+    level: 'Lise',
+    category: 'sayi-calismasi',
+    categoryLabel: 'Sayı Çalışması',
+    iconName: 'Zap',
+    description: '4 ve 5 basamaklı sayıları tek odak noktasıyla hafızaya alma ve şıklardan doğru olanı yakalama egzersizi.',
+    targetWpm: 400,
+    data: {
+      type: 'number-flash',
+      defaultSpeedBpm: 180,
+      numbers: ['2840', '6915', '8042', '12509', '48391', '70214', '91583', '30492', '88104', '52901']
+    }
+  },
+  {
+    id: 'l-sc-3',
+    title: 'Sayama & Ritmik Sayı Odaklanma (YKS)',
+    level: 'Lise',
+    category: 'sayi-calismasi',
+    categoryLabel: 'Sayı Çalışması',
+    iconName: 'TrendingUp',
+    description: '25’er ve 50’şer artan sayı dizileri üzerinden YKS mantık ve sayısal odaklama rekoru.',
+    targetWpm: 420,
+    data: {
+      type: 'number-flash',
+      defaultSpeedBpm: 200,
+      numbers: ['25', '50', '75', '100', '150', '200', '250', '300', '400', '500', '750', '1000']
+    }
+  },
+  {
+    id: 'l-sc-4',
+    title: 'Karışık Sayı Dizisi Yakalama (YKS)',
+    level: 'Lise',
+    category: 'sayi-calismasi',
+    categoryLabel: 'Sayı Çalışması',
+    iconName: 'Grid',
+    description: 'Değişken basamak sayılarıyla dikkati maksimize eden rekor denemesi.',
+    targetWpm: 450,
+    data: {
+      type: 'number-flash',
+      defaultSpeedBpm: 220,
+      numbers: ['42', '801', '6920', '91034', '5', '88', '312', '4509', '82109', '99042']
+    }
+  },
+  {
+    id: 'l-sc-5',
+    title: 'Sayı Açı Genişletme Maratonu (YKS)',
+    level: 'Lise',
+    category: 'sayi-calismasi',
+    categoryLabel: 'Sayı Çalışması',
+    iconName: 'Maximize2',
+    description: 'Giderek büyüyen sayı basamaklarıyla çevresel görme ve sayısal algı kapasitenizi zirveye çıkarın.',
+    targetWpm: 480,
+    data: {
+      type: 'number-flash',
+      defaultSpeedBpm: 240,
+      numbers: ['99', '204', '888', '1905', '7777', '24801', '89012', '105920', '999999']
+    }
+  },
+
   // 1. Göz Takip (6 Adet)
   {
     id: 'l-gt-1',
@@ -1936,7 +2456,157 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
     data: {
       type: 'word-search',
       theme: 'subjects',
-      targetWords: ['EPİSTEMOLOJİ', 'ONTOLOJİ', 'AK SİYOLOJİ', 'POSTMODERNİZM', 'KUANTUM', 'METİNLERARASI', 'MUHAKEME', 'SENTEZ']
+      targetWords: ['EPİSTEMOLOJİ', 'ONTOLOJİ', 'AKSİYOLOJİ', 'POSTMODERNİZM', 'KUANTUM', 'METİNLERARASI', 'MUHAKEME', 'SENTEZ']
+    }
+  },
+  {
+    id: 'l-bm-kitap-turleri',
+    title: 'YKS Edebi Türler & Metin Türleri Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Türler',
+    iconName: 'BookOpen',
+    description: 'YKS Edebiyat türlerini (Epose, Dram, Trajedi, Komedi, Makale, Deneme, Eleştiri...) matriste tarayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'yks-genres',
+      targetWords: ['EPOSE', 'DRAM', 'TRAJEDİ', 'KOMEDİ', 'MAKALE', 'DENEME', 'ELEŞTİRİ', 'BİYOGRAFİ']
+    }
+  },
+  {
+    id: 'l-bm-edebiyat-eserleri',
+    title: 'YKS Klasik Edebiyat Eserleri Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Eserler',
+    iconName: 'Bookmark',
+    description: 'Türk edebiyatının başyapıtlarını (Mai ve Siyah, Çalıkuşu, Eylül, Yaban, İntebah...) matriste bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'lit-works',
+      targetWords: ['MAİVESİYAH', 'ÇALIKUŞU', 'EYLÜL', 'YABAN', 'İNTEBAH', 'TUTUNAMAYANLAR', 'AŞKIMEMNU']
+    }
+  },
+  {
+    id: 'l-bm-yazarlar-sairler',
+    title: 'YKS Türk Edebiyatı Yazarlar & Şairler Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Yazarlar',
+    iconName: 'PenTool',
+    description: 'Usta edebiyatçıları (Namık Kemal, Ziya Gökalp, Yakup Kadri, Reşat Nuri, Cahit Sıtkı...) matriste tarayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'authors-poets',
+      targetWords: ['NAMIKKEMAL', 'ZİYAGÖKALP', 'YAKUPKADRİ', 'REŞATNURİ', 'CAHİTSITKI', 'ORHANVELİ', 'ATTİLAİLHAN']
+    }
+  },
+  {
+    id: 'l-bm-turkce-dilbilgisi',
+    title: 'YKS Türkçe Cümle & Ses Bilgisi Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Dilbilgisi',
+    iconName: 'FileText',
+    description: 'YKS Türkçe dil bilgisi terimlerini (Özne, Yüklem, Nesne, Tamlama, Fiilimsi, Çatı...) matriste yakalayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'yks-grammar',
+      targetWords: ['ÖZNE', 'YÜKLEM', 'NESNE', 'TAMLAMA', 'FİİLİMSİ', 'ÇATI', 'SESOLAYI', 'YAZIM']
+    }
+  },
+  {
+    id: 'l-bm-tarihi-antlasmalar',
+    title: 'YKS Tarih Önemli Antlaşmalar Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Antlaşmalar',
+    iconName: 'Scroll',
+    description: 'Tarihimizin dönüm noktası antlaşmalarını (Kasr-ı Şirin, Karlofça, Pasarofça, Sevr, Lozan...) matriste tarayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'treaties',
+      targetWords: ['KASRIŞİRİN', 'KARLOFÇA', 'PASAROFÇA', 'KAYNARCA', 'SEVR', 'LOZAN', 'MONDROS', 'AMASYA']
+    }
+  },
+  {
+    id: 'l-bm-osmanli-padisahlari',
+    title: 'YKS Osmanlı Padişahları Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Padişahlar',
+    iconName: 'Crown',
+    description: 'Tarihe damga vuran Osmanlı padişahlarını (Osman Bey, Orhan Gazi, Fatih, Yavuz, Kanuni...) matriste bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'sultans',
+      targetWords: ['OSMANBEY', 'ORHANGAZİ', 'FATİH', 'YAVUZ', 'KANUNİ', 'ÇELEBİ', 'MAHMUT', 'ABDÜLHAMİD']
+    }
+  },
+  {
+    id: 'l-bm-cografi-terimler',
+    title: 'YKS Coğrafya Terimleri Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Coğrafya',
+    iconName: 'Compass',
+    description: 'YKS Coğrafya dersi terimlerini (Fay Hattı, Delta, Deprem, Tundra, İklim, İzohips...) matriste tarayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'geography-terms',
+      targetWords: ['FAYHATT', 'DELTA', 'DEPREM', 'TUNDRA', 'İKLİM', 'İZOHİPS', 'MONSON', 'EROSYON']
+    }
+  },
+  {
+    id: 'l-bm-matematik-terimleri',
+    title: 'YKS AYT Matematik Terimleri Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Matematik',
+    iconName: 'PieChart',
+    description: 'AYT Matematik ve Geometri kavramlarını (İntegral, Türev, Limit, Logaritma, Polinom, Matris...) matriste yakalayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'math-terms',
+      targetWords: ['İNTEGRAL', 'TÜREV', 'LİMİT', 'LOGARİTMA', 'POLİNOM', 'MATRİS', 'VEKTÖR', 'OLASILIK']
+    }
+  },
+  {
+    id: 'l-bm-felsefe-kavramlari',
+    title: 'YKS Felsefe & Akımlar Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Felsefe',
+    iconName: 'Brain',
+    description: 'Felsefe akımlarını ve kavramlarını (Eksistansiyalizm, Rasyonalizm, Empirizm, Kritisizm, Nihilizm...) matriste bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'philosophy-terms',
+      targetWords: ['RASYONALİZM', 'EMPİRİZM', 'KRİTİSİZM', 'NİHİLİZM', 'PRAGMATİZM', 'FAZİLET', 'ETİK', 'ESTETİK']
+    }
+  },
+  {
+    id: 'l-bm-nobel-bilim-insanlari',
+    title: 'YKS Nobel Ödüllü Bilim İnsanları Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Nobel',
+    iconName: 'Award',
+    description: 'Nobel ödüllü bilim insanlarını (Aziz Sancar, Marie Curie, Einstein, Penrose, Roentgen...) matriste keşfedin.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'nobel-laureates',
+      targetWords: ['SANCAR', 'CURIE', 'EINSTEIN', 'PENROSE', 'ROENTGEN', 'SCHRODINGER', 'HEISENBERG', 'BOHR']
     }
   }
 ];

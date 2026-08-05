@@ -980,9 +980,11 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
                     { id: 'hece-calismasi', label: '⚡ Hece Çalışması' },
                     { id: 'sayi-calismasi', label: '🔢 Sayı Çalışması' },
                     { id: 'goz-takip', label: '👁️ Göz Çalışması' },
-                    { id: 'okuma-metni', label: '📚 İlkokul Metin Okumaları' }
+                    { id: 'okuma-metni', label: '📚 İlkokul Metin Okumaları' },
+                    { id: 'bulmaca', label: '🧩 Bulmacalar & Kelime Matrisi' }
                   ] : [
                     { id: 'all', label: 'Tüm Egzersizler' },
+                    { id: 'sayi-calismasi', label: '🔢 Sayı Çalışması' },
                     { id: 'goz-takip', label: '👁️ Göz Takip' },
                     { id: 'sutun-takip', label: '📐 Sütun Takibi' },
                     { id: 'okuma-metni', label: '📚 Okuma Metni & Takistoskop' },
@@ -2512,7 +2514,7 @@ function SayiCalismasiRunner({ exercise, speedBpm, setSpeedBpm, isSoundEnabled, 
   const [history, setHistory] = useState<{ qNum: number; target: string; choice: string; isCorrect: boolean }[]>([]);
   const [isCompleted, setIsCompleted] = useState(false);
 
-  const rawNumbers: string[] = exercise.data?.numbers && exercise.data.numbers.length >= TOTAL_QUESTIONS
+  const rawNumbers: string[] = exercise.data?.numbers && exercise.data.numbers.length >= 1
     ? exercise.data.numbers
     : ['1250', '4891', '7023', '9514', '12408', '56931', '80492', '31579', '99104', '42018', '77391', '60512'];
 
@@ -3815,6 +3817,17 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
   const [selectedCells, setSelectedCells] = useState<{ r: number; c: number }[]>([]);
   const [foundWords, setFoundWords] = useState<string[]>([]);
   const [foundCells, setFoundCells] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (targetWords && targetWords.length > 0) {
+      setActiveWords(targetWords);
+      setActiveTheme('custom');
+      setGridData(generateWordSearchGrid(targetWords, 10, 10));
+      setSelectedCells([]);
+      setFoundWords([]);
+      setFoundCells(new Set());
+    }
+  }, [targetWords]);
 
   const switchTheme = (themeId: string, wordList: string[]) => {
     setActiveTheme(themeId);
