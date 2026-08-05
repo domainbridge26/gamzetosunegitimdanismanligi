@@ -41,7 +41,18 @@ function getRandomWords(count: number, exclude?: string[]): string[] {
 }
 
 // Helper to generate a word search matrix grid for Akademik Kelime Matris Bulmacası
-function generateWordSearchGrid(targetWords: string[], gridRows = 10, gridCols = 10) {
+function generateWordSearchGrid(targetWords: string[], initialRows = 10, initialCols = 10) {
+  let maxWordLength = 10;
+  for (const rawWord of targetWords || []) {
+    const clean = rawWord.toUpperCase().replace(/\s+/g, '');
+    if (clean.length > maxWordLength) {
+      maxWordLength = clean.length;
+    }
+  }
+
+  const gridRows = Math.max(initialRows, maxWordLength);
+  const gridCols = Math.max(initialCols, maxWordLength);
+
   const grid: string[][] = Array.from({ length: gridRows }, () => Array(gridCols).fill(''));
   const wordLocations: { word: string; cells: { r: number; c: number }[] }[] = [];
   const TURKISH_CHARS = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ';
@@ -2185,7 +2196,7 @@ function ExerciseRunner({
       </div>
 
       {/* Exercise Active Canvas Fullscreen Center Area */}
-      <div className={`flex-1 p-4 sm:p-8 flex flex-col items-center justify-center relative min-h-[500px] transition-colors ${
+      <div className={`flex-1 p-2 sm:p-4 flex flex-col items-center justify-start sm:justify-center relative min-h-[400px] overflow-y-auto w-full transition-colors ${
         themeMode === 'dark' ? 'bg-[#181818]' :
         themeMode === 'sepia' ? 'bg-[#FAF6EE]' :
         'bg-white'
@@ -3891,25 +3902,25 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
   };
 
   return (
-    <div className="w-full max-w-4xl sm:max-w-5xl lg:max-w-6xl mx-auto bg-white p-3 sm:p-6 md:p-8 border border-[#2D2D2D]/15 shadow-md space-y-4 sm:space-y-6 text-center overflow-hidden">
-      <div className="space-y-1">
-        <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#C5A059] bg-[#C5A059]/10 px-3 py-1 border border-[#C5A059]/30 inline-block">
+    <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mx-auto bg-white p-2.5 sm:p-4 md:p-5 border border-[#2D2D2D]/15 shadow-md space-y-2.5 sm:space-y-3.5 text-center overflow-y-auto max-h-[85vh]">
+      <div className="space-y-0.5">
+        <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#C5A059] bg-[#C5A059]/10 px-2.5 py-0.5 border border-[#C5A059]/30 inline-block">
           🧩 KELİME MATRİS BULMACASI (SÖZCÜK AVI)
         </span>
-        <h3 className="font-serif font-bold text-lg sm:text-xl text-[#2D2D2D] pt-1">
+        <h3 className="font-serif font-bold text-base sm:text-lg text-[#2D2D2D] pt-0.5">
           Harf Matrisindeki Gizli Sözcükleri Bulun
         </h3>
-        <p className="text-xs text-stone-500">
+        <p className="text-[11px] sm:text-xs text-stone-500">
           Aşağıdaki temalardan dilediğinizi seçip matristeki gizli kelimeleri gözlerinizle tarayın.
         </p>
       </div>
 
       {/* Theme Selection Buttons - Scrollable / Compact */}
-      <div className="w-full overflow-x-auto pb-1">
-        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 bg-stone-100 p-2 border border-stone-200 min-w-max sm:min-w-0">
+      <div className="w-full overflow-x-auto pb-0.5">
+        <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 bg-stone-100 p-1.5 border border-stone-200">
           <button
             onClick={() => switchTheme('countries', ['TÜRKİYE', 'ALMANYA', 'FRANSA', 'İTALYA', 'JAPONYA', 'KANADA', 'MISIR', 'BREZİLYA'])}
-            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+            className={`px-2 py-0.5 text-[10px] sm:text-[11px] font-bold border cursor-pointer transition-all flex items-center gap-1 ${
               activeTheme === 'countries' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
             }`}
           >
@@ -3918,7 +3929,7 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
 
           <button
             onClick={() => switchTheme('nature', ['ORMAN', 'ŞELALE', 'YANARDAĞ', 'OKYANUS', 'YAĞMUR', 'ATMOSFER', 'NEHİR', 'GÜNEŞ'])}
-            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+            className={`px-2 py-0.5 text-[10px] sm:text-[11px] font-bold border cursor-pointer transition-all flex items-center gap-1 ${
               activeTheme === 'nature' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
             }`}
           >
@@ -3927,7 +3938,7 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
 
           <button
             onClick={() => switchTheme('professions', ['MÜHENDİS', 'MİMAR', 'DOKTOR', 'YAZAR', 'PİLOT', 'SANATÇI', 'AVUKAT', 'HAKİM'])}
-            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+            className={`px-2 py-0.5 text-[10px] sm:text-[11px] font-bold border cursor-pointer transition-all flex items-center gap-1 ${
               activeTheme === 'professions' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
             }`}
           >
@@ -3936,7 +3947,7 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
 
           <button
             onClick={() => switchTheme('subjects', ['MATEMATİK', 'FİZİK', 'KİMYA', 'BİYOLOJİ', 'TARİH', 'EDEBİYAT', 'FELSEFE', 'GEOMETRİ'])}
-            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+            className={`px-2 py-0.5 text-[10px] sm:text-[11px] font-bold border cursor-pointer transition-all flex items-center gap-1 ${
               activeTheme === 'subjects' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
             }`}
           >
@@ -3945,7 +3956,7 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
 
           <button
             onClick={() => switchTheme('city-tr', ['ANKARA', 'İSTANBUL', 'İZMİR', 'BURSA', 'KONYA', 'ANTALYA', 'ADANA', 'TRABZON'])}
-            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+            className={`px-2 py-0.5 text-[10px] sm:text-[11px] font-bold border cursor-pointer transition-all flex items-center gap-1 ${
               activeTheme === 'city-tr' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
             }`}
           >
@@ -3954,7 +3965,7 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
 
           <button
             onClick={() => switchTheme('city-world', ['PARİS', 'LONDRA', 'TOKYO', 'ROMA', 'BERLİN', 'MADRİD', 'VİYANA', 'KAHİRE'])}
-            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+            className={`px-2 py-0.5 text-[10px] sm:text-[11px] font-bold border cursor-pointer transition-all flex items-center gap-1 ${
               activeTheme === 'city-world' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
             }`}
           >
@@ -3963,7 +3974,7 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
 
           <button
             onClick={() => switchTheme('animals-cute', ['KEDİ', 'KÖPEK', 'TAVŞAN', 'YUNUS', 'PENGUEN', 'KUNDUZ', 'KARTAL', 'KELEBEK'])}
-            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+            className={`px-2 py-0.5 text-[10px] sm:text-[11px] font-bold border cursor-pointer transition-all flex items-center gap-1 ${
               activeTheme === 'animals-cute' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
             }`}
           >
@@ -3972,7 +3983,7 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
 
           <button
             onClick={() => switchTheme('science', ['ROBOTİK', 'GENETİK', 'KUANTUM', 'YAZILIM', 'ATOM', 'NÖROLOJİ', 'SİBER', 'BİYOLOJİ'])}
-            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+            className={`px-2 py-0.5 text-[10px] sm:text-[11px] font-bold border cursor-pointer transition-all flex items-center gap-1 ${
               activeTheme === 'science' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
             }`}
           >
@@ -3981,7 +3992,7 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
 
           <button
             onClick={() => switchTheme('academic', targetWords && targetWords.length > 0 ? targetWords : ['PARAGRAF', 'MUHAKEME', 'SENTEZ', 'ANALİZ', 'DERECE', 'AKIL'])}
-            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+            className={`px-2 py-0.5 text-[10px] sm:text-[11px] font-bold border cursor-pointer transition-all flex items-center gap-1 ${
               activeTheme === 'academic' || activeTheme === 'custom' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
             }`}
           >
@@ -3991,21 +4002,21 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
       </div>
 
       {/* Target Words Badges */}
-      <div className="bg-[#FAF9F6] p-3 sm:p-4 border border-stone-200 space-y-2">
-        <div className="flex items-center justify-between text-xs font-bold text-stone-600 border-b pb-1.5">
+      <div className="bg-[#FAF9F6] p-2 sm:p-3 border border-stone-200 space-y-1.5">
+        <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold text-stone-600 border-b pb-1">
           <span>BULUNACAK HEDEF SÖZCÜKLER</span>
           <span className="font-mono text-[#C5A059] font-black text-xs sm:text-sm">
             {foundWords.length} / {activeWords.length} Bulundu
           </span>
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+        <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 pt-0.5">
           {activeWords.map((tw) => {
             const cleanW = tw.toUpperCase().replace(/\s+/g, '');
             const isFound = foundWords.includes(cleanW);
             return (
               <span
                 key={tw}
-                className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold font-mono tracking-wider transition-all border flex items-center gap-1 ${
+                className={`px-2 py-0.5 text-[10px] sm:text-[11px] font-bold font-mono tracking-wider transition-all border flex items-center gap-1 ${
                   isFound
                     ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm font-black scale-105'
                     : 'bg-white text-stone-800 border-stone-300'
@@ -4019,9 +4030,12 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
         </div>
       </div>
 
-      {/* Grid Display - Responsive 10x10 matrix scaled for mobile */}
+      {/* Grid Display - Responsive matrix scaled for mobile & desktop */}
       <div className="w-full overflow-x-auto pb-1">
-        <div className="grid grid-cols-10 gap-1 sm:gap-1.5 md:gap-2 bg-[#FAF9F6] p-2 sm:p-4 md:p-6 border border-stone-300 max-w-2xl mx-auto shadow-inner min-w-[280px]">
+        <div
+          className="grid gap-1 sm:gap-1.5 bg-[#FAF9F6] p-1.5 sm:p-3 border border-stone-300 max-w-sm sm:max-w-md md:max-w-lg mx-auto shadow-inner min-w-[260px]"
+          style={{ gridTemplateColumns: `repeat(${gridData.grid[0]?.length || 10}, minmax(0, 1fr))` }}
+        >
           {gridData.grid.map((row, r) =>
             row.map((char, c) => {
               const key = `${r}-${c}`;
@@ -4032,7 +4046,7 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
                 <button
                   key={key}
                   onClick={() => handleCellClick(r, c)}
-                  className={`aspect-square w-full font-mono font-black text-xs sm:text-base md:text-lg border transition-all cursor-pointer rounded-none select-none flex items-center justify-center p-0 ${
+                  className={`aspect-square w-full font-mono font-black text-[10px] sm:text-xs md:text-sm border transition-all cursor-pointer rounded-none select-none flex items-center justify-center p-0 ${
                     isFoundCell
                       ? 'bg-emerald-600 text-white border-emerald-700 font-extrabold shadow-sm'
                       : isSelected
@@ -4049,33 +4063,33 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
       </div>
 
       {/* Selected Sequence Status & Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-stone-200 text-xs font-bold">
-        <div className="text-stone-700 font-mono text-left">
-          Seçilen Harfler: <span className="text-[#C5A059] font-black text-sm bg-stone-100 px-2 py-0.5 border">{selectedCells.map(c => gridData.grid[c.r][c.c]).join('') || '—'}</span>
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-stone-200 text-xs font-bold">
+        <div className="text-stone-700 font-mono text-left text-[11px] sm:text-xs">
+          Seçilen: <span className="text-[#C5A059] font-black text-xs sm:text-sm bg-stone-100 px-1.5 py-0.5 border">{selectedCells.map(c => gridData.grid[c.r][c.c]).join('') || '—'}</span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => setSelectedCells([])}
-            className="px-3 py-1.5 bg-stone-200 hover:bg-stone-300 text-stone-800 uppercase text-[11px] tracking-wider transition-all cursor-pointer"
+            className="px-2.5 py-1 bg-stone-200 hover:bg-stone-300 text-stone-800 uppercase text-[10px] sm:text-[11px] tracking-wider transition-all cursor-pointer"
           >
             Seçimi Temizle
           </button>
           <button
             onClick={resetMatrix}
-            className="px-3 py-1.5 bg-stone-800 hover:bg-stone-900 text-white uppercase text-[11px] tracking-wider transition-all cursor-pointer flex items-center gap-1"
+            className="px-2.5 py-1 bg-stone-800 hover:bg-stone-900 text-white uppercase text-[10px] sm:text-[11px] tracking-wider transition-all cursor-pointer flex items-center gap-1"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Yeniden Karıştır</span>
+            <RefreshCw className="w-3 h-3" />
+            <span>Karıştır</span>
           </button>
           <button
             onClick={() => {
               const acc = Math.round((foundWords.length / targetWords.length) * 100);
               onCompleteResult(350, acc, 30);
             }}
-            className="px-3.5 py-1.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white uppercase text-[11px] tracking-wider shadow cursor-pointer"
+            className="px-3 py-1 bg-[#C5A059] hover:bg-[#b08d4b] text-white uppercase text-[10px] sm:text-[11px] tracking-wider shadow cursor-pointer font-bold"
           >
-            Egzersizi Tamamla & Puanla
+            Tamamla & Puanla
           </button>
         </div>
       </div>
@@ -4258,7 +4272,7 @@ function BulmacaRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
   }
 
   return (
-    <div className="w-full max-w-4xl sm:max-w-5xl lg:max-w-6xl mx-auto bg-white p-4 sm:p-6 md:p-8 border border-[#2D2D2D]/15 text-center space-y-6 shadow-sm overflow-hidden">
+    <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mx-auto bg-white p-3 sm:p-5 md:p-6 border border-[#2D2D2D]/15 text-center space-y-3 sm:space-y-4 shadow-sm overflow-y-auto max-h-[85vh]">
       
       {/* 1. ANAGRAM TEST */}
       {type === 'anagram' && anagramWords[anagramIndex] && (
