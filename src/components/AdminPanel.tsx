@@ -3,11 +3,12 @@ import {
   X, Check, Trash2, Archive, Shield, Phone, 
   Mail, Calendar, Users, FileSpreadsheet, PlusCircle, UserCheck,
   ListFilter, Sparkles, MessageSquare, ThumbsUp, LogOut, Clock, Info,
-  Eye, TrendingUp, Globe, Zap
+  Eye, TrendingUp, Globe, Zap, HeartPulse
 } from 'lucide-react';
 import { ContactSubmission, Testimonial } from '../types';
 import { TESTIMONIALS_DATA } from '../data';
 import SchedulePlanner from './SchedulePlanner';
+import AnxietyControlPanel from './AnxietyControlPanel';
 import { 
   dbGetInquiries, 
   dbUpdateInquiryStatus, 
@@ -36,7 +37,7 @@ export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading }: Admi
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('gamze_admin_remember') === 'true');
   const [loginError, setLoginError] = useState('');
-  const [activeTab, setActiveTab] = useState<'requests' | 'planner' | 'comments'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'planner' | 'comments' | 'anxiety'>('requests');
 
   const [inquiries, setInquiries] = useState<ContactSubmission[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -470,6 +471,17 @@ export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading }: Admi
             >
               <Sparkles className="w-4 h-4" />
               <span>Ders Programı Robotu</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('anxiety')}
+              className={`px-4 py-2 text-xs font-bold transition-all rounded-lg flex items-center gap-2 cursor-pointer ${
+                activeTab === 'anxiety'
+                  ? 'bg-[#C5A059] text-slate-950 shadow-sm font-extrabold'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <HeartPulse className="w-4 h-4 text-rose-400" />
+              <span>Kaygını Kontrol Et</span>
             </button>
 
             {onOpenSpeedReading && (
@@ -1131,6 +1143,8 @@ export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading }: Admi
                 </div>
               )}
             </div>
+          ) : activeTab === 'anxiety' ? (
+            <AnxietyControlPanel />
           ) : (
             <SchedulePlanner />
           )}
