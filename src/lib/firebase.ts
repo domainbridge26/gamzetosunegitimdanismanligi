@@ -1258,6 +1258,20 @@ export async function dbMarkScheduleAsRead(studentUsername: string): Promise<voi
   } catch (e) {}
 }
 
+export async function dbDeleteStudentSchedule(studentUsername: string): Promise<void> {
+  const usernameKey = studentUsername.toLowerCase();
+  try {
+    const ref = doc(db, 'coaching_student_schedules', usernameKey);
+    await deleteDoc(ref);
+  } catch (error) {
+    console.error('Failed to delete student schedule from Firestore:', error);
+  }
+
+  try {
+    localStorage.removeItem(`gamze_student_schedule_${usernameKey}`);
+  } catch (e) {}
+}
+
 
 
 

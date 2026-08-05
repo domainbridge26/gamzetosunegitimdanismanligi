@@ -7,11 +7,12 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudentAccount } from '../types';
-import { dbSaveStudentSchedule } from '../lib/firebase';
+import { dbSaveStudentSchedule, dbGetStudentSchedule, dbDeleteStudentSchedule } from '../lib/firebase';
 
 interface SchedulePlannerProps {
   studentsList?: StudentAccount[];
   onScheduleSavedForStudent?: (username: string) => void;
+  initialSelectedUsername?: string;
 }
 
 // Subject database based on Turkish curriculum
@@ -782,9 +783,9 @@ const sortScheduleSlots = (slots: ScheduleItem[]): ScheduleItem[] => {
   });
 };
 
-export default function SchedulePlanner({ studentsList = [], onScheduleSavedForStudent }: SchedulePlannerProps) {
+export default function SchedulePlanner({ studentsList = [], onScheduleSavedForStudent, initialSelectedUsername }: SchedulePlannerProps) {
   // Wizard Input States
-  const [selectedStudentUsername, setSelectedStudentUsername] = useState('');
+  const [selectedStudentUsername, setSelectedStudentUsername] = useState(initialSelectedUsername || '');
   const [studentName, setStudentName] = useState('');
   const [examGroup, setExamGroup] = useState('YKS Sayısal');
   const [targetGoal, setTargetGoal] = useState('');
@@ -798,6 +799,42 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
   const [selectedDay, setSelectedDay] = useState('Pazartesi');
   const [savedSchedules, setSavedSchedules] = useState<SavedSchedule[]>([]);
   const [isGenerated, setIsGenerated] = useState(false);
+
+  // Helper to load student schedule from database
+  const handleSelectStudent = async (un: string) => {
+    setSelectedStudentUsername(un);
+    if (!un) return;
+
+    const found = studentsList.find(s => s.username === un);
+    if (found) {
+      setStudentName(found.fullName);
+      if (found.studentClass.includes('LGS')) setExamGroup('LGS (8. Sınıf)');
+      else if (found.studentClass.includes('YKS')) setExamGroup('YKS Sayısal');
+      else if (found.studentClass.includes('KPSS')) setExamGroup('KPSS Lisans & Ön Lisans');
+    }
+
+    // Attempt to load stored schedule for this student
+    const existing = await dbGetStudentSchedule(un);
+    if (existing && existing.schedule) {
+      if (existing.studentName) setStudentName(existing.studentName);
+      if (existing.examGroup) setExamGroup(existing.examGroup);
+      if (existing.targetGoal) setTargetGoal(existing.targetGoal);
+      
+      const sorted: Record<string, ScheduleItem[]> = {};
+      Object.keys(existing.schedule).forEach(day => {
+        sorted[day] = sortScheduleSlots(existing.schedule[day] || []);
+      });
+      setSchedule(sorted);
+      setIsGenerated(true);
+      setSelectedDay('Pazartesi');
+    }
+  };
+
+  useEffect(() => {
+    if (initialSelectedUsername) {
+      handleSelectStudent(initialSelectedUsername);
+    }
+  }, [initialSelectedUsername]);
 
   // Editor Modal States
   const [editingSlot, setEditingSlot] = useState<{ day: string; index: number; slot: ScheduleItem } | null>(null);
@@ -1456,17 +1493,7 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
                 </label>
                 <select
                   value={selectedStudentUsername}
-                  onChange={(e) => {
-                    const un = e.target.value;
-                    setSelectedStudentUsername(un);
-                    const found = studentsList.find(s => s.username === un);
-                    if (found) {
-                      setStudentName(found.fullName);
-                      if (found.studentClass.includes('LGS')) setExamGroup('LGS (8. Sınıf)');
-                      else if (found.studentClass.includes('YKS')) setExamGroup('YKS Sayısal');
-                      else if (found.studentClass.includes('KPSS')) setExamGroup('KPSS Lisans & Ön Lisans');
-                    }
-                  }}
+                  onChange={(e) => handleSelectStudent(e.target.value)}
                   className="w-full px-2.5 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none"
                 >
                   <option value="">-- Yeni Öğrenci Yazın veya Seçin --</option>
