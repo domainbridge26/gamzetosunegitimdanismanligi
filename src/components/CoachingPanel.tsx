@@ -266,6 +266,7 @@ export default function CoachingPanel({ isOpen, onClose, onOpenSpeedReading }: C
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
 
   // Active Main Tabs
   const [studentActiveTab, setStudentActiveTab] = useState<'kaygi' | 'gunluk' | 'deneme' | 'mufredat'>('kaygi');
@@ -320,7 +321,7 @@ export default function CoachingPanel({ isOpen, onClose, onOpenSpeedReading }: C
   const [newStudentClass, setNewStudentClass] = useState('8. Sınıf (LGS)');
   const [studentMgmtMsg, setStudentMgmtMsg] = useState('');
 
-  // Fetch initial data
+  // Fetch initial data & load saved session
   const loadAllData = async () => {
     try {
       const sts = await dbGetStudents();
@@ -342,6 +343,21 @@ export default function CoachingPanel({ isOpen, onClose, onOpenSpeedReading }: C
   useEffect(() => {
     if (isOpen) {
       loadAllData();
+      try {
+        const savedSession = localStorage.getItem('gamze_coaching_auth_session');
+        if (savedSession) {
+          const parsed = JSON.parse(savedSession);
+          if (parsed.userRole === 'coach') {
+            setUserRole('coach');
+            setCurrentStudent(null);
+          } else if (parsed.userRole === 'student' && parsed.student) {
+            setUserRole('student');
+            setCurrentStudent(parsed.student);
+          }
+        }
+      } catch (err) {
+        console.error('Session load error:', err);
+      }
     }
   }, [isOpen]);
 
@@ -380,14 +396,21 @@ export default function CoachingPanel({ isOpen, onClose, onOpenSpeedReading }: C
     setLoginError('');
 
     if (loginTab === 'coach') {
-      if ((loginUsername === 'gamze' || loginUsername === 'admin') && (loginPassword === '123456' || loginPassword === 'Gamze!2026')) {
+      const u = loginUsername.trim().toLowerCase();
+      const p = loginPassword.trim();
+      if ((u === 'gamze' || u === 'admin') && (p === 'Gamze1283' || p === '123456' || p === 'Gamze!2026')) {
         setUserRole('coach');
         setCurrentStudent(null);
         setLoginUsername('');
         setLoginPassword('');
+        if (rememberMe) {
+          localStorage.setItem('gamze_coaching_auth_session', JSON.stringify({ userRole: 'coach' }));
+        } else {
+          localStorage.removeItem('gamze_coaching_auth_session');
+        }
         loadAllData();
       } else {
-        setLoginError('Hatalı koç kullanıcı adı veya şifresi. (Örnek: gamze / 123456)');
+        setLoginError('Hatalı eğitmen kullanıcı adı veya şifresi. (Örn: Gamze / Gamze1283)');
       }
     } else {
       // Student login
@@ -400,18 +423,16 @@ export default function CoachingPanel({ isOpen, onClose, onOpenSpeedReading }: C
         setCurrentStudent(match);
         setLoginUsername('');
         setLoginPassword('');
+        if (rememberMe) {
+          localStorage.setItem('gamze_coaching_auth_session', JSON.stringify({ userRole: 'student', student: match }));
+        } else {
+          localStorage.removeItem('gamze_coaching_auth_session');
+        }
         loadAllData();
       } else {
-        setLoginError('Kullanıcı adı veya şifre hatalı. Lütfen Gamze Hanım tarafından tanımlanan bilgilerinizi kontrol ediniz.');
+        setLoginError('Kullanıcı adı veya şifre hatalı. Lütfen Eğitmen Gamze Hanım tarafından tanımlanan bilgilerinizi kontrol ediniz.');
       }
     }
-  };
-
-  // Quick login helper for demo
-  const quickStudentLogin = (st: StudentAccount) => {
-    setUserRole('student');
-    setCurrentStudent(st);
-    setLoginError('');
   };
 
   // Handle adding new daily study log
@@ -604,7 +625,7 @@ export default function CoachingPanel({ isOpen, onClose, onOpenSpeedReading }: C
                 </span>
               </div>
               <p className="text-slate-300 text-xs">
-                {userRole === 'coach' ? 'Gamze Hanım Yönetici ve Öğrenci Rapor Portalı' : userRole === 'student' ? `${currentStudent?.fullName} (${currentStudent?.studentClass}) Özel Sayfası` : 'Kullanıcı ve Koç Giriş Portalı'}
+                {userRole === 'coach' ? 'Gamze Hanım Yönetici ve Öğrenci Rapor Portalı' : userRole === 'student' ? `${currentStudent?.fullName} (${currentStudent?.studentClass}) Özel Sayfası` : 'Kullanıcı ve Eğitmen Giriş Portalı'}
               </p>
             </div>
           </div>
@@ -615,6 +636,7 @@ export default function CoachingPanel({ isOpen, onClose, onOpenSpeedReading }: C
                 onClick={() => {
                   setUserRole('none');
                   setCurrentStudent(null);
+                  localStorage.removeItem('gamze_coaching_auth_session');
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-300 hover:text-white text-xs font-bold rounded transition-colors cursor-pointer"
               >
@@ -649,7 +671,7 @@ export default function CoachingPanel({ isOpen, onClose, onOpenSpeedReading }: C
                   Koçluk Özel Paneline Hoş Geldiniz
                 </h3>
                 <p className="text-slate-600 text-xs sm:text-sm mt-1">
-                  Öğrenci veya Koç hesabınızla giriş yaparak günlük çalışmalarınızı, sınav takibinizi ve kaygı egzersizlerinizi yönetebilirsiniz.
+                  Öğrenci veya Eğitmen hesabınızla giriş yaparak günlük çalışmalarınızı, sınav takibinizi ve kaygı egzersizlerinizi yönetebilirsiniz.
                 </p>
               </div>
 
@@ -677,7 +699,7 @@ export default function CoachingPanel({ isOpen, onClose, onOpenSpeedReading }: C
                   }`}
                 >
                   <Shield className="w-4 h-4 inline mr-1.5 text-[#C5A059]" />
-                  Gamze Hanım (Koç) Girişi
+                  Eğitmen Girişi
                 </button>
               </div>
 
@@ -701,7 +723,7 @@ export default function CoachingPanel({ isOpen, onClose, onOpenSpeedReading }: C
                       type="text"
                       value={loginUsername}
                       onChange={(e) => setLoginUsername(e.target.value)}
-                      placeholder={loginTab === 'coach' ? 'gamze' : 'Örn: lgs_ogrenci veya zeynep'}
+                      placeholder={loginTab === 'coach' ? 'Gamze' : 'Örn: lgs_ogrenci veya zeynep'}
                       className="w-full pl-9 pr-3 py-2.5 bg-stone-50 border border-stone-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059]"
                       required
                     />
@@ -725,6 +747,19 @@ export default function CoachingPanel({ isOpen, onClose, onOpenSpeedReading }: C
                   </div>
                 </div>
 
+                {/* Remember Me Checkbox */}
+                <div className="flex items-center justify-between py-1">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 text-[#C5A059] bg-stone-50 border-stone-300 rounded focus:ring-[#C5A059] accent-[#C5A059] cursor-pointer"
+                    />
+                    <span>Beni Hatırla</span>
+                  </label>
+                </div>
+
                 <button
                   type="submit"
                   className={`w-full py-3 font-bold text-sm uppercase tracking-wider rounded-lg shadow-lg transition-all cursor-pointer ${
@@ -733,36 +768,9 @@ export default function CoachingPanel({ isOpen, onClose, onOpenSpeedReading }: C
                       : 'bg-[#C5A059] hover:bg-[#b08d4b] text-slate-950'
                   }`}
                 >
-                  {loginTab === 'coach' ? 'Koç Paneline Giriş Yap' : 'Öğrenci Paneline Giriş Yap'}
+                  {loginTab === 'coach' ? 'Eğitmen Paneline Giriş Yap' : 'Öğrenci Paneline Giriş Yap'}
                 </button>
               </form>
-
-              {/* Quick sample student accounts helper */}
-              {loginTab === 'student' && studentsList.length > 0 && (
-                <div className="mt-8 pt-6 border-t border-stone-200">
-                  <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#C5A059]" />
-                    Örnek Kayıtlı Öğrenci Hesapları ile Hızlı Giriş:
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {studentsList.slice(0, 3).map((st) => (
-                      <button
-                        key={st.id}
-                        type="button"
-                        onClick={() => quickStudentLogin(st)}
-                        className="p-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-left rounded-lg text-xs transition-all cursor-pointer group"
-                      >
-                        <span className="font-bold text-slate-900 block group-hover:text-[#C5A059]">
-                          {st.fullName}
-                        </span>
-                        <span className="text-[10px] text-slate-500 block">
-                          {st.studentClass}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
