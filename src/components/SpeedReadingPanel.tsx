@@ -3851,10 +3851,91 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
   };
 
   const resetMatrix = () => {
-    setGridData(generateWordSearchGrid(activeWords, 10, 10));
+    if (foundWords.length === 0) {
+      setGridData(generateWordSearchGrid(activeWords, 10, 10));
+      setSelectedCells([]);
+      return;
+    }
+
+    const unfoundTargetWords = activeWords.filter(w => {
+      const cleanW = w.toUpperCase().replace(/\s+/g, '');
+      return !foundWords.includes(cleanW);
+    });
+
+    const gridRows = gridData.grid.length;
+    const gridCols = gridData.grid[0].length;
+    const newGrid: string[][] = Array.from({ length: gridRows }, (_, r) =>
+      Array.from({ length: gridCols }, (_, c) => {
+        const key = `${r}-${c}`;
+        return foundCells.has(key) ? gridData.grid[r][c] : '';
+      })
+    );
+
+    const TURKISH_CHARS = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ';
+    const newWordLocations = gridData.wordLocations.filter(loc => foundWords.includes(loc.word));
+
+    for (const rawWord of unfoundTargetWords) {
+      const word = rawWord.toUpperCase().replace(/\s+/g, '');
+      if (!word) continue;
+      let placed = false;
+      let attempts = 0;
+
+      while (!placed && attempts < 200) {
+        attempts++;
+        const dir = Math.floor(Math.random() * 3);
+        let r = 0, c = 0;
+
+        if (dir === 0) {
+          r = Math.floor(Math.random() * gridRows);
+          c = Math.floor(Math.random() * Math.max(1, gridCols - word.length + 1));
+        } else if (dir === 1) {
+          r = Math.floor(Math.random() * Math.max(1, gridRows - word.length + 1));
+          c = Math.floor(Math.random() * gridCols);
+        } else {
+          r = Math.floor(Math.random() * Math.max(1, gridRows - word.length + 1));
+          c = Math.floor(Math.random() * Math.max(1, gridCols - word.length + 1));
+        }
+
+        let fits = true;
+        const cells: { r: number; c: number }[] = [];
+
+        for (let i = 0; i < word.length; i++) {
+          const curR = dir === 0 ? r : dir === 1 ? r + i : r + i;
+          const curC = dir === 0 ? c + i : dir === 1 ? c : c + i;
+
+          if (curR >= gridRows || curC >= gridCols) {
+            fits = false;
+            break;
+          }
+
+          if (newGrid[curR][curC] !== '' && newGrid[curR][curC] !== word[i]) {
+            fits = false;
+            break;
+          }
+          cells.push({ r: curR, c: curC });
+        }
+
+        if (fits && cells.length === word.length) {
+          for (let i = 0; i < word.length; i++) {
+            newGrid[cells[i].r][cells[i].c] = word[i];
+          }
+          newWordLocations.push({ word, cells });
+          placed = true;
+        }
+      }
+    }
+
+    for (let r = 0; r < gridRows; r++) {
+      for (let c = 0; c < gridCols; c++) {
+        if (newGrid[r][c] === '') {
+          newGrid[r][c] = TURKISH_CHARS[Math.floor(Math.random() * TURKISH_CHARS.length)];
+        }
+      }
+    }
+
+    setGridData({ grid: newGrid, wordLocations: newWordLocations });
     setSelectedCells([]);
-    setFoundWords([]);
-    setFoundCells(new Set());
+    playExerciseClickSound(isSoundEnabled);
   };
 
   const handleCellClick = (r: number, c: number) => {
