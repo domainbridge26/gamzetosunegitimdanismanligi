@@ -20,7 +20,6 @@ import AnxietyControlPanel from './AnxietyControlPanel';
 interface CoachingPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  onOpenSpeedReading?: () => void;
 }
 
 // =========================================================================
@@ -256,7 +255,7 @@ export const CURRICULUM_DATA: Record<string, { subject: string; topics: string[]
   ]
 };
 
-export default function CoachingPanel({ isOpen, onClose, onOpenSpeedReading }: CoachingPanelProps) {
+export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
   // Authentication State
   const [userRole, setUserRole] = useState<'none' | 'student' | 'coach'>('none');
   const [currentStudent, setCurrentStudent] = useState<StudentAccount | null>(null);
@@ -802,14 +801,6 @@ export default function CoachingPanel({ isOpen, onClose, onOpenSpeedReading }: C
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {onOpenSpeedReading && (
-                    <button
-                      onClick={onOpenSpeedReading}
-                      className="px-3.5 py-2 bg-[#C5A059]/10 border border-[#C5A059]/40 text-[#C5A059] hover:bg-[#C5A059] hover:text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all cursor-pointer"
-                    >
-                      ⚡ Hızlı Okuma Egzersizleri
-                    </button>
-                  )}
                 </div>
               </div>
 

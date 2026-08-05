@@ -295,7 +295,6 @@ export default function App() {
       <CoachingPanel 
         isOpen={isCoachingOpen} 
         onClose={() => setIsCoachingOpen(false)} 
-        onOpenSpeedReading={() => setIsSpeedReadingOpen(true)}
       />
 
       {/* FLOATING ACTION & BACK TO TOP BUTTONS */}
