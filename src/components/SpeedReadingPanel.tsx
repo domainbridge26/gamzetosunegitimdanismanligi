@@ -2501,10 +2501,10 @@ function generateNumberDistractor(numStr: string): string {
   return result;
 }
 
-function SayiCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setSpeedBpm, isSoundEnabled, onCompleteResult }: any) {
+function SayiCalismasiRunner({ exercise, speedBpm, setSpeedBpm, isSoundEnabled, onCompleteResult }: any) {
   const TOTAL_QUESTIONS = 10;
   const [qIndex, setQIndex] = useState(0);
-  const [flashDurationMs, setFlashDurationMs] = useState(150);
+  const [flashDurationMs, setFlashDurationMs] = useState(200);
   const [isFlashed, setIsFlashed] = useState(true);
   const [choices, setChoices] = useState<string[]>([]);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
@@ -2560,13 +2560,14 @@ function SayiCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setS
       isCorrect
     }]);
 
+    // Otomatik olarak buton basılmadan bir sonraki sayıya ve şıklara geç
     setTimeout(() => {
       if (qIndex + 1 >= TOTAL_QUESTIONS) {
         setIsCompleted(true);
       } else {
         setQIndex(prev => prev + 1);
       }
-    }, 1100);
+    }, 600);
   };
 
   const handleRestart = () => {
@@ -2583,17 +2584,17 @@ function SayiCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setS
     <div className="w-full max-w-4xl sm:max-w-5xl space-y-6 text-center select-none py-4 mx-auto">
       <div className="space-y-1">
         <span className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-3 py-1 border border-blue-200 uppercase tracking-widest inline-block">
-          ⚡ SÜPER HIZLI SAYI DİZİSİ TAKİSTOSKOP FLAŞÖRÜ (2 ŞIKLI ÇOKTAN SEÇMELİ)
+          ⚡ SÜPER HIZLI SAYI DİZİSİ FLAŞÖRÜ (OTOMATİK GEÇİŞLİ)
         </span>
         <h3 className="font-serif font-bold text-[#2D2D2D] text-2xl">{exercise.title}</h3>
         <p className="text-xs text-stone-500">
-          Anlık çakan sayıyı görün, ardından 2 seçenek arasından doğru olanı seçerek 10 soruluk testi tamamlayın.
+          Sayı anlık yanıp söner. 2 şıktan doğru olanı seçtiğiniz an otomatik olarak sıradaki sayıya geçilir.
         </p>
       </div>
 
       {!isCompleted ? (
         <>
-          <div className="flex items-center justify-between bg-stone-100 p-3 border border-stone-200 text-xs font-bold">
+          <div className="flex flex-wrap items-center justify-between bg-stone-100 p-3 border border-stone-200 text-xs font-bold gap-2">
             <div className="flex items-center gap-2">
               <span className="bg-blue-600 text-white px-2.5 py-1 text-xs font-mono font-black">
                 Soru {qIndex + 1} / {TOTAL_QUESTIONS}
@@ -2601,15 +2602,41 @@ function SayiCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setS
               <span className="text-stone-600 font-mono">Basamak: {targetNumber.length} Haneli</span>
             </div>
 
+            {/* Flash Speed Controller */}
+            <div className="flex items-center gap-2 bg-white px-3 py-1 border border-stone-200 shadow-sm">
+              <span className="text-stone-600 font-bold text-[11px]">⚡ Yanıp Sönme Hızı:</span>
+              {[
+                { label: 'Çok Hızlı (100 ms)', val: 100 },
+                { label: 'Hızlı (200 ms)', val: 200 },
+                { label: 'Orta (350 ms)', val: 350 },
+                { label: 'Yavaş (600 ms)', val: 600 }
+              ].map(m => (
+                <button
+                  key={m.val}
+                  onClick={() => {
+                    setFlashDurationMs(m.val);
+                    setIsFlashed(true);
+                  }}
+                  className={`px-2 py-0.5 text-[11px] font-bold font-mono transition-all cursor-pointer ${
+                    flashDurationMs === m.val
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-stone-700 hover:bg-stone-100'
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+
             <div className="flex items-center gap-2">
-              <span className="text-stone-600">Başarı Skoru:</span>
+              <span className="text-stone-600">Skor:</span>
               <span className="font-mono text-emerald-700 font-black text-sm bg-emerald-50 px-2 py-0.5 border border-emerald-200">
-                {score} / {qIndex + (selectedChoice !== null ? 1 : 0)} (%{qIndex > 0 || selectedChoice !== null ? Math.round((score / (qIndex + (selectedChoice !== null ? 1 : 0))) * 100) : 100})
+                {score} / {qIndex + (selectedChoice !== null ? 1 : 0)}
               </span>
             </div>
           </div>
 
-          <div className="h-60 sm:h-80 bg-[#FAF9F6] border-2 border-blue-400/80 relative flex flex-col items-center justify-center p-6 overflow-hidden shadow-lg transition-all">
+          <div className="h-60 sm:h-80 bg-[#FAF9F6] border-2 border-blue-500 relative flex flex-col items-center justify-center p-6 overflow-hidden shadow-lg transition-all">
             {isFlashed && (
               <div className="absolute inset-0 bg-blue-500/10 pointer-events-none animate-pulse" />
             )}
@@ -2618,7 +2645,7 @@ function SayiCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setS
               <div className="flex items-center justify-center gap-2">
                 <Zap className={`w-5 h-5 ${isFlashed ? 'text-amber-500 animate-bounce' : 'text-stone-300'}`} />
                 <span className="text-xs font-mono font-bold text-stone-500">
-                  {isFlashed ? '⚡ Flaşör Aktif (Görsel Odaklama)' : '🎯 Flaşör Kapandı — Doğru Şıkkı Seçin'}
+                  {isFlashed ? `⚡ Flaşör Aktif (${flashDurationMs} ms)` : '🎯 Flaşör Kapandı — Şıkkı Seçin'}
                 </span>
               </div>
 
@@ -2647,8 +2674,8 @@ function SayiCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setS
 
           <div className="bg-stone-50 p-6 border border-stone-200 space-y-4 shadow-sm text-left">
             <div className="text-center space-y-1">
-              <h4 className="text-sm font-bold text-[#2D2D2D]">Flaşörde Parıldayan Sayı Hangisiydi? (2 Şık)</h4>
-              <p className="text-xs text-stone-500">Aşağıdaki 2 şıktan doğru olan seçeneğe tıklayın:</p>
+              <h4 className="text-sm font-bold text-[#2D2D2D]">Flaşörde Parıldayan Sayı Hangisiydi?</h4>
+              <p className="text-xs text-stone-500">Doğru şıkka dokunduğunuz an otomatik olarak sıradaki sayıya geçilecektir.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto pt-2">
@@ -2689,55 +2716,17 @@ function SayiCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setS
                 selectedChoice === targetNumber ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-rose-50 border-rose-300 text-rose-800'
               }`}>
                 {selectedChoice === targetNumber 
-                  ? `🎉 Harika! Doğru Seçim: "${targetNumber}"` 
-                  : `❌ Hatalı Seçim! Flaşördeki Sayı: "${targetNumber}" (Seçilen: "${selectedChoice}")`}
+                  ? `🎉 Doğru! ("${targetNumber}") — Sıradaki sayıya geçiliyor...` 
+                  : `❌ Yanlış! Doğru sayı: "${targetNumber}" — Sıradaki sayıya geçiliyor...`}
               </div>
             )}
-
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-stone-200 text-xs">
-              <div className="flex items-center gap-2 bg-white p-1.5 border border-stone-200">
-                <span className="font-bold text-stone-600 text-[11px] px-2">Flaş Süresi:</span>
-                {[
-                  { label: '100 ms', val: 100 },
-                  { label: '150 ms', val: 150 },
-                  { label: '250 ms', val: 250 },
-                  { label: '500 ms', val: 500 },
-                  { label: 'Sürekli', val: 9999 }
-                ].map(m => (
-                  <button
-                    key={m.val}
-                    onClick={() => setFlashDurationMs(m.val)}
-                    className={`px-2.5 py-1 text-[11px] font-bold font-mono transition-all cursor-pointer ${
-                      flashDurationMs === m.val
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-stone-700 hover:bg-stone-200'
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => {
-                  if (qIndex + 1 < TOTAL_QUESTIONS) {
-                    setQIndex(prev => prev + 1);
-                  } else {
-                    setIsCompleted(true);
-                  }
-                }}
-                className="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white font-bold uppercase tracking-wider cursor-pointer ml-auto flex items-center gap-1.5"
-              >
-                <span>{qIndex + 1 >= TOTAL_QUESTIONS ? 'Puanlamaya Geç' : 'Sonraki Sayı ➔'}</span>
-              </button>
-            </div>
           </div>
         </>
       ) : (
         <div className="bg-white p-6 sm:p-8 border-2 border-blue-600 space-y-6 shadow-xl text-left max-w-3xl mx-auto">
           <div className="text-center space-y-2 border-b border-stone-200 pb-5">
             <span className="text-xs font-mono font-black text-emerald-600 bg-emerald-50 px-3 py-1 border border-emerald-200 uppercase tracking-widest inline-block">
-              🏆 10 SAYI PERFORMANS & BAŞARI MASKESİ
+              🏆 10 SAYI PERFORMANS VE PUANLAMA REPORTİ
             </span>
             <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#2D2D2D]">Egzersiz Puanlama Raporu</h3>
             <p className="text-xs text-stone-500">10 soruluk sayı flaşörü hafıza testini başarıyla tamamladınız.</p>
@@ -3889,12 +3878,12 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
   };
 
   return (
-    <div className="w-full max-w-4xl sm:max-w-5xl lg:max-w-6xl mx-auto bg-white p-6 sm:p-8 border border-[#2D2D2D]/15 shadow-md space-y-6 text-center">
+    <div className="w-full max-w-4xl sm:max-w-5xl lg:max-w-6xl mx-auto bg-white p-3 sm:p-6 md:p-8 border border-[#2D2D2D]/15 shadow-md space-y-4 sm:space-y-6 text-center overflow-hidden">
       <div className="space-y-1">
         <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#C5A059] bg-[#C5A059]/10 px-3 py-1 border border-[#C5A059]/30 inline-block">
-          🧩 ŞEHİR & HAYVAN KELİME MATRİS BULMACASI
+          🧩 KELİME MATRİS BULMACASI (SÖZCÜK AVI)
         </span>
-        <h3 className="font-serif font-bold text-xl text-[#2D2D2D] pt-1">
+        <h3 className="font-serif font-bold text-lg sm:text-xl text-[#2D2D2D] pt-1">
           Harf Matrisindeki Gizli Sözcükleri Bulun
         </h3>
         <p className="text-xs text-stone-500">
@@ -3902,115 +3891,108 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
         </p>
       </div>
 
-      {/* Theme Selection Buttons */}
-      <div className="flex flex-wrap items-center justify-center gap-2 bg-stone-100 p-2.5 border border-stone-200">
-        <button
-          onClick={() => switchTheme('countries', ['TÜRKİYE', 'ALMANYA', 'FRANSA', 'İTALYA', 'JAPONYA', 'KANADA', 'MISIR', 'BREZİLYA'])}
-          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
-            activeTheme === 'countries' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
-          }`}
-        >
-          <span>🌍 Ülkeler & Başkentler</span>
-        </button>
+      {/* Theme Selection Buttons - Scrollable / Compact */}
+      <div className="w-full overflow-x-auto pb-1">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 bg-stone-100 p-2 border border-stone-200 min-w-max sm:min-w-0">
+          <button
+            onClick={() => switchTheme('countries', ['TÜRKİYE', 'ALMANYA', 'FRANSA', 'İTALYA', 'JAPONYA', 'KANADA', 'MISIR', 'BREZİLYA'])}
+            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+              activeTheme === 'countries' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+            }`}
+          >
+            <span>🌍 Ülkeler</span>
+          </button>
 
-        <button
-          onClick={() => switchTheme('nature', ['ORMAN', 'ŞELALE', 'YANARDAĞ', 'OKYANUS', 'YAĞMUR', 'ATMOSFER', 'NEHİR', 'GÜNEŞ'])}
-          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
-            activeTheme === 'nature' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
-          }`}
-        >
-          <span>🌿 Doğa & Çevre</span>
-        </button>
+          <button
+            onClick={() => switchTheme('nature', ['ORMAN', 'ŞELALE', 'YANARDAĞ', 'OKYANUS', 'YAĞMUR', 'ATMOSFER', 'NEHİR', 'GÜNEŞ'])}
+            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+              activeTheme === 'nature' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+            }`}
+          >
+            <span>🌿 Doğa</span>
+          </button>
 
-        <button
-          onClick={() => switchTheme('professions', ['MÜHENDİS', 'MİMAR', 'DOKTOR', 'YAZAR', 'PİLOT', 'SANATÇI', 'AVUKAT', 'HAKİM'])}
-          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
-            activeTheme === 'professions' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
-          }`}
-        >
-          <span>💼 Meslekler & Kariyer</span>
-        </button>
+          <button
+            onClick={() => switchTheme('professions', ['MÜHENDİS', 'MİMAR', 'DOKTOR', 'YAZAR', 'PİLOT', 'SANATÇI', 'AVUKAT', 'HAKİM'])}
+            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+              activeTheme === 'professions' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+            }`}
+          >
+            <span>💼 Meslekler</span>
+          </button>
 
-        <button
-          onClick={() => switchTheme('subjects', ['MATEMATİK', 'FİZİK', 'KİMYA', 'BİYOLOJİ', 'TARİH', 'EDEBİYAT', 'FELSEFE', 'GEOMETRİ'])}
-          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
-            activeTheme === 'subjects' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
-          }`}
-        >
-          <span>📚 Dersler & Konular</span>
-        </button>
+          <button
+            onClick={() => switchTheme('subjects', ['MATEMATİK', 'FİZİK', 'KİMYA', 'BİYOLOJİ', 'TARİH', 'EDEBİYAT', 'FELSEFE', 'GEOMETRİ'])}
+            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+              activeTheme === 'subjects' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+            }`}
+          >
+            <span>📚 Dersler</span>
+          </button>
 
-        <button
-          onClick={() => switchTheme('city-tr', ['ANKARA', 'İSTANBUL', 'İZMİR', 'BURSA', 'KONYA', 'ANTALYA', 'ADANA', 'TRABZON'])}
-          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
-            activeTheme === 'city-tr' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
-          }`}
-        >
-          <span>🏙️ Türkiye Şehirleri</span>
-        </button>
+          <button
+            onClick={() => switchTheme('city-tr', ['ANKARA', 'İSTANBUL', 'İZMİR', 'BURSA', 'KONYA', 'ANTALYA', 'ADANA', 'TRABZON'])}
+            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+              activeTheme === 'city-tr' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+            }`}
+          >
+            <span>🏙️ Türkiye Şehirleri</span>
+          </button>
 
-        <button
-          onClick={() => switchTheme('city-world', ['PARİS', 'LONDRA', 'TOKYO', 'ROMA', 'BERLİN', 'MADRİD', 'VİYANA', 'KAHİRE'])}
-          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
-            activeTheme === 'city-world' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
-          }`}
-        >
-          <span>✈️ Dünya Şehirleri</span>
-        </button>
+          <button
+            onClick={() => switchTheme('city-world', ['PARİS', 'LONDRA', 'TOKYO', 'ROMA', 'BERLİN', 'MADRİD', 'VİYANA', 'KAHİRE'])}
+            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+              activeTheme === 'city-world' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+            }`}
+          >
+            <span>✈️ Dünya Şehirleri</span>
+          </button>
 
-        <button
-          onClick={() => switchTheme('animals-cute', ['KEDİ', 'KÖPEK', 'TAVŞAN', 'YUNUS', 'PENGUEN', 'KUNDUZ', 'KARTAL', 'KELEBEK'])}
-          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
-            activeTheme === 'animals-cute' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
-          }`}
-        >
-          <span>🐾 Sevimli Hayvanlar</span>
-        </button>
+          <button
+            onClick={() => switchTheme('animals-cute', ['KEDİ', 'KÖPEK', 'TAVŞAN', 'YUNUS', 'PENGUEN', 'KUNDUZ', 'KARTAL', 'KELEBEK'])}
+            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+              activeTheme === 'animals-cute' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+            }`}
+          >
+            <span>🐾 Hayvanlar</span>
+          </button>
 
-        <button
-          onClick={() => switchTheme('animals-wild', ['ASLAN', 'KAPLAN', 'ZÜRAFA', 'LEOPAR', 'BUFALO', 'FLAMİNGO', 'KANGURU', 'AHTAPOT'])}
-          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
-            activeTheme === 'animals-wild' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
-          }`}
-        >
-          <span>🦁 Yabani Hayvanlar</span>
-        </button>
+          <button
+            onClick={() => switchTheme('science', ['ROBOTİK', 'GENETİK', 'KUANTUM', 'YAZILIM', 'ATOM', 'NÖROLOJİ', 'SİBER', 'BİYOLOJİ'])}
+            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+              activeTheme === 'science' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+            }`}
+          >
+            <span>🔬 Bilim</span>
+          </button>
 
-        <button
-          onClick={() => switchTheme('science', ['ROBOTİK', 'GENETİK', 'KUANTUM', 'YAZILIM', 'ATOM', 'NÖROLOJİ', 'SİBER', 'BİYOLOJİ'])}
-          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
-            activeTheme === 'science' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
-          }`}
-        >
-          <span>🔬 Bilim & Teknoloji</span>
-        </button>
-
-        <button
-          onClick={() => switchTheme('academic', targetWords && targetWords.length > 0 ? targetWords : ['PARAGRAF', 'MUHAKEME', 'SENTEZ', 'ANALİZ', 'DERECE', 'AKIL'])}
-          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
-            activeTheme === 'academic' || activeTheme === 'custom' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
-          }`}
-        >
-          <span>🎓 Akademik Sözcükler</span>
-        </button>
+          <button
+            onClick={() => switchTheme('academic', targetWords && targetWords.length > 0 ? targetWords : ['PARAGRAF', 'MUHAKEME', 'SENTEZ', 'ANALİZ', 'DERECE', 'AKIL'])}
+            className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+              activeTheme === 'academic' || activeTheme === 'custom' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+            }`}
+          >
+            <span>🎓 Akademik</span>
+          </button>
+        </div>
       </div>
 
       {/* Target Words Badges */}
-      <div className="bg-[#FAF9F6] p-4 border border-stone-200 space-y-2">
-        <div className="flex items-center justify-between text-xs font-bold text-stone-600 border-b pb-2">
+      <div className="bg-[#FAF9F6] p-3 sm:p-4 border border-stone-200 space-y-2">
+        <div className="flex items-center justify-between text-xs font-bold text-stone-600 border-b pb-1.5">
           <span>BULUNACAK HEDEF SÖZCÜKLER</span>
-          <span className="font-mono text-[#C5A059] font-black text-sm">
+          <span className="font-mono text-[#C5A059] font-black text-xs sm:text-sm">
             {foundWords.length} / {activeWords.length} Bulundu
           </span>
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
           {activeWords.map((tw) => {
             const cleanW = tw.toUpperCase().replace(/\s+/g, '');
             const isFound = foundWords.includes(cleanW);
             return (
               <span
                 key={tw}
-                className={`px-3 py-1.5 text-xs font-bold font-mono tracking-wider transition-all border flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold font-mono tracking-wider transition-all border flex items-center gap-1 ${
                   isFound
                     ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm font-black scale-105'
                     : 'bg-white text-stone-800 border-stone-300'
@@ -4024,49 +4006,51 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
         </div>
       </div>
 
-      {/* Grid Display */}
-      <div className="grid grid-cols-10 gap-1 sm:gap-2 bg-[#FAF9F6] p-3 sm:p-6 border border-stone-300 max-w-2xl mx-auto shadow-inner">
-        {gridData.grid.map((row, r) =>
-          row.map((char, c) => {
-            const key = `${r}-${c}`;
-            const isSelected = selectedCells.some(cell => cell.r === r && cell.c === c);
-            const isFoundCell = foundCells.has(key);
+      {/* Grid Display - Responsive 10x10 matrix scaled for mobile */}
+      <div className="w-full overflow-x-auto pb-1">
+        <div className="grid grid-cols-10 gap-1 sm:gap-1.5 md:gap-2 bg-[#FAF9F6] p-2 sm:p-4 md:p-6 border border-stone-300 max-w-2xl mx-auto shadow-inner min-w-[280px]">
+          {gridData.grid.map((row, r) =>
+            row.map((char, c) => {
+              const key = `${r}-${c}`;
+              const isSelected = selectedCells.some(cell => cell.r === r && cell.c === c);
+              const isFoundCell = foundCells.has(key);
 
-            return (
-              <button
-                key={key}
-                onClick={() => handleCellClick(r, c)}
-                className={`h-9 sm:h-12 w-full font-mono font-black text-sm sm:text-lg border transition-all cursor-pointer rounded-none select-none flex items-center justify-center ${
-                  isFoundCell
-                    ? 'bg-emerald-600 text-white border-emerald-700 font-extrabold shadow-sm'
-                    : isSelected
-                    ? 'bg-[#C5A059] text-white border-[#9A7B39] scale-105 shadow-md font-extrabold animate-pulse'
-                    : 'bg-white text-stone-800 border-stone-200 hover:border-[#C5A059] hover:bg-[#C5A059]/10'
-                }`}
-              >
-                {char}
-              </button>
-            );
-          })
-        )}
+              return (
+                <button
+                  key={key}
+                  onClick={() => handleCellClick(r, c)}
+                  className={`aspect-square w-full font-mono font-black text-xs sm:text-base md:text-lg border transition-all cursor-pointer rounded-none select-none flex items-center justify-center p-0 ${
+                    isFoundCell
+                      ? 'bg-emerald-600 text-white border-emerald-700 font-extrabold shadow-sm'
+                      : isSelected
+                      ? 'bg-[#C5A059] text-white border-[#9A7B39] scale-105 shadow-md font-extrabold animate-pulse'
+                      : 'bg-white text-stone-800 border-stone-200 hover:border-[#C5A059] hover:bg-[#C5A059]/10'
+                  }`}
+                >
+                  {char}
+                </button>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* Selected Sequence Status & Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-stone-200 text-xs font-bold">
-        <div className="text-stone-700 font-mono">
-          Seçilen Harfler: <span className="text-[#C5A059] font-black text-sm bg-stone-100 px-2.5 py-1 border">{selectedCells.map(c => gridData.grid[c.r][c.c]).join('') || '—'}</span>
+        <div className="text-stone-700 font-mono text-left">
+          Seçilen Harfler: <span className="text-[#C5A059] font-black text-sm bg-stone-100 px-2 py-0.5 border">{selectedCells.map(c => gridData.grid[c.r][c.c]).join('') || '—'}</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setSelectedCells([])}
-            className="px-3.5 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 uppercase text-[11px] tracking-wider transition-all cursor-pointer"
+            className="px-3 py-1.5 bg-stone-200 hover:bg-stone-300 text-stone-800 uppercase text-[11px] tracking-wider transition-all cursor-pointer"
           >
             Seçimi Temizle
           </button>
           <button
             onClick={resetMatrix}
-            className="px-3.5 py-2 bg-stone-800 hover:bg-stone-900 text-white uppercase text-[11px] tracking-wider transition-all cursor-pointer flex items-center gap-1"
+            className="px-3 py-1.5 bg-stone-800 hover:bg-stone-900 text-white uppercase text-[11px] tracking-wider transition-all cursor-pointer flex items-center gap-1"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Yeniden Karıştır</span>
@@ -4076,7 +4060,7 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
               const acc = Math.round((foundWords.length / targetWords.length) * 100);
               onCompleteResult(350, acc, 30);
             }}
-            className="px-4 py-2 bg-[#C5A059] hover:bg-[#b08d4b] text-white uppercase text-[11px] tracking-wider shadow cursor-pointer"
+            className="px-3.5 py-1.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white uppercase text-[11px] tracking-wider shadow cursor-pointer"
           >
             Egzersizi Tamamla & Puanla
           </button>
@@ -4261,7 +4245,7 @@ function BulmacaRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
   }
 
   return (
-    <div className="w-full max-w-4xl sm:max-w-5xl lg:max-w-6xl mx-auto bg-white p-6 sm:p-8 border border-[#2D2D2D]/15 text-center space-y-6 shadow-sm">
+    <div className="w-full max-w-4xl sm:max-w-5xl lg:max-w-6xl mx-auto bg-white p-4 sm:p-6 md:p-8 border border-[#2D2D2D]/15 text-center space-y-6 shadow-sm overflow-hidden">
       
       {/* 1. ANAGRAM TEST */}
       {type === 'anagram' && anagramWords[anagramIndex] && (
@@ -4357,7 +4341,7 @@ function BulmacaRunner({ exercise, isSoundEnabled, onCompleteResult }: any) {
           </div>
 
           {/* Multiple Choice Options */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {matchChoices.map((choice, i) => {
               const isCorrectOpt = choice === matchPairs[matchIndex].match;
               const isSelected = selectedMatch === choice;
