@@ -1758,5 +1758,185 @@ export const SPEED_READING_EXERCISES: SpeedExercise[] = [
       theme: 'animals-wild',
       targetWords: ['ZÜRAFA', 'LEOPAR', 'BUFALO', 'FLAMİNGO', 'AHTAPOT', 'KANGURU', 'KARTAL', 'PENGUEN']
     }
+  },
+  {
+    id: 'i-bm-ulke',
+    title: 'İlkokul Ülkeler & Başkentler Kelime Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Ülkeler',
+    iconName: 'Globe',
+    description: 'Ülke ve başkent isimlerini (Türkiye, Almanya, Fransa, İtalya...) matriste hızlıca bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'countries',
+      targetWords: ['TÜRKİYE', 'ALMANYA', 'FRANSA', 'İTALYA', 'JAPONYA', 'KANADA', 'MISIR', 'BREZİLYA']
+    }
+  },
+  {
+    id: 'i-bm-doga',
+    title: 'İlkokul Doğa & Çevre Kelime Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Doğa',
+    iconName: 'Trees',
+    description: 'Doğa ve çevre terimlerini (Orman, Şelale, Okyanus, Yağmur...) gözlerinizle tarayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'nature',
+      targetWords: ['ORMAN', 'ŞELALE', 'YANARDAĞ', 'OKYANUS', 'YAĞMUR', 'ATMOSFER', 'NEHİR', 'GÜNEŞ']
+    }
+  },
+  {
+    id: 'i-bm-meslek',
+    title: 'İlkokul Geleceğin Meslekleri Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Meslekler',
+    iconName: 'Briefcase',
+    description: 'Meslek isimlerini (Mühendis, Mimar, Doktor, Yazar, Pilot...) matriste tarayıp keşfedin.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'professions',
+      targetWords: ['MÜHENDİS', 'MİMAR', 'DOKTOR', 'YAZAR', 'PİLOT', 'SANATÇI', 'AVUKAT', 'HAKİM']
+    }
+  },
+  {
+    id: 'i-bm-ders',
+    title: 'İlkokul Okul Dersleri & Konuları Bulmacası',
+    level: 'İlkokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Dersler',
+    iconName: 'GraduationCap',
+    description: 'Okul derslerini (Matematik, Türkçe, Fen, Hayat Bilgisi...) matriste tarayarak öğrenin.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'subjects',
+      targetWords: ['MATEMATİK', 'TÜRKÇE', 'FİZİK', 'KİMYA', 'BİYOLOJİ', 'TARİH', 'GEOMETRİ', 'MÜZİK']
+    }
+  },
+  {
+    id: 'o-bm-ulke',
+    title: 'Ortaokul Dünya Ülkeleri & Coğrafya Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Ülkeler',
+    iconName: 'Globe',
+    description: 'LGS ve genel kültür ülkelerini matriste hızla tespit edin.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'countries',
+      targetWords: ['İSPANYA', 'İSVEÇ', 'NORVEÇ', 'HOLLANDA', 'JAPONYA', 'HİNDİSTAN', 'ÇİN', 'KORE']
+    }
+  },
+  {
+    id: 'o-bm-doga',
+    title: 'Ortaokul Ekosistem & Doğa Bilimi Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Doğa',
+    iconName: 'Trees',
+    description: 'Fen bilimleri ve çevre kavramlarını matriste gözlerinizle bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'nature',
+      targetWords: ['EKOSİSTEM', 'BİYOÇEŞİTLİLİK', 'ATMOSFER', 'BİOTOP', 'OKYANUS', 'VOLKAN', 'BUZUL', 'FOTO SENTEZ']
+    }
+  },
+  {
+    id: 'o-bm-meslek',
+    title: 'Ortaokul Kariyer & Meslekler Matris Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Meslekler',
+    iconName: 'Briefcase',
+    description: 'Geleceğin kariyer mesleklerini matriste arayıp dikkatinizi ölçün.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'professions',
+      targetWords: ['PSİKOLOG', 'ASTRONOT', 'YAZILIMCI', 'BİYOLOG', 'GENETİKÇİ', 'MİMAR', 'MÜHENDİS', 'DOKTOR']
+    }
+  },
+  {
+    id: 'o-bm-ders',
+    title: 'Ortaokul LGS Ders & Akıl Yürütme Bulmacası',
+    level: 'Ortaokul',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Dersler',
+    iconName: 'GraduationCap',
+    description: 'LGS derslerini ve sözel mantık kavramlarını matriste tarayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'subjects',
+      targetWords: ['PARAGRAF', 'MANTIK', 'FİZİK', 'BİYOLOJİ', 'KİMYA', 'GEOMETRİ', 'MUHAKEME', 'SENTEZ']
+    }
+  },
+  {
+    id: 'l-bm-ulke',
+    title: 'YKS & KPSS Dünya Coğrafyası & Ülkeler Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Ülkeler',
+    iconName: 'Globe',
+    description: 'YKS ve KPSS Coğrafya sınavlarında çıkan dünya ülkelerini matriste tarayıp öğrenin.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'countries',
+      targetWords: ['ARJANTİN', 'AVUSTRALYA', 'ENDONEZYA', 'GÜNEYAFRİKA', 'MEKSİKA', 'ŞİLİ', 'PORT Portekiz', 'İSVİÇRE']
+    }
+  },
+  {
+    id: 'l-bm-doga',
+    title: 'YKS & KPSS Doğa, Çevre & İklim Bilimi Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Doğa',
+    iconName: 'Trees',
+    description: 'Coğrafya iklim ve çevre bilimi terimlerini matriste hızla bulun.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'nature',
+      targetWords: ['BİYOSFER', 'LİTOSFER', 'HİDROSFER', 'ATMOSFER', 'BİYOÇEŞİTLİLİK', 'JEOMORFOLOJİ', 'KLİMATOLOJİ', 'EKOLOJİ']
+    }
+  },
+  {
+    id: 'l-bm-meslek',
+    title: 'YKS İhtisas Meslekleri & Kariyer Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Meslekler',
+    iconName: 'Briefcase',
+    description: 'İhtisas mesleklerini matriste tarayıp görsel algınızı güçlendirin.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'professions',
+      targetWords: ['AKADEMİSYEN', 'BİYOTEKNOLOG', 'AKTUER', 'KİBERNETİK', 'NEVROLOG', 'CERRAH', 'DİPLOMAT', 'MÜHENDİS']
+    }
+  },
+  {
+    id: 'l-bm-ders',
+    title: 'YKS & TYT / AYT Akademik Disiplinler Bulmacası',
+    level: 'Lise',
+    category: 'bulmaca',
+    categoryLabel: 'Bulmaca & Dersler',
+    iconName: 'GraduationCap',
+    description: 'YKS akademik disiplinlerini ve bilimsellik terimlerini matriste tarayın.',
+    targetWpm: 0,
+    data: {
+      type: 'word-search',
+      theme: 'subjects',
+      targetWords: ['EPİSTEMOLOJİ', 'ONTOLOJİ', 'AK SİYOLOJİ', 'POSTMODERNİZM', 'KUANTUM', 'METİNLERARASI', 'MUHAKEME', 'SENTEZ']
+    }
   }
 ];

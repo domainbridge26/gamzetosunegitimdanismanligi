@@ -2469,205 +2469,329 @@ function HeceCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setS
   );
 }
 
-function SayiCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setSpeedBpm, isSoundEnabled, onCompleteResult }: any) {
-  const [numIndex, setNumIndex] = useState(0);
-  const [flashDurationMs, setFlashDurationMs] = useState(150); // 150ms default tachistoscopic flash
-  const [isFlashed, setIsFlashed] = useState(true);
-  const [userRecall, setUserRecall] = useState('');
-  const [recallFeedback, setRecallFeedback] = useState<{ isCorrect: boolean; msg: string } | null>(null);
-  const [recallScore, setRecallScore] = useState(0);
-  const [recallTotal, setRecallTotal] = useState(0);
+function generateNumberDistractor(numStr: string): string {
+  if (!numStr) return '123';
+  const clean = numStr.trim();
+  if (clean.length === 1) {
+    const val = parseInt(clean, 10);
+    const alt = val === 9 ? 8 : val + 1;
+    return alt.toString();
+  }
+  const digits = clean.split('');
+  const mode = Math.floor(Math.random() * 3);
+  if (mode === 0 && digits.length >= 2) {
+    const swapIdx = Math.floor(Math.random() * (digits.length - 1));
+    const temp = digits[swapIdx];
+    digits[swapIdx] = digits[swapIdx + 1];
+    digits[swapIdx + 1] = temp;
+  } else if (mode === 1) {
+    const changeIdx = Math.floor(Math.random() * digits.length);
+    const orig = parseInt(digits[changeIdx], 10);
+    const newDigit = (orig + (Math.random() > 0.5 ? 1 : -1) + 10) % 10;
+    digits[changeIdx] = newDigit.toString();
+  } else {
+    const lastIdx = digits.length - 1;
+    const orig = parseInt(digits[lastIdx], 10);
+    digits[lastIdx] = (orig === 9 ? 8 : orig + 1).toString();
+  }
+  const result = digits.join('');
+  if (result === clean) {
+    return (parseInt(clean, 10) + 1).toString();
+  }
+  return result;
+}
 
-  const rawNumbers: string[] = exercise.data?.numbers || ['1250', '4891', '7023', '9514', '12408', '56931', '80492', '31579', '99104'];
+function SayiCalismasiRunner({ exercise, isPlaying, setIsPlaying, speedBpm, setSpeedBpm, isSoundEnabled, onCompleteResult }: any) {
+  const TOTAL_QUESTIONS = 10;
+  const [qIndex, setQIndex] = useState(0);
+  const [flashDurationMs, setFlashDurationMs] = useState(150);
+  const [isFlashed, setIsFlashed] = useState(true);
+  const [choices, setChoices] = useState<string[]>([]);
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const [score, setScore] = useState(0);
+  const [history, setHistory] = useState<{ qNum: number; target: string; choice: string; isCorrect: boolean }[]>([]);
+  const [isCompleted, setIsCompleted] = useState(false);
+
+  const rawNumbers: string[] = exercise.data?.numbers && exercise.data.numbers.length >= TOTAL_QUESTIONS
+    ? exercise.data.numbers
+    : ['1250', '4891', '7023', '9514', '12408', '56931', '80492', '31579', '99104', '42018', '77391', '60512'];
+
+  const targetNumber = rawNumbers[qIndex % rawNumbers.length] || '12345';
+
+  const setupQuestion = useCallback((index: number) => {
+    const target = rawNumbers[index % rawNumbers.length] || '12345';
+    const distractor = generateNumberDistractor(target);
+    const options = [target, distractor].sort(() => Math.random() - 0.5);
+    setChoices(options);
+    setSelectedChoice(null);
+    setIsFlashed(true);
+  }, [rawNumbers]);
+
+  useEffect(() => {
+    setupQuestion(qIndex);
+  }, [qIndex, setupQuestion]);
 
   useEffect(() => {
     let timer: any;
-    let flashTimeout: any;
-
-    if (isPlaying && rawNumbers.length > 0) {
-      const intervalMs = Math.max(80, Math.round(60000 / speedBpm));
-
-      timer = setInterval(() => {
-        setNumIndex(prev => (prev + 1) % rawNumbers.length);
-        setIsFlashed(true);
-        playExerciseTickSound(isSoundEnabled);
-
-        if (flashDurationMs < 5000) {
-          flashTimeout = setTimeout(() => {
-            setIsFlashed(false);
-          }, flashDurationMs);
-        }
-      }, intervalMs);
-    } else {
-      setIsFlashed(true);
+    if (isFlashed && flashDurationMs < 5000) {
+      timer = setTimeout(() => {
+        setIsFlashed(false);
+      }, flashDurationMs);
     }
+    return () => clearTimeout(timer);
+  }, [isFlashed, flashDurationMs, qIndex]);
 
-    return () => {
-      clearInterval(timer);
-      clearTimeout(flashTimeout);
-    };
-  }, [isPlaying, speedBpm, rawNumbers.length, isSoundEnabled, flashDurationMs]);
+  const handleSelectOption = (choice: string) => {
+    if (selectedChoice !== null || isCompleted) return;
+    setSelectedChoice(choice);
+    const isCorrect = choice === targetNumber;
 
-  const activeNumber = rawNumbers[numIndex] || '12345';
-
-  const handleCheckRecall = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userRecall.trim()) return;
-
-    const isMatch = userRecall.trim() === activeNumber.trim();
-    setRecallTotal(prev => prev + 1);
-    if (isMatch) {
-      setRecallScore(prev => prev + 1);
-      setRecallFeedback({ isCorrect: true, msg: `🎉 Tebrikler! Sayıyı tam yakaladınız: "${activeNumber}"` });
+    if (isCorrect) {
+      setScore(prev => prev + 1);
       playExerciseSuccessSound(isSoundEnabled);
     } else {
-      setRecallFeedback({ isCorrect: false, msg: `❌ Hatalı. Flaşörde Yanan Sayı: "${activeNumber}" (Yazdığınız: "${userRecall}")` });
       playExerciseClickSound(isSoundEnabled);
     }
-    setUserRecall('');
+
+    setHistory(prev => [...prev, {
+      qNum: qIndex + 1,
+      target: targetNumber,
+      choice,
+      isCorrect
+    }]);
+
+    setTimeout(() => {
+      if (qIndex + 1 >= TOTAL_QUESTIONS) {
+        setIsCompleted(true);
+      } else {
+        setQIndex(prev => prev + 1);
+      }
+    }, 1100);
   };
+
+  const handleRestart = () => {
+    setQIndex(0);
+    setScore(0);
+    setHistory([]);
+    setIsCompleted(false);
+    setupQuestion(0);
+  };
+
+  const accuracyPct = Math.round((score / TOTAL_QUESTIONS) * 100);
 
   return (
     <div className="w-full max-w-4xl sm:max-w-5xl space-y-6 text-center select-none py-4 mx-auto">
       <div className="space-y-1">
         <span className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-3 py-1 border border-blue-200 uppercase tracking-widest inline-block">
-          ⚡ SÜPER HIZLI SAYI DİZİSİ TAKİSTOSKOP FLAŞÖRÜ
+          ⚡ SÜPER HIZLI SAYI DİZİSİ TAKİSTOSKOP FLAŞÖRÜ (2 ŞIKLI ÇOKTAN SEÇMELİ)
         </span>
         <h3 className="font-serif font-bold text-[#2D2D2D] text-2xl">{exercise.title}</h3>
         <p className="text-xs text-stone-500">
-          Anlık çakan sayıları odak noktasında yakalayın ve flaş hafızanızı geliştirin.
+          Anlık çakan sayıyı görün, ardından 2 seçenek arasından doğru olanı seçerek 10 soruluk testi tamamlayın.
         </p>
       </div>
 
-      {/* Main Flash Screen */}
-      <div className="h-64 sm:h-96 bg-[#FAF9F6] border-2 border-blue-400/80 relative flex flex-col items-center justify-center p-8 overflow-hidden shadow-lg transition-all">
-        {/* Flash Indicator Ring */}
-        {isFlashed && (
-          <div className="absolute inset-0 bg-blue-500/10 pointer-events-none animate-pulse" />
-        )}
+      {!isCompleted ? (
+        <>
+          <div className="flex items-center justify-between bg-stone-100 p-3 border border-stone-200 text-xs font-bold">
+            <div className="flex items-center gap-2">
+              <span className="bg-blue-600 text-white px-2.5 py-1 text-xs font-mono font-black">
+                Soru {qIndex + 1} / {TOTAL_QUESTIONS}
+              </span>
+              <span className="text-stone-600 font-mono">Basamak: {targetNumber.length} Haneli</span>
+            </div>
 
-        <div className="text-center space-y-4 z-10">
-          <div className="flex items-center justify-center gap-2">
-            <Zap className={`w-5 h-5 ${isFlashed ? 'text-amber-500 animate-bounce' : 'text-stone-300'}`} />
-            <span className="text-xs font-mono font-bold text-stone-500">
-              Basamak: {activeNumber.length} Basamaklı • Adım {numIndex + 1} / {rawNumbers.length}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-stone-600">Başarı Skoru:</span>
+              <span className="font-mono text-emerald-700 font-black text-sm bg-emerald-50 px-2 py-0.5 border border-emerald-200">
+                {score} / {qIndex + (selectedChoice !== null ? 1 : 0)} (%{qIndex > 0 || selectedChoice !== null ? Math.round((score / (qIndex + (selectedChoice !== null ? 1 : 0))) * 100) : 100})
+              </span>
+            </div>
           </div>
 
-          <div className="min-h-[120px] flex items-center justify-center">
-            {isFlashed ? (
-              <span className="font-mono font-black text-6xl sm:text-8xl lg:text-9xl text-blue-950 tracking-[0.2em] drop-shadow-md transition-all scale-105">
-                {activeNumber}
-              </span>
-            ) : (
-              <span className="font-mono text-5xl sm:text-7xl font-light text-stone-300 tracking-[0.25em] select-none opacity-40">
-                {'• '.repeat(activeNumber.length)}
-              </span>
+          <div className="h-60 sm:h-80 bg-[#FAF9F6] border-2 border-blue-400/80 relative flex flex-col items-center justify-center p-6 overflow-hidden shadow-lg transition-all">
+            {isFlashed && (
+              <div className="absolute inset-0 bg-blue-500/10 pointer-events-none animate-pulse" />
             )}
+
+            <div className="text-center space-y-3 z-10 w-full">
+              <div className="flex items-center justify-center gap-2">
+                <Zap className={`w-5 h-5 ${isFlashed ? 'text-amber-500 animate-bounce' : 'text-stone-300'}`} />
+                <span className="text-xs font-mono font-bold text-stone-500">
+                  {isFlashed ? '⚡ Flaşör Aktif (Görsel Odaklama)' : '🎯 Flaşör Kapandı — Doğru Şıkkı Seçin'}
+                </span>
+              </div>
+
+              <div className="min-h-[120px] flex items-center justify-center">
+                {isFlashed ? (
+                  <span className="font-mono font-black text-6xl sm:text-8xl lg:text-9xl text-blue-950 tracking-[0.2em] drop-shadow-md transition-all scale-105">
+                    {targetNumber}
+                  </span>
+                ) : (
+                  <div className="flex flex-col items-center space-y-2">
+                    <span className="font-mono text-4xl sm:text-6xl font-light text-stone-300 tracking-[0.25em] select-none opacity-40">
+                      {'• '.repeat(targetNumber.length)}
+                    </span>
+                    <button
+                      onClick={() => setIsFlashed(true)}
+                      className="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1 cursor-pointer bg-blue-50 px-3 py-1 border border-blue-200"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Sayıyı Tekrar Flaşla</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Controls Bar */}
-      <div className="bg-white p-4 sm:p-6 border border-stone-200 space-y-4 shadow-sm text-left">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <button
-            onClick={() => {
-              setIsPlaying(!isPlaying);
-              playExerciseClickSound(isSoundEnabled);
-            }}
-            className={`px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-all cursor-pointer flex items-center gap-2 ${
-              isPlaying ? 'bg-blue-600 hover:bg-blue-700' : 'bg-[#2D2D2D] hover:bg-[#C5A059]'
-            }`}
-          >
-            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
-            <span>{isPlaying ? 'Flaşörü Duraklat' : 'Flaşörü Başlat'}</span>
-          </button>
+          <div className="bg-stone-50 p-6 border border-stone-200 space-y-4 shadow-sm text-left">
+            <div className="text-center space-y-1">
+              <h4 className="text-sm font-bold text-[#2D2D2D]">Flaşörde Parıldayan Sayı Hangisiydi? (2 Şık)</h4>
+              <p className="text-xs text-stone-500">Aşağıdaki 2 şıktan doğru olan seçeneğe tıklayın:</p>
+            </div>
 
-          {/* Flash Duration Mode Selector */}
-          <div className="flex items-center gap-2 bg-stone-100 p-1.5 border border-stone-200 text-xs">
-            <span className="font-bold text-stone-600 text-[11px] px-2">Flaş Süresi:</span>
-            {[
-              { label: '100 ms', val: 100 },
-              { label: '150 ms', val: 150 },
-              { label: '250 ms', val: 250 },
-              { label: '500 ms', val: 500 },
-              { label: 'Sürekli', val: 9999 }
-            ].map(m => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto pt-2">
+              {choices.map((opt, idx) => {
+                const isSelected = selectedChoice === opt;
+                const isCorrectOpt = opt === targetNumber;
+                let btnStyle = "bg-white text-[#2D2D2D] border-stone-300 hover:border-blue-500 hover:bg-blue-50/50 shadow-sm";
+
+                if (selectedChoice !== null) {
+                  if (isCorrectOpt) {
+                    btnStyle = "bg-emerald-600 text-white border-emerald-700 shadow-lg scale-102 font-black";
+                  } else if (isSelected && !isCorrectOpt) {
+                    btnStyle = "bg-rose-600 text-white border-rose-700 shadow-md font-bold";
+                  } else {
+                    btnStyle = "bg-stone-100 text-stone-400 border-stone-200 opacity-60";
+                  }
+                }
+
+                return (
+                  <button
+                    key={idx}
+                    disabled={selectedChoice !== null}
+                    onClick={() => handleSelectOption(opt)}
+                    className={`py-5 px-6 border-2 font-mono font-black text-3xl sm:text-4xl tracking-widest transition-all cursor-pointer flex items-center justify-center gap-3 ${btnStyle}`}
+                  >
+                    <span className="text-xs font-sans font-bold opacity-60 bg-stone-200/50 text-stone-700 px-2 py-1 rounded">
+                      {idx === 0 ? 'A' : 'B'}
+                    </span>
+                    <span>{opt}</span>
+                    {selectedChoice !== null && isCorrectOpt && <CheckCircle2 className="w-6 h-6 text-white ml-auto" />}
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedChoice !== null && (
+              <div className={`p-3 border text-xs font-bold text-center transition-all ${
+                selectedChoice === targetNumber ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-rose-50 border-rose-300 text-rose-800'
+              }`}>
+                {selectedChoice === targetNumber 
+                  ? `🎉 Harika! Doğru Seçim: "${targetNumber}"` 
+                  : `❌ Hatalı Seçim! Flaşördeki Sayı: "${targetNumber}" (Seçilen: "${selectedChoice}")`}
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-stone-200 text-xs">
+              <div className="flex items-center gap-2 bg-white p-1.5 border border-stone-200">
+                <span className="font-bold text-stone-600 text-[11px] px-2">Flaş Süresi:</span>
+                {[
+                  { label: '100 ms', val: 100 },
+                  { label: '150 ms', val: 150 },
+                  { label: '250 ms', val: 250 },
+                  { label: '500 ms', val: 500 },
+                  { label: 'Sürekli', val: 9999 }
+                ].map(m => (
+                  <button
+                    key={m.val}
+                    onClick={() => setFlashDurationMs(m.val)}
+                    className={`px-2.5 py-1 text-[11px] font-bold font-mono transition-all cursor-pointer ${
+                      flashDurationMs === m.val
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-stone-700 hover:bg-stone-200'
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+
               <button
-                key={m.val}
-                onClick={() => setFlashDurationMs(m.val)}
-                className={`px-2.5 py-1 text-[11px] font-bold font-mono transition-all cursor-pointer ${
-                  flashDurationMs === m.val
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-stone-700 hover:bg-stone-200'
-                }`}
+                onClick={() => {
+                  if (qIndex + 1 < TOTAL_QUESTIONS) {
+                    setQIndex(prev => prev + 1);
+                  } else {
+                    setIsCompleted(true);
+                  }
+                }}
+                className="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white font-bold uppercase tracking-wider cursor-pointer ml-auto flex items-center gap-1.5"
               >
-                {m.label}
+                <span>{qIndex + 1 >= TOTAL_QUESTIONS ? 'Puanlamaya Geç' : 'Sonraki Sayı ➔'}</span>
               </button>
-            ))}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="bg-white p-6 sm:p-8 border-2 border-blue-600 space-y-6 shadow-xl text-left max-w-3xl mx-auto">
+          <div className="text-center space-y-2 border-b border-stone-200 pb-5">
+            <span className="text-xs font-mono font-black text-emerald-600 bg-emerald-50 px-3 py-1 border border-emerald-200 uppercase tracking-widest inline-block">
+              🏆 10 SAYI PERFORMANS & BAŞARI MASKESİ
+            </span>
+            <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#2D2D2D]">Egzersiz Puanlama Raporu</h3>
+            <p className="text-xs text-stone-500">10 soruluk sayı flaşörü hafıza testini başarıyla tamamladınız.</p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-stone-600">Tempo (BPM): <span className="font-mono font-black text-blue-600">{speedBpm}</span></span>
-            <input
-              type="range"
-              min={60}
-              max={350}
-              step={10}
-              value={speedBpm}
-              onChange={(e) => setSpeedBpm(Number(e.target.value))}
-              className="w-32 accent-blue-600 cursor-pointer"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+            <div className="bg-blue-50 p-4 border border-blue-200 space-y-1">
+              <span className="text-[11px] font-bold text-blue-700 uppercase">Doğru Cevap</span>
+              <div className="text-3xl font-black text-blue-900 font-mono">{score} / {TOTAL_QUESTIONS}</div>
+            </div>
+            <div className="bg-emerald-50 p-4 border border-emerald-200 space-y-1">
+              <span className="text-[11px] font-bold text-emerald-700 uppercase">Başarı Oranı</span>
+              <div className="text-3xl font-black text-emerald-900 font-mono">%{accuracyPct}</div>
+            </div>
+            <div className="bg-amber-50 p-4 border border-amber-200 space-y-1">
+              <span className="text-[11px] font-bold text-amber-700 uppercase">Hafıza Seviyesi</span>
+              <div className="text-xl font-bold text-amber-900 pt-1">
+                {accuracyPct >= 90 ? '🌟 Üstün Flaşör' : accuracyPct >= 70 ? '⚡ Harika Odak' : '📈 Geliştirilebilir'}
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Flash Memory Recall Form */}
-        <div className="pt-4 border-t border-stone-200">
-          <form onSubmit={handleCheckRecall} className="flex flex-wrap items-center gap-3">
-            <span className="text-xs font-bold text-stone-700">Flaşörde Yakaladığınız Sayı:</span>
-            <input
-              type="text"
-              value={userRecall}
-              onChange={(e) => setUserRecall(e.target.value)}
-              placeholder="Gördüğünüz sayıyı yazın..."
-              className="px-4 py-2 border border-stone-300 text-sm font-mono font-bold focus:border-blue-600 focus:outline-none w-48 uppercase tracking-widest text-[#2D2D2D]"
-            />
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold text-stone-700 uppercase tracking-wider">Cevap Özeti (10 Soru):</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 font-mono text-xs">
+              {history.map((h, i) => (
+                <div key={i} className={`p-2 border text-center ${h.isCorrect ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-rose-50 border-rose-300 text-rose-900'}`}>
+                  <div className="font-bold text-[10px] text-stone-500"># {h.qNum}</div>
+                  <div className="font-black text-sm">{h.target}</div>
+                  <div className="text-[10px] font-bold pt-0.5">{h.isCorrect ? '✅ Doğru' : `❌ (${h.choice})`}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-stone-200">
             <button
-              type="submit"
-              className="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+              onClick={handleRestart}
+              className="px-5 py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-800 text-xs font-bold uppercase tracking-wider cursor-pointer flex items-center gap-1.5"
             >
-              Cevabı Onayla
+              <RotateCcw className="w-4 h-4" />
+              <span>Yeniden Başla (Yeni 10 Sayı)</span>
             </button>
 
-            {recallTotal > 0 && (
-              <span className="text-xs font-mono font-bold text-stone-600 ml-auto">
-                Yakalama Skoru: <span className="text-emerald-600 font-black text-sm">{recallScore}</span> / {recallTotal} (%{Math.round((recallScore / recallTotal) * 100)})
-              </span>
-            )}
-          </form>
-
-          {recallFeedback && (
-            <div className={`mt-3 p-2.5 border text-xs font-bold ${
-              recallFeedback.isCorrect ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-rose-50 border-rose-300 text-rose-800'
-            }`}>
-              {recallFeedback.msg}
-            </div>
-          )}
+            <button
+              onClick={() => onCompleteResult(220, accuracyPct, 25)}
+              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider cursor-pointer shadow-lg flex items-center gap-2"
+            >
+              <Award className="w-4 h-4" />
+              <span>Egzersizi Tamamla & Puanı Kaydet</span>
+            </button>
+          </div>
         </div>
-
-        <div className="flex justify-end pt-2">
-          <button
-            onClick={() => {
-              const acc = recallTotal > 0 ? Math.round((recallScore / recallTotal) * 100) : 100;
-              onCompleteResult(220, acc, 25);
-            }}
-            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider cursor-pointer shadow"
-          >
-            Egzersizi Tamamla & Puanla
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -3781,6 +3905,42 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
       {/* Theme Selection Buttons */}
       <div className="flex flex-wrap items-center justify-center gap-2 bg-stone-100 p-2.5 border border-stone-200">
         <button
+          onClick={() => switchTheme('countries', ['TÜRKİYE', 'ALMANYA', 'FRANSA', 'İTALYA', 'JAPONYA', 'KANADA', 'MISIR', 'BREZİLYA'])}
+          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
+            activeTheme === 'countries' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+          }`}
+        >
+          <span>🌍 Ülkeler & Başkentler</span>
+        </button>
+
+        <button
+          onClick={() => switchTheme('nature', ['ORMAN', 'ŞELALE', 'YANARDAĞ', 'OKYANUS', 'YAĞMUR', 'ATMOSFER', 'NEHİR', 'GÜNEŞ'])}
+          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
+            activeTheme === 'nature' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+          }`}
+        >
+          <span>🌿 Doğa & Çevre</span>
+        </button>
+
+        <button
+          onClick={() => switchTheme('professions', ['MÜHENDİS', 'MİMAR', 'DOKTOR', 'YAZAR', 'PİLOT', 'SANATÇI', 'AVUKAT', 'HAKİM'])}
+          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
+            activeTheme === 'professions' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+          }`}
+        >
+          <span>💼 Meslekler & Kariyer</span>
+        </button>
+
+        <button
+          onClick={() => switchTheme('subjects', ['MATEMATİK', 'FİZİK', 'KİMYA', 'BİYOLOJİ', 'TARİH', 'EDEBİYAT', 'FELSEFE', 'GEOMETRİ'])}
+          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
+            activeTheme === 'subjects' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+          }`}
+        >
+          <span>📚 Dersler & Konular</span>
+        </button>
+
+        <button
           onClick={() => switchTheme('city-tr', ['ANKARA', 'İSTANBUL', 'İZMİR', 'BURSA', 'KONYA', 'ANTALYA', 'ADANA', 'TRABZON'])}
           className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
             activeTheme === 'city-tr' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
@@ -3795,7 +3955,7 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
             activeTheme === 'city-world' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
           }`}
         >
-          <span>🌍 Dünya Şehirleri</span>
+          <span>✈️ Dünya Şehirleri</span>
         </button>
 
         <button
@@ -3814,6 +3974,15 @@ function WordSearchGrid({ targetWords, isSoundEnabled, onCompleteResult }: { tar
           }`}
         >
           <span>🦁 Yabani Hayvanlar</span>
+        </button>
+
+        <button
+          onClick={() => switchTheme('science', ['ROBOTİK', 'GENETİK', 'KUANTUM', 'YAZILIM', 'ATOM', 'NÖROLOJİ', 'SİBER', 'BİYOLOJİ'])}
+          className={`px-3.5 py-1.5 text-xs font-bold border cursor-pointer transition-all flex items-center gap-1.5 ${
+            activeTheme === 'science' ? 'bg-[#2D2D2D] text-white border-[#2D2D2D] font-black shadow-sm' : 'bg-white text-stone-800 border-stone-300 hover:border-[#C5A059]'
+          }`}
+        >
+          <span>🔬 Bilim & Teknoloji</span>
         </button>
 
         <button
