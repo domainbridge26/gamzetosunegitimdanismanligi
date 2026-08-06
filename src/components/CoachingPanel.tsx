@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, User, Lock, Key, LogOut, CheckCircle2, AlertCircle, Plus, Trash2, Edit, Save, 
   Calendar, BookOpen, Clock, BarChart2, Award, Sparkles, Filter, RefreshCw, ChevronRight, 
-  Search, Shield, GraduationCap, Check, FileText, Sliders, ArrowUpRight, TrendingUp, HeartPulse
+  Search, Shield, GraduationCap, Check, FileText, Sliders, ArrowUpRight, TrendingUp, HeartPulse, Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -283,6 +283,10 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
   const [dailyLogs, setDailyLogs] = useState<DailyStudyLog[]>([]);
   const [mockLogs, setMockLogs] = useState<MockExamLog[]>([]);
   const [completedTopics, setCompletedTopics] = useState<string[]>([]);
+
+  // Selected Student for Schedule & Student Tracking Modal
+  const [selectedStudentForSchedule, setSelectedStudentForSchedule] = useState<string>('');
+  const [inspectingStudent, setInspectingStudent] = useState<StudentAccount | null>(null);
 
   // Filter States for Reports
   const [selectedStudentFilter, setSelectedStudentFilter] = useState<string>('all');
@@ -1663,6 +1667,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                 <div className="bg-white p-6 rounded-2xl shadow-md border border-stone-200">
                   <SchedulePlanner 
                     studentsList={studentsList}
+                    initialSelectedUsername={selectedStudentForSchedule}
                     onScheduleSavedForStudent={async (username) => {
                       if (currentStudent && currentStudent.username === username) {
                         const sch = await dbGetStudentSchedule(username);
@@ -1774,21 +1779,68 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                         <thead className="bg-stone-100 text-slate-700 uppercase font-bold border-b border-stone-200">
                           <tr>
                             <th className="p-3">Kullanıcı Adı</th>
-                            <th className="p-3">Şifre</th>
                             <th className="p-3">Adı Soyadı</th>
                             <th className="p-3">Sınıfı / Grubu</th>
                             <th className="p-3">Kayıt Tarihi</th>
-                            <th className="p-3 text-right">İşlem</th>
+                            <th className="p-3 text-center">Öğrenci Takip & İşlemler</th>
+                            <th className="p-3 text-right">Sil</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-200">
                           {studentsList.map((st) => (
-                            <tr key={st.id} className="hover:bg-stone-50">
+                            <tr key={st.id} className="hover:bg-amber-50/40 transition-colors">
                               <td className="p-3 font-mono font-bold text-slate-900">{st.username}</td>
-                              <td className="p-3 font-mono text-slate-600">{st.password}</td>
                               <td className="p-3 font-bold text-[#C5A059]">{st.fullName}</td>
                               <td className="p-3 text-slate-800">{st.studentClass}</td>
                               <td className="p-3 text-slate-500">{st.createdAt}</td>
+                              <td className="p-3 text-center">
+                                <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedStudentForSchedule(st.username);
+                                      setCoachActiveTab('ders_programi');
+                                    }}
+                                    className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-[#C5A059] text-[11px] font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                                    title="Ders Programını Görüntüle ve Düzenle"
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    <span>Ders Programı</span>
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      setSelectedStudentFilter(st.username);
+                                      setCoachActiveTab('gunluk_rapor');
+                                    }}
+                                    className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold rounded-lg border border-emerald-200 transition-all cursor-pointer flex items-center gap-1"
+                                    title="Günlük Soru ve Çalışma Performansı"
+                                  >
+                                    <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                                    <span>Performans</span>
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      setSelectedStudentFilter(st.username);
+                                      setCoachActiveTab('deneme_rapor');
+                                    }}
+                                    className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 text-[11px] font-bold rounded-lg border border-blue-200 transition-all cursor-pointer flex items-center gap-1"
+                                    title="Deneme Sınavı Raporları"
+                                  >
+                                    <BarChart2 className="w-3.5 h-3.5 text-blue-600" />
+                                    <span>Raporlar</span>
+                                  </button>
+
+                                  <button
+                                    onClick={() => setInspectingStudent(st)}
+                                    className="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-slate-900 text-[11px] font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1"
+                                    title="Öğrenci Detay ve Durum Özeti"
+                                  >
+                                    <Eye className="w-3.5 h-3.5 text-amber-800" />
+                                    <span>Takip Et</span>
+                                  </button>
+                                </div>
+                              </td>
                               <td className="p-3 text-right">
                                 <button
                                   onClick={() => handleDeleteStudentClick(st.id, st.fullName)}
@@ -1804,6 +1856,120 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                       </table>
                     </div>
                   </div>
+
+                  {/* Student Inspection / Tracking Modal */}
+                  {inspectingStudent && (
+                    <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+                      <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl border border-stone-200 space-y-6 animate-in fade-in zoom-in-95">
+                        {/* Header */}
+                        <div className="flex items-center justify-between border-b border-stone-200 pb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-amber-100 text-[#C5A059] rounded-2xl flex items-center justify-center font-bold text-xl border border-amber-200">
+                              {inspectingStudent.fullName.charAt(0)}
+                            </div>
+                            <div>
+                              <h3 className="font-serif text-xl font-bold text-slate-900">{inspectingStudent.fullName}</h3>
+                              <p className="text-xs text-slate-500">
+                                Kullanıcı Adı: <span className="font-mono font-bold text-slate-800">@{inspectingStudent.username}</span> &bull; Grubu: <span className="font-bold text-[#C5A059]">{inspectingStudent.studentClass}</span>
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setInspectingStudent(null)}
+                            className="p-2 hover:bg-stone-100 rounded-xl text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        {/* Summary Metrics */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          {(() => {
+                            const studentDaily = dailyLogs.filter(d => d.studentUsername.toLowerCase() === inspectingStudent.username.toLowerCase());
+                            const totalQuestions = studentDaily.reduce((acc, curr) => acc + (curr.solvedQuestions || 0), 0);
+                            const totalMinutes = studentDaily.reduce((acc, curr) => acc + (curr.studyDurationMinutes || 0), 0);
+                            const studentMocks = mockLogs.filter(m => m.studentUsername.toLowerCase() === inspectingStudent.username.toLowerCase());
+                            const latestMock = studentMocks[0];
+                            const studentExercises = exerciseLogs.filter(e => e.studentUsername.toLowerCase() === inspectingStudent.username.toLowerCase());
+
+                            return (
+                              <>
+                                <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-200">
+                                  <span className="text-[10px] uppercase font-bold text-slate-500 block">Toplam Soru</span>
+                                  <span className="font-serif text-xl font-black text-slate-900">{totalQuestions}</span>
+                                  <span className="text-[10px] text-slate-400 block font-medium">Çözülen Soru</span>
+                                </div>
+                                <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-200">
+                                  <span className="text-[10px] uppercase font-bold text-slate-500 block">Çalışma Süresi</span>
+                                  <span className="font-serif text-xl font-black text-slate-900">{Math.round(totalMinutes / 60)} sa {totalMinutes % 60} dk</span>
+                                  <span className="text-[10px] text-slate-400 block font-medium">Toplam Oturum</span>
+                                </div>
+                                <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-200">
+                                  <span className="text-[10px] uppercase font-bold text-slate-500 block">Son Deneme Net</span>
+                                  <span className="font-serif text-xl font-black text-emerald-700">{latestMock ? `${latestMock.totalNet} Net` : 'Yok'}</span>
+                                  <span className="text-[10px] text-slate-400 block font-medium">{latestMock ? latestMock.examName : 'Deneme yok'}</span>
+                                </div>
+                                <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-200">
+                                  <span className="text-[10px] uppercase font-bold text-slate-500 block">Egzersiz Tamamlama</span>
+                                  <span className="font-serif text-xl font-black text-[#C5A059]">{studentExercises.length} Log</span>
+                                  <span className="text-[10px] text-slate-400 block font-medium">Nefes & Odak</span>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+
+                        {/* Direct Action Hub */}
+                        <div className="p-4 bg-amber-50/50 rounded-xl border border-amber-200/80 space-y-3">
+                          <h4 className="font-serif font-bold text-sm text-slate-900 flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-[#C5A059]" />
+                            Öğrenci Takip & Yönlendirme Modülü
+                          </h4>
+                          <p className="text-xs text-slate-600">
+                            Öğrencinin haftalık ders programını güncellemek, günlük çalışma detaylarını veya deneme sınavı gelişim grafiklerini incelemek için aşağıdaki hızlı yönlendirme butonlarını kullanabilirsiniz:
+                          </p>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+                            <button
+                              onClick={() => {
+                                setSelectedStudentForSchedule(inspectingStudent.username);
+                                setCoachActiveTab('ders_programi');
+                                setInspectingStudent(null);
+                              }}
+                              className="py-2.5 px-3 bg-[#2D2D2D] hover:bg-slate-900 text-[#C5A059] text-xs font-bold rounded-xl shadow transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                              <Calendar className="w-4 h-4" />
+                              <span>Ders Programını Aç / Düzenle</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setSelectedStudentFilter(inspectingStudent.username);
+                                setCoachActiveTab('gunluk_rapor');
+                                setInspectingStudent(null);
+                              }}
+                              className="py-2.5 px-3 bg-white hover:bg-stone-100 text-slate-800 text-xs font-bold rounded-xl border border-stone-300 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                              <TrendingUp className="w-4 h-4 text-emerald-600" />
+                              <span>Günlük Çalışma Performansı</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setSelectedStudentFilter(inspectingStudent.username);
+                                setCoachActiveTab('deneme_rapor');
+                                setInspectingStudent(null);
+                              }}
+                              className="py-2.5 px-3 bg-white hover:bg-stone-100 text-slate-800 text-xs font-bold rounded-xl border border-stone-300 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                              <BarChart2 className="w-4 h-4 text-blue-600" />
+                              <span>Deneme Sınavı Raporu</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                 </div>
               )}
