@@ -268,7 +268,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
   });
 
   // Students Data list
-  const [students, setStudents] = useState<StudentAccount[]>(DEFAULT_STUDENTS);
+  const [students, setStudents] = useState<StudentAccount[]>(DEFAULT_SPEED_READING_STUDENTS);
 
   // Student Accounts Management Modal (Trainer view)
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
@@ -338,8 +338,8 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
   const handleSaveEditStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingStudent) return;
-    await dbUpdateStudent(editingStudent.id, editingStudent);
-    const updated = await dbGetStudents();
+    await dbUpdateSpeedReadingStudent(editingStudent.id, editingStudent);
+    const updated = await dbGetSpeedReadingStudents();
     setStudents(updated);
     if (selectedStudentForReport?.id === editingStudent.id) {
       setSelectedStudentForReport(editingStudent);
@@ -422,7 +422,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
 
   // Load student credentials from Firestore / localStorage
   useEffect(() => {
-    dbGetStudents().then(data => {
+    dbGetSpeedReadingStudents().then(data => {
       setStudents(data);
     });
   }, [isOpen]);
@@ -549,7 +549,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
       return;
     }
 
-    const created = await dbAddStudent({
+    const created = await dbAddSpeedReadingStudent({
       fullName: newStudentName.trim(),
       username: cleanUsername,
       password: newStudentPassword.trim(),
@@ -569,7 +569,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
   // Student deletion handler
   const handleDeleteStudent = async (id: string, name: string) => {
     if (window.confirm(`"${name}" adlı öğrenciyi silmek istediğinize emin misiniz?`)) {
-      await dbDeleteStudent(id);
+      await dbDeleteSpeedReadingStudent(id);
       setStudents(prev => prev.filter(s => s.id !== id));
       playExerciseClickSound(isSoundEnabled);
     }
