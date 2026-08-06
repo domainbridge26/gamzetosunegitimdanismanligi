@@ -17,9 +17,6 @@ concurrency:
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -35,6 +32,14 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "./dist" ]; then
+            echo "Error: ./dist directory not found."
+            exit 1
+          fi
+          ls -la ./dist
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
