@@ -627,9 +627,17 @@ export const DEFAULT_STUDENT_LOGS: StudentExerciseLog[] = [
   }
 ];
 
-export const DEFAULT_STUDENTS: StudentAccount[] = [
+export const DEFAULT_SPEED_READING_STUDENTS: StudentAccount[] = [
   {
-    id: 'st-1',
+    id: 'sr-1',
+    username: 'hayriyenisaşark',
+    password: '123456',
+    fullName: 'Hayriye Nisa Şark',
+    studentClass: '8. Sınıf (LGS)',
+    createdAt: new Date().toLocaleDateString('tr-TR')
+  },
+  {
+    id: 'sr-2',
     username: 'lgs_ogrenci',
     password: 'Lgs!Ogrenci#2026',
     fullName: 'Ahmet Yılmaz',
@@ -637,7 +645,7 @@ export const DEFAULT_STUDENTS: StudentAccount[] = [
     createdAt: new Date().toLocaleDateString('tr-TR')
   },
   {
-    id: 'st-2',
+    id: 'sr-3',
     username: 'yks_ogrenci',
     password: 'Yks!Ogrenci#2026',
     fullName: 'Zeynep Kaya',
@@ -645,7 +653,7 @@ export const DEFAULT_STUDENTS: StudentAccount[] = [
     createdAt: new Date().toLocaleDateString('tr-TR')
   },
   {
-    id: 'st-3',
+    id: 'sr-4',
     username: 'ilkokul_ogrenci',
     password: 'Ilkokul!Ogrenci#2026',
     fullName: 'Caner Demir',
@@ -654,9 +662,47 @@ export const DEFAULT_STUDENTS: StudentAccount[] = [
   }
 ];
 
+export const DEFAULT_COACHING_STUDENTS: StudentAccount[] = [
+  {
+    id: 'coach-st-1',
+    username: 'lgs_ogrenci',
+    password: 'Lgs!Ogrenci#2026',
+    fullName: 'Ahmet Yılmaz',
+    studentClass: '8. Sınıf (LGS)',
+    createdAt: new Date().toLocaleDateString('tr-TR')
+  },
+  {
+    id: 'coach-st-2',
+    username: 'yks_ogrenci',
+    password: 'Yks!Ogrenci#2026',
+    fullName: 'Zeynep Kaya',
+    studentClass: '12. Sınıf (YKS)',
+    createdAt: new Date().toLocaleDateString('tr-TR')
+  },
+  {
+    id: 'coach-st-3',
+    username: 'ilkokul_ogrenci',
+    password: 'Ilkokul!Ogrenci#2026',
+    fullName: 'Caner Demir',
+    studentClass: '4. Sınıf (İlkokul)',
+    createdAt: new Date().toLocaleDateString('tr-TR')
+  }
+];
+
+// Backward compatible default alias
+export const DEFAULT_STUDENTS: StudentAccount[] = DEFAULT_SPEED_READING_STUDENTS;
+
+// ==========================================
+// SPEED READING STUDENT SERVICES
+// ==========================================
+
 export async function dbGetStudents(): Promise<StudentAccount[]> {
+  return dbGetSpeedReadingStudents();
+}
+
+export async function dbGetSpeedReadingStudents(): Promise<StudentAccount[]> {
   try {
-    const querySnapshot = await getDocs(collection(db, 'students'));
+    const querySnapshot = await getDocs(collection(db, 'speed_reading_students'));
     const result: StudentAccount[] = [];
     querySnapshot.forEach((docSnap) => {
       const data = docSnap.data();
@@ -672,67 +718,73 @@ export async function dbGetStudents(): Promise<StudentAccount[]> {
     });
 
     if (result.length === 0) {
-      // Seed default students to Firestore
       const batch = writeBatch(db);
-      DEFAULT_STUDENTS.forEach((st) => {
-        const docRef = doc(db, 'students', st.id);
+      DEFAULT_SPEED_READING_STUDENTS.forEach((st) => {
+        const docRef = doc(db, 'speed_reading_students', st.id);
         batch.set(docRef, st);
       });
       await batch.commit();
-      localStorage.setItem('gamze_students', JSON.stringify(DEFAULT_STUDENTS));
-      return DEFAULT_STUDENTS;
+      localStorage.setItem('gamze_speed_reading_students', JSON.stringify(DEFAULT_SPEED_READING_STUDENTS));
+      return DEFAULT_SPEED_READING_STUDENTS;
     }
 
-    localStorage.setItem('gamze_students', JSON.stringify(result));
+    localStorage.setItem('gamze_speed_reading_students', JSON.stringify(result));
     return result;
   } catch (error) {
-    console.error('Failed to fetch students from Firestore, falling back to local storage:', error);
-    const raw = localStorage.getItem('gamze_students');
-    return raw ? JSON.parse(raw) : DEFAULT_STUDENTS;
+    console.error('Failed to fetch speed reading students from Firestore:', error);
+    const raw = localStorage.getItem('gamze_speed_reading_students');
+    return raw ? JSON.parse(raw) : DEFAULT_SPEED_READING_STUDENTS;
   }
 }
 
 export async function dbAddStudent(student: Omit<StudentAccount, 'id'>): Promise<StudentAccount> {
+  return dbAddSpeedReadingStudent(student);
+}
+
+export async function dbAddSpeedReadingStudent(student: Omit<StudentAccount, 'id'>): Promise<StudentAccount> {
   const newStudentData = {
     ...student,
     createdAt: student.createdAt || new Date().toLocaleDateString('tr-TR')
   };
   try {
-    const docRef = await addDoc(collection(db, 'students'), newStudentData);
+    const docRef = await addDoc(collection(db, 'speed_reading_students'), newStudentData);
     const created: StudentAccount = { ...newStudentData, id: docRef.id };
     
-    // Update local cache
-    const raw = localStorage.getItem('gamze_students');
-    const local: StudentAccount[] = raw ? JSON.parse(raw) : DEFAULT_STUDENTS;
+    const raw = localStorage.getItem('gamze_speed_reading_students');
+    const local: StudentAccount[] = raw ? JSON.parse(raw) : DEFAULT_SPEED_READING_STUDENTS;
     local.push(created);
-    localStorage.setItem('gamze_students', JSON.stringify(local));
+    localStorage.setItem('gamze_speed_reading_students', JSON.stringify(local));
     return created;
   } catch (error) {
-    console.error('Failed to add student to Firestore:', error);
-    const id = 'st-' + Math.random().toString(36).substring(2, 8);
+    console.error('Failed to add speed reading student to Firestore:', error);
+    const id = 'sr-' + Math.random().toString(36).substring(2, 8);
     const created: StudentAccount = { ...newStudentData, id };
-    const raw = localStorage.getItem('gamze_students');
-    const local: StudentAccount[] = raw ? JSON.parse(raw) : DEFAULT_STUDENTS;
+    const raw = localStorage.getItem('gamze_speed_reading_students');
+    const local: StudentAccount[] = raw ? JSON.parse(raw) : DEFAULT_SPEED_READING_STUDENTS;
     local.push(created);
-    localStorage.setItem('gamze_students', JSON.stringify(local));
+    localStorage.setItem('gamze_speed_reading_students', JSON.stringify(local));
     return created;
   }
 }
 
 export async function dbUpdateStudent(id: string, updates: Partial<StudentAccount>): Promise<void> {
+  return dbUpdateSpeedReadingStudent(id, updates);
+}
+
+export async function dbUpdateSpeedReadingStudent(id: string, updates: Partial<StudentAccount>): Promise<void> {
   try {
-    const ref = doc(db, 'students', id);
+    const ref = doc(db, 'speed_reading_students', id);
     await updateDoc(ref, updates);
   } catch (error) {
-    console.error(`Failed to update student ${id} in Firestore:`, error);
+    console.error(`Failed to update speed reading student ${id} in Firestore:`, error);
   }
 
   try {
-    const raw = localStorage.getItem('gamze_students');
+    const raw = localStorage.getItem('gamze_speed_reading_students');
     if (raw) {
       const local: StudentAccount[] = JSON.parse(raw);
       const updated = local.map(st => st.id === id ? { ...st, ...updates } : st);
-      localStorage.setItem('gamze_students', JSON.stringify(updated));
+      localStorage.setItem('gamze_speed_reading_students', JSON.stringify(updated));
     }
   } catch (e) {
     console.error(e);
@@ -740,19 +792,130 @@ export async function dbUpdateStudent(id: string, updates: Partial<StudentAccoun
 }
 
 export async function dbDeleteStudent(id: string): Promise<void> {
+  return dbDeleteSpeedReadingStudent(id);
+}
+
+export async function dbDeleteSpeedReadingStudent(id: string): Promise<void> {
   try {
-    const ref = doc(db, 'students', id);
+    const ref = doc(db, 'speed_reading_students', id);
     await deleteDoc(ref);
   } catch (error) {
-    console.error(`Failed to delete student ${id} in Firestore:`, error);
+    console.error(`Failed to delete speed reading student ${id} in Firestore:`, error);
   }
 
   try {
-    const raw = localStorage.getItem('gamze_students');
+    const raw = localStorage.getItem('gamze_speed_reading_students');
     if (raw) {
       const local: StudentAccount[] = JSON.parse(raw);
       const updated = local.filter(st => st.id !== id);
-      localStorage.setItem('gamze_students', JSON.stringify(updated));
+      localStorage.setItem('gamze_speed_reading_students', JSON.stringify(updated));
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// ==========================================
+// COACHING STUDENT SERVICES
+// ==========================================
+
+export async function dbGetCoachingStudents(): Promise<StudentAccount[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'coaching_students'));
+    const result: StudentAccount[] = [];
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      result.push({
+        id: docSnap.id,
+        username: data.username || '',
+        password: data.password || '',
+        fullName: data.fullName || '',
+        studentClass: data.studentClass || 'Ortaokul',
+        createdAt: data.createdAt || new Date().toLocaleDateString('tr-TR'),
+        lastLogin: data.lastLogin
+      });
+    });
+
+    if (result.length === 0) {
+      const batch = writeBatch(db);
+      DEFAULT_COACHING_STUDENTS.forEach((st) => {
+        const docRef = doc(db, 'coaching_students', st.id);
+        batch.set(docRef, st);
+      });
+      await batch.commit();
+      localStorage.setItem('gamze_coaching_students', JSON.stringify(DEFAULT_COACHING_STUDENTS));
+      return DEFAULT_COACHING_STUDENTS;
+    }
+
+    localStorage.setItem('gamze_coaching_students', JSON.stringify(result));
+    return result;
+  } catch (error) {
+    console.error('Failed to fetch coaching students from Firestore:', error);
+    const raw = localStorage.getItem('gamze_coaching_students');
+    return raw ? JSON.parse(raw) : DEFAULT_COACHING_STUDENTS;
+  }
+}
+
+export async function dbAddCoachingStudent(student: Omit<StudentAccount, 'id'>): Promise<StudentAccount> {
+  const newStudentData = {
+    ...student,
+    createdAt: student.createdAt || new Date().toLocaleDateString('tr-TR')
+  };
+  try {
+    const docRef = await addDoc(collection(db, 'coaching_students'), newStudentData);
+    const created: StudentAccount = { ...newStudentData, id: docRef.id };
+    
+    const raw = localStorage.getItem('gamze_coaching_students');
+    const local: StudentAccount[] = raw ? JSON.parse(raw) : DEFAULT_COACHING_STUDENTS;
+    local.push(created);
+    localStorage.setItem('gamze_coaching_students', JSON.stringify(local));
+    return created;
+  } catch (error) {
+    console.error('Failed to add coaching student to Firestore:', error);
+    const id = 'coach-st-' + Math.random().toString(36).substring(2, 8);
+    const created: StudentAccount = { ...newStudentData, id };
+    const raw = localStorage.getItem('gamze_coaching_students');
+    const local: StudentAccount[] = raw ? JSON.parse(raw) : DEFAULT_COACHING_STUDENTS;
+    local.push(created);
+    localStorage.setItem('gamze_coaching_students', JSON.stringify(local));
+    return created;
+  }
+}
+
+export async function dbUpdateCoachingStudent(id: string, updates: Partial<StudentAccount>): Promise<void> {
+  try {
+    const ref = doc(db, 'coaching_students', id);
+    await updateDoc(ref, updates);
+  } catch (error) {
+    console.error(`Failed to update coaching student ${id} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_coaching_students');
+    if (raw) {
+      const local: StudentAccount[] = JSON.parse(raw);
+      const updated = local.map(st => st.id === id ? { ...st, ...updates } : st);
+      localStorage.setItem('gamze_coaching_students', JSON.stringify(updated));
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export async function dbDeleteCoachingStudent(id: string): Promise<void> {
+  try {
+    const ref = doc(db, 'coaching_students', id);
+    await deleteDoc(ref);
+  } catch (error) {
+    console.error(`Failed to delete coaching student ${id} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_coaching_students');
+    if (raw) {
+      const local: StudentAccount[] = JSON.parse(raw);
+      const updated = local.filter(st => st.id !== id);
+      localStorage.setItem('gamze_coaching_students', JSON.stringify(updated));
     }
   } catch (e) {
     console.error(e);

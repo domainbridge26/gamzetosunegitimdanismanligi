@@ -9,7 +9,8 @@ import {
   StudentAccount, StudentExerciseLog, DailyStudyLog, MockExamLog 
 } from '../types';
 import { 
-  dbGetStudents, dbAddStudent, dbUpdateStudent, dbDeleteStudent, DEFAULT_STUDENTS,
+  dbGetCoachingStudents, dbAddCoachingStudent, dbUpdateCoachingStudent, dbDeleteCoachingStudent, DEFAULT_COACHING_STUDENTS,
+  dbGetSpeedReadingStudents,
   dbGetStudentLogs, dbDeleteStudentLog,
   dbGetDailyStudyLogs, dbAddDailyStudyLog, dbUpdateDailyStudyLog, dbDeleteDailyStudyLog,
   dbGetMockExamLogs, dbAddMockExamLog, dbUpdateMockExamLog, dbDeleteMockExamLog,
@@ -333,7 +334,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
   // Fetch initial data & load saved session
   const loadAllData = async () => {
     try {
-      const sts = await dbGetStudents();
+      const sts = await dbGetCoachingStudents();
       setStudentsList(sts);
 
       const logs = await dbGetStudentLogs();
@@ -442,9 +443,11 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
       }
     } else {
       // Student login
-      const allSts = await dbGetStudents();
+      const allSts = await dbGetCoachingStudents();
+      const inputUser = loginUsername.trim().toLowerCase();
+      const inputPass = loginPassword.trim();
       const match = allSts.find(
-        s => s.username.toLowerCase() === loginUsername.trim().toLowerCase() && s.password === loginPassword.trim()
+        s => s.username.toLowerCase() === inputUser && s.password === inputPass
       );
       if (match) {
         setUserRole('student');
@@ -458,7 +461,14 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
         }
         loadAllData();
       } else {
-        setLoginError('Kullanıcı adı veya şifre hatalı. Lütfen Eğitmen Gamze Hanım tarafından tanımlanan bilgilerinizi kontrol ediniz.');
+        // Check if user exists in Speed Reading portal to provide explicit feedback
+        const speedSts = await dbGetSpeedReadingStudents();
+        const speedMatch = speedSts.find(s => s.username.toLowerCase() === inputUser);
+        if (speedMatch) {
+          setLoginError(`"${inputUser}" kullanıcı adı Hızlı Okuma Portalı'nda kayıtlıdır ancak Koçluk Sistemine henüz eklenmemiştir. Koçluk Paneline giriş yapabilmeniz için Eğitmen Gamze Hanım'ın sizi ayrıca Koçluk Sistemine kaydetmesi gerekmektedir.`);
+        } else {
+          setLoginError('Kullanıcı adı veya şifre hatalı. Lütfen Eğitmen Gamze Hanım tarafından Koçluk Paneli için tanımlanan bilgilerinizi kontrol ediniz.');
+        }
       }
     }
   };
@@ -584,7 +594,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
       return;
     }
 
-    const created = await dbAddStudent({
+    const created = await dbAddCoachingStudent({
       username: newStudentUsername.trim().toLowerCase(),
       password: newStudentPassword.trim(),
       fullName: newStudentFullName.trim(),
@@ -604,7 +614,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
   // Coach action: Delete Student
   const handleDeleteStudentClick = async (id: string, name: string) => {
     if (confirm(`${name} isimli öğrenci hesabını silmek istediğinize emin misiniz?`)) {
-      await dbDeleteStudent(id);
+      await dbDeleteCoachingStudent(id);
       setStudentsList(prev => prev.filter(s => s.id !== id));
     }
   };

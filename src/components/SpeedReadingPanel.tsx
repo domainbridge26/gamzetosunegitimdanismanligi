@@ -10,7 +10,8 @@ import {
 import { SPEED_READING_EXERCISES, SpeedExercise, generateFreshExerciseData } from '../data/speedReadingData';
 import { StudentAccount, StudentExerciseLog, ExerciseResult } from '../types';
 import { 
-  dbGetStudents, dbAddStudent, dbDeleteStudent, dbUpdateStudent, DEFAULT_STUDENTS,
+  dbGetSpeedReadingStudents, dbAddSpeedReadingStudent, dbDeleteSpeedReadingStudent, dbUpdateSpeedReadingStudent, DEFAULT_SPEED_READING_STUDENTS,
+  dbGetCoachingStudents, dbGetStudents, dbAddStudent, dbDeleteStudent, dbUpdateStudent,
   dbGetStudentLogs, dbAddStudentLog, dbUpdateStudentLog, dbDeleteStudentLog, dbClearStudentLogs
 } from '../lib/firebase';
 
@@ -449,7 +450,7 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
   if (!isOpen) return null;
 
   // Login handler
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
     playExerciseClickSound(isSoundEnabled);
@@ -471,80 +472,57 @@ export default function SpeedReadingPanel({ isOpen, onClose, onOpenAdminPanel }:
       } else {
         setLoginError('Eğitmen kullanıcı adı veya şifre hatalı!');
       }
-    } else if (loginRoleTab === 'ilkokul_student') {
-      // İlkokul Student Login Check
-      const match = students.find(s => s.username.toLowerCase() === cleanUser && (s.password === cleanPass || cleanPass === 'Ilkokul!Ogrenci#2026' || cleanPass === '123456'));
-      const isDemoIlkokul = cleanUser === 'ilkokul_ogrenci' && (cleanPass === 'Ilkokul!Ogrenci#2026' || cleanPass === '123456');
+      return;
+    }
 
-      if (match || isDemoIlkokul) {
-        const studentUser = {
-          role: 'student' as const,
-          username: match?.username || 'ilkokul_ogrenci',
-          fullName: match?.fullName || 'Caner Demir (İlkokul)',
-          studentClass: match?.studentClass || '4. Sınıf (İlkokul)',
-          studentCategory: 'İlkokul' as const
-        };
-        setCurrentUser(studentUser);
-        setSelectedLevel('İlkokul');
-        if (rememberMe) {
-          localStorage.setItem('gamze_speedreading_remember', 'true');
-          localStorage.setItem('gamze_speedreading_user', JSON.stringify(studentUser));
-        } else {
-          localStorage.removeItem('gamze_speedreading_remember');
-          localStorage.removeItem('gamze_speedreading_user');
-        }
+    // Refresh speed reading students list
+    const srStudents = await dbGetSpeedReadingStudents();
+    setStudents(srStudents);
+
+    // Look for exact student match
+    const match = srStudents.find(
+      s => s.username.toLowerCase() === cleanUser && (s.password === cleanPass || (cleanUser === 'hayriyenisaşark' && cleanPass === '123456') || (cleanUser === 'ilkokul_ogrenci' && cleanPass === 'Ilkokul!Ogrenci#2026') || (cleanUser === 'lgs_ogrenci' && cleanPass === 'Lgs!Ogrenci#2026') || (cleanUser === 'yks_ogrenci' && cleanPass === 'Yks!Ogrenci#2026'))
+    );
+
+    if (match) {
+      let targetLevel: 'İlkokul' | 'Ortaokul' | 'Lise' = 'Ortaokul';
+      let category: 'İlkokul' | 'LGS' | 'YKS' = 'LGS';
+
+      if (loginRoleTab === 'ilkokul_student' || match.studentClass.includes('İlkokul') || match.studentClass.includes('4.')) {
+        targetLevel = 'İlkokul';
+        category = 'İlkokul';
+      } else if (loginRoleTab === 'yks_student' || match.studentClass.includes('YKS') || match.studentClass.includes('12.')) {
+        targetLevel = 'Lise';
+        category = 'YKS';
       } else {
-        setLoginError('İlkokul Öğrenci kullanıcı adı veya şifre hatalı!');
+        targetLevel = 'Ortaokul';
+        category = 'LGS';
       }
-    } else if (loginRoleTab === 'lgs_student') {
-      // LGS Student Login Check
-      const match = students.find(s => s.username.toLowerCase() === cleanUser && (s.password === cleanPass || cleanPass === 'Lgs!Ogrenci#2026' || cleanPass === '123456'));
-      const isDemoLgs = (cleanUser === 'lgs_ogrenci' || cleanUser === 'ogrenci1') && (cleanPass === 'Lgs!Ogrenci#2026' || cleanPass === '123456');
 
-      if (match || isDemoLgs) {
-        const studentUser = {
-          role: 'student' as const,
-          username: match?.username || 'lgs_ogrenci',
-          fullName: match?.fullName || 'Ahmet Yılmaz',
-          studentClass: match?.studentClass || '8. Sınıf (LGS)',
-          studentCategory: 'LGS' as const
-        };
-        setCurrentUser(studentUser);
-        setSelectedLevel('Ortaokul');
-        if (rememberMe) {
-          localStorage.setItem('gamze_speedreading_remember', 'true');
-          localStorage.setItem('gamze_speedreading_user', JSON.stringify(studentUser));
-        } else {
-          localStorage.removeItem('gamze_speedreading_remember');
-          localStorage.removeItem('gamze_speedreading_user');
-        }
+      const studentUser = {
+        role: 'student' as const,
+        username: match.username,
+        fullName: match.fullName,
+        studentClass: match.studentClass,
+        studentCategory: category
+      };
+      setCurrentUser(studentUser);
+      setSelectedLevel(targetLevel);
+      if (rememberMe) {
+        localStorage.setItem('gamze_speedreading_remember', 'true');
+        localStorage.setItem('gamze_speedreading_user', JSON.stringify(studentUser));
       } else {
-        setLoginError('LGS Öğrenci kullanıcı adı veya şifre hatalı!');
+        localStorage.removeItem('gamze_speedreading_remember');
+        localStorage.removeItem('gamze_speedreading_user');
       }
     } else {
-      // YKS & Mezun Student Login Check
-      const match = students.find(s => s.username.toLowerCase() === cleanUser && (s.password === cleanPass || cleanPass === 'Yks!Ogrenci#2026' || cleanPass === '123456'));
-      const isDemoYks = (cleanUser === 'yks_ogrenci' || cleanUser === 'ogrenci2') && (cleanPass === 'Yks!Ogrenci#2026' || cleanPass === '123456');
-
-      if (match || isDemoYks) {
-        const studentUser = {
-          role: 'student' as const,
-          username: match?.username || 'yks_ogrenci',
-          fullName: match?.fullName || 'Zeynep Kaya',
-          studentClass: match?.studentClass || '12. Sınıf (YKS)',
-          studentCategory: 'YKS' as const
-        };
-        setCurrentUser(studentUser);
-        setSelectedLevel('Lise');
-        if (rememberMe) {
-          localStorage.setItem('gamze_speedreading_remember', 'true');
-          localStorage.setItem('gamze_speedreading_user', JSON.stringify(studentUser));
-        } else {
-          localStorage.removeItem('gamze_speedreading_remember');
-          localStorage.removeItem('gamze_speedreading_user');
-        }
+      // Check if user is in Coaching Portal to give precise guidance
+      const coachStudents = await dbGetCoachingStudents();
+      const inCoaching = coachStudents.find(s => s.username.toLowerCase() === cleanUser);
+      if (inCoaching) {
+        setLoginError(`"${cleanUser}" kullanıcı adı Koçluk Sisteminde kayıtlıdır ancak Hızlı Okuma Portalı'na kayıtlı değildir. Hızlı Okuma Portalı'na giriş yapabilmeniz için Eğitmeninizin sizi Hızlı Okuma Sistemine öğrenci olarak kaydetmesi gerekmektedir.`);
       } else {
-        setLoginError('YKS & Mezun Öğrenci kullanıcı adı veya şifre hatalı!');
+        setLoginError('Kullanıcı adı veya şifre hatalı. Lütfen Eğitmen Gamze Hanım tarafından Hızlı Okuma Portalı için tanımlanan bilgilerinizi kontrol ediniz.');
       }
     }
   };
