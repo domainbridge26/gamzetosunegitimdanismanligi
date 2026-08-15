@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Settings, User, Eye, Zap } from 'lucide-react';
+import { Menu, X, Settings, User, Eye, Zap, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import logoImg from '../assets/images/gamze_tosun_logo_1783782272260.jpg';
 import { dbSubscribeToPageViews, PageViews } from '../lib/firebase';
@@ -193,21 +193,32 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, o
           </div>
 
           {/* Mobile menu button */}
-          <div className="flex items-center gap-2 lg:hidden">
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden">
             {/* Canlı Site Ziyaret Sayacı (Mobil/Tablet) */}
             <div 
               id="live-visit-counter-mobile"
-              className="flex items-center gap-1.5 px-2 py-1 bg-[#FAF9F6] border border-[#2D2D2D]/15 rounded shadow-sm text-left"
+              className="hidden xs:flex sm:flex items-center gap-1 px-1.5 sm:px-2 py-1 bg-[#FAF9F6] border border-[#2D2D2D]/15 rounded shadow-sm text-left"
             >
               <span className="flex h-1.5 w-1.5 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
               </span>
               <div className="flex flex-col">
-                <span className="text-[7px] font-bold text-[#2D2D2D]/55 uppercase tracking-wider leading-none">Site ziyaret sayısı</span>
+                <span className="text-[7px] font-bold text-[#2D2D2D]/55 uppercase tracking-wider leading-none">Ziyaret</span>
                 <span className="text-[10px] font-black text-[#2D2D2D] leading-none mt-0.5 font-mono">{pageViews.totalViews}</span>
               </div>
             </div>
+
+            {/* Koçluk Özel Paneli Mobil Üst Çubuk Butonu */}
+            <button
+              id="btn-coaching-portal-mobile-top"
+              onClick={onOpenCoaching}
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-[#C5A059] text-white hover:bg-[#b08d48] active:scale-95 transition-all shadow-sm rounded-none border border-[#C5A059]"
+              title="Koçluk Özel Paneli"
+            >
+              <GraduationCap className="w-4 h-4 text-white" />
+              <span className="text-[11px] font-black tracking-wider uppercase">Koçluk</span>
+            </button>
 
             <button
               onClick={onOpenSpeedReading}
@@ -266,7 +277,7 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, o
                   {item.label}
                 </button>
               ))}
-              <div className="pt-4 border-t border-[#2D2D2D]/10 flex flex-col gap-2">
+              <div className="pt-4 border-t border-[#2D2D2D]/10 flex flex-col gap-2.5">
                 {/* Mobil Çekmece Canlı Ziyaret Sayacı */}
                 <div className="flex items-center justify-between px-4 py-2.5 bg-stone-50 border border-[#2D2D2D]/15 rounded">
                   <div className="flex items-center gap-2">
@@ -278,6 +289,27 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, o
                   </div>
                   <span className="text-sm font-black text-[#2D2D2D] font-mono">{pageViews.totalViews}</span>
                 </div>
+
+                {/* KOÇLUK ÖZEL PANELİ - MOBİL ANA BUTONU */}
+                <button
+                  id="mobile-btn-coaching-portal"
+                  onClick={() => {
+                    setIsOpen(false);
+                    if (onOpenCoaching) onOpenCoaching();
+                  }}
+                  className="flex items-center justify-between px-4 py-3.5 text-xs font-black uppercase tracking-wider text-slate-900 bg-gradient-to-r from-[#e7cb8a] via-[#C5A059] to-[#d6b772] hover:brightness-105 active:scale-[0.99] transition-all shadow-md border border-[#C5A059] cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5 text-left">
+                    <div className="p-1.5 bg-slate-900 text-[#C5A059] rounded">
+                      <GraduationCap className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-slate-950 font-black tracking-wide text-[13px] leading-tight">KOÇLUK ÖZEL PANELİ</div>
+                      <div className="text-[10px] text-slate-900 font-bold lowercase tracking-normal">öğrenci & eğitmen girişi</div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-slate-900 text-white rounded">Giriş Yap</span>
+                </button>
 
                 <button
                   onClick={() => {

@@ -644,31 +644,31 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-stone-50 w-full max-w-7xl h-[92vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-amber-900/20">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-0 sm:p-4 overflow-y-auto">
+      <div className="bg-stone-50 w-full max-w-7xl h-[100dvh] sm:h-[92vh] rounded-none sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-amber-900/20">
         
         {/* TOP HEADER BAR */}
-        <div className="bg-slate-900 text-white px-4 sm:px-6 py-3.5 flex items-center justify-between border-b border-[#C5A059]/40 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#C5A059] text-slate-900 flex items-center justify-center font-serif font-black text-xl rounded shadow-md">
+        <div className="bg-slate-900 text-white px-3 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between border-b border-[#C5A059]/40 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#C5A059] text-slate-900 flex items-center justify-center font-serif font-black text-lg sm:text-xl rounded shadow-md shrink-0">
               GT
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="font-serif font-black text-lg sm:text-xl text-white tracking-wide uppercase">
+                <h2 className="font-serif font-black text-base sm:text-xl text-white tracking-wide uppercase truncate">
                   KOÇLUK ÖZEL PANELİ
                 </h2>
-                <span className="bg-[#C5A059] text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider hidden sm:inline-block">
+                <span className="bg-[#C5A059] text-slate-950 text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded uppercase tracking-wider hidden sm:inline-block">
                   GAMZE TOSUN ÖĞRENCİ TAKİBİ
                 </span>
               </div>
-              <p className="text-slate-300 text-xs">
+              <p className="text-slate-300 text-[11px] sm:text-xs truncate max-w-[200px] xs:max-w-[260px] sm:max-w-md">
                 {userRole === 'coach' ? 'Gamze Hanım Yönetici ve Öğrenci Rapor Portalı' : userRole === 'student' ? `${currentStudent?.fullName} (${currentStudent?.studentClass}) Özel Sayfası` : 'Kullanıcı ve Eğitmen Giriş Portalı'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {userRole !== 'none' && (
               <button
                 onClick={() => {
@@ -676,7 +676,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                   setCurrentStudent(null);
                   localStorage.removeItem('gamze_coaching_auth_session');
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-300 hover:text-white text-xs font-bold rounded transition-colors cursor-pointer"
+                className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-300 hover:text-white text-xs font-bold rounded transition-colors cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Çıkış Yap</span>
@@ -685,8 +685,9 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
 
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
               title="Kapat"
+              aria-label="Kapat"
             >
               <X className="w-6 h-6" />
             </button>
@@ -844,7 +845,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
               </div>
 
               {/* Student Nav Tabs */}
-              <div className="flex flex-wrap bg-white p-1.5 rounded-xl shadow border border-stone-200 gap-1">
+              <div className="flex overflow-x-auto no-scrollbar scrollbar-none bg-white p-1.5 rounded-xl shadow border border-stone-200 gap-1.5 snap-x">
                 <button
                   onClick={async () => {
                     setStudentActiveTab('program');
@@ -853,17 +854,17 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                       setStudentSchedule(prev => prev ? { ...prev, hasUnreadNotification: false } : null);
                     }
                   }}
-                  className={`flex-1 py-3 px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 relative ${
+                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 relative ${
                     studentActiveTab === 'program'
                       ? 'bg-[#C5A059] text-slate-950 shadow-md'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
                   }`}
                 >
-                  <Sparkles className="w-4 h-4 text-amber-800" />
+                  <Sparkles className="w-4 h-4 text-amber-800 shrink-0" />
                   <span>Ders Programım</span>
                   {studentSchedule?.hasUnreadNotification && (
-                    <span className="flex items-center gap-1 bg-rose-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-bounce shadow-md">
-                      <span className="w-2 h-2 bg-white rounded-full animate-ping" />
+                    <span className="flex items-center gap-1 bg-rose-600 text-white text-[10px] font-black px-1.5 sm:px-2 py-0.5 rounded-full animate-bounce shadow-md">
+                      <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
                       YENİ!
                     </span>
                   )}
@@ -871,50 +872,50 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
 
                 <button
                   onClick={() => setStudentActiveTab('kaygi')}
-                  className={`flex-1 py-3 px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     studentActiveTab === 'kaygi'
                       ? 'bg-[#C5A059] text-slate-950 shadow-md'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
                   }`}
                 >
-                  <HeartPulse className="w-4 h-4" />
-                  <span>Kaygı Yönetimi Egzersizleri</span>
+                  <HeartPulse className="w-4 h-4 shrink-0" />
+                  <span>Kaygı Yönetimi</span>
                 </button>
 
                 <button
                   onClick={() => setStudentActiveTab('gunluk')}
-                  className={`flex-1 py-3 px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     studentActiveTab === 'gunluk'
                       ? 'bg-[#C5A059] text-slate-950 shadow-md'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
                   }`}
                 >
-                  <Calendar className="w-4 h-4" />
-                  <span>Günlük Çalışma Takibi</span>
+                  <Calendar className="w-4 h-4 shrink-0" />
+                  <span>Günlük Çalışma</span>
                 </button>
 
                 <button
                   onClick={() => setStudentActiveTab('deneme')}
-                  className={`flex-1 py-3 px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     studentActiveTab === 'deneme'
                       ? 'bg-[#C5A059] text-slate-950 shadow-md'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
                   }`}
                 >
-                  <BarChart2 className="w-4 h-4" />
-                  <span>Deneme Sınavı Takibi</span>
+                  <BarChart2 className="w-4 h-4 shrink-0" />
+                  <span>Deneme Sınavı</span>
                 </button>
 
                 <button
                   onClick={() => setStudentActiveTab('mufredat')}
-                  className={`flex-1 py-3 px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     studentActiveTab === 'mufredat'
                       ? 'bg-[#C5A059] text-slate-950 shadow-md'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
                   }`}
                 >
-                  <BookOpen className="w-4 h-4" />
-                  <span>Müfredat & Konu Takibi</span>
+                  <BookOpen className="w-4 h-4 shrink-0" />
+                  <span>Müfredat Takibi</span>
                 </button>
               </div>
 
@@ -1610,65 +1611,65 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
               </div>
 
               {/* Coach Nav Tabs */}
-              <div className="flex flex-wrap bg-white p-1.5 rounded-xl shadow border border-stone-200 gap-1">
+              <div className="flex overflow-x-auto no-scrollbar scrollbar-none bg-white p-1.5 rounded-xl shadow border border-stone-200 gap-1.5 snap-x">
                 <button
                   onClick={() => setCoachActiveTab('ogrenciler')}
-                  className={`flex-1 py-3 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     coachActiveTab === 'ogrenciler'
                       ? 'bg-slate-900 text-white shadow'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
                   }`}
                 >
-                  <User className="w-4 h-4 text-[#C5A059]" />
-                  <span>Öğrenci Hesap Yönetimi</span>
+                  <User className="w-4 h-4 text-[#C5A059] shrink-0" />
+                  <span>Öğrenci Yönetimi</span>
                 </button>
 
                 <button
                   onClick={() => setCoachActiveTab('ders_programi')}
-                  className={`flex-1 py-3 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     coachActiveTab === 'ders_programi'
                       ? 'bg-slate-900 text-white shadow'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
                   }`}
                 >
-                  <Sparkles className="w-4 h-4 text-[#C5A059]" />
+                  <Sparkles className="w-4 h-4 text-[#C5A059] shrink-0" />
                   <span>Ders Programı Robotu</span>
                 </button>
 
                 <button
                   onClick={() => setCoachActiveTab('egzersiz_raporu')}
-                  className={`flex-1 py-3 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     coachActiveTab === 'egzersiz_raporu'
                       ? 'bg-slate-900 text-white shadow'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
                   }`}
                 >
-                  <HeartPulse className="w-4 h-4 text-[#C5A059]" />
+                  <HeartPulse className="w-4 h-4 text-[#C5A059] shrink-0" />
                   <span>Egzersiz Raporları</span>
                 </button>
 
                 <button
                   onClick={() => setCoachActiveTab('gunluk_rapor')}
-                  className={`flex-1 py-3 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     coachActiveTab === 'gunluk_rapor'
                       ? 'bg-slate-900 text-white shadow'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
                   }`}
                 >
-                  <Calendar className="w-4 h-4 text-[#C5A059]" />
-                  <span>Günlük Çalışma Raporları</span>
+                  <Calendar className="w-4 h-4 text-[#C5A059] shrink-0" />
+                  <span>Günlük Çalışmalar</span>
                 </button>
 
                 <button
                   onClick={() => setCoachActiveTab('deneme_rapor')}
-                  className={`flex-1 py-3 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     coachActiveTab === 'deneme_rapor'
                       ? 'bg-slate-900 text-white shadow'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
                   }`}
                 >
-                  <BarChart2 className="w-4 h-4 text-[#C5A059]" />
-                  <span>Deneme Sınavı Raporları</span>
+                  <BarChart2 className="w-4 h-4 text-[#C5A059] shrink-0" />
+                  <span>Deneme Sınavları</span>
                 </button>
               </div>
 
