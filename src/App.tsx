@@ -22,7 +22,7 @@ import {
   Linkedin, Calendar, Sparkles, BookOpen, Clock, Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { dbGetInquiries, dbGetTestimonials, dbIncrementPageViews } from './lib/firebase';
+import { dbGetInquiries, dbGetTestimonials, dbIncrementPageViews, dbSubscribeToPageViews, PageViews } from './lib/firebase';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState('hero');
@@ -31,6 +31,7 @@ export default function App() {
   const [isCoachingOpen, setIsCoachingOpen] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [notifCount, setNotifCount] = useState(0);
+  const [pageViews, setPageViews] = useState<PageViews>({ todayViews: 0, totalViews: 0 });
 
   const updateNotifCount = async () => {
     let count = 0;
@@ -50,6 +51,10 @@ export default function App() {
     updateNotifCount();
     dbIncrementPageViews();
     
+    const unsubViews = dbSubscribeToPageViews((views) => {
+      setPageViews(views);
+    });
+
     // Listen to custom events
     window.addEventListener('gamze-new-inquiry', updateNotifCount);
     window.addEventListener('gamze-new-testimonial', updateNotifCount);
@@ -59,6 +64,7 @@ export default function App() {
     window.addEventListener('storage', updateNotifCount);
 
     return () => {
+      unsubViews();
       window.removeEventListener('gamze-new-inquiry', updateNotifCount);
       window.removeEventListener('gamze-new-testimonial', updateNotifCount);
       window.removeEventListener('gamze-testimonials-updated', updateNotifCount);
@@ -249,9 +255,19 @@ export default function App() {
 
           {/* Copyright and Legal row */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
-            <span>
-              &copy; {new Date().getFullYear()} Gamze Tosun Eğitim Danışmanlığı. Tüm Hakları Saklıdır.
-            </span>
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <span>
+                &copy; {new Date().getFullYear()} Gamze Tosun Eğitim Danışmanlığı. Tüm Hakları Saklıdır.
+              </span>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800/80 border border-slate-700 rounded text-slate-300">
+                <span className="flex h-1.5 w-1.5 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                </span>
+                <span className="text-[10px] uppercase font-bold text-slate-400">Site Ziyaret:</span>
+                <span className="text-xs font-mono font-bold text-emerald-400">{pageViews.totalViews.toLocaleString('tr-TR')}</span>
+              </div>
+            </div>
             <div className="flex items-center gap-4">
               <a href="#" className="hover:text-slate-300">Kullanım Koşulları</a>
               <a href="#" className="hover:text-slate-300">Gizlilik Politikası</a>

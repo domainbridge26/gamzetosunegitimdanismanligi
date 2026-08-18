@@ -80,22 +80,22 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, o
           {/* Logo */}
           <div 
             id="nav-logo"
-            className="flex items-center gap-4 cursor-pointer group"
+            className="flex items-center gap-2.5 sm:gap-4 cursor-pointer group min-w-0"
             onClick={() => handleNavClick('hero')}
           >
-            <div className="flex items-center justify-center w-16 h-16 bg-white border-2 border-[#C5A059] rounded-none shadow-md overflow-hidden group-hover:border-[#2D2D2D] transition-all duration-300 transform group-hover:scale-105">
+            <div className="flex items-center justify-center w-11 h-11 sm:w-16 sm:h-16 bg-white border-2 border-[#C5A059] rounded-none shadow-md overflow-hidden group-hover:border-[#2D2D2D] transition-all duration-300 transform group-hover:scale-105 shrink-0">
               <img 
                 src={logoImg} 
                 alt="GAMZE TOSUN Logo" 
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-contain p-1"
+                className="w-full h-full object-contain p-0.5 sm:p-1"
               />
             </div>
-            <div className="flex flex-col justify-center">
-              <h1 className="font-serif text-2xl sm:text-3xl font-black uppercase tracking-tight text-[#2D2D2D] leading-none">
+            <div className="flex flex-col justify-center min-w-0">
+              <h1 className="font-serif text-base sm:text-2xl lg:text-3xl font-black uppercase tracking-tight text-[#2D2D2D] leading-none truncate">
                 GAMZE TOSUN
               </h1>
-              <span className="text-[9px] sm:text-[10px] font-extrabold text-[#C5A059] tracking-[0.15em] sm:tracking-[0.2em] uppercase mt-1.5 leading-none">
+              <span className="text-[7px] sm:text-[9px] lg:text-[10px] font-extrabold text-[#C5A059] tracking-[0.1em] sm:tracking-[0.2em] uppercase mt-1 sm:mt-1.5 leading-none truncate">
                 EĞİTİM DANIŞMANLIĞI & ÖĞRENCİ KOÇLUĞU
               </span>
             </div>
@@ -193,19 +193,20 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, o
           </div>
 
           {/* Mobile menu button */}
-          <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden">
+          <div className="flex items-center gap-1 sm:gap-2 lg:hidden">
             {/* Canlı Site Ziyaret Sayacı (Mobil/Tablet) */}
             <div 
               id="live-visit-counter-mobile"
-              className="hidden xs:flex sm:flex items-center gap-1 px-1.5 sm:px-2 py-1 bg-[#FAF9F6] border border-[#2D2D2D]/15 rounded shadow-sm text-left"
+              className="flex items-center gap-1 px-1.5 sm:px-2 py-1 bg-[#FAF9F6] border border-[#2D2D2D]/15 rounded shadow-xs text-left shrink-0"
+              title="Site Toplam Ziyaret Sayısı"
             >
-              <span className="flex h-1.5 w-1.5 relative">
+              <span className="flex h-1.5 w-1.5 relative shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
               </span>
               <div className="flex flex-col">
                 <span className="text-[7px] font-bold text-[#2D2D2D]/55 uppercase tracking-wider leading-none">Ziyaret</span>
-                <span className="text-[10px] font-black text-[#2D2D2D] leading-none mt-0.5 font-mono">{pageViews.totalViews}</span>
+                <span className="text-[10px] sm:text-xs font-black text-[#2D2D2D] leading-none mt-0.5 font-mono">{pageViews.totalViews.toLocaleString('tr-TR')}</span>
               </div>
             </div>
 
@@ -213,11 +214,11 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, o
             <button
               id="btn-coaching-portal-mobile-top"
               onClick={onOpenCoaching}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-[#C5A059] text-white hover:bg-[#b08d48] active:scale-95 transition-all shadow-sm rounded-none border border-[#C5A059]"
+              className="flex items-center gap-1 px-2 py-1.5 bg-[#C5A059] text-white hover:bg-[#b08d48] active:scale-95 transition-all shadow-xs rounded-none border border-[#C5A059] shrink-0"
               title="Koçluk Özel Paneli"
             >
-              <GraduationCap className="w-4 h-4 text-white" />
-              <span className="text-[11px] font-black tracking-wider uppercase">Koçluk</span>
+              <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+              <span className="text-[10px] sm:text-[11px] font-black tracking-wider uppercase">Koçluk</span>
             </button>
 
             <button
