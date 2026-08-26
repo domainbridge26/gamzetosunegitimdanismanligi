@@ -1,0 +1,159 @@
+{
+  "entities": {
+    "ContactSubmission": {
+      "title": "ContactSubmission",
+      "description": "Web sitesinden veli ve öğrencilerin gönderdiği danışmanlık ve bilgi talep formları",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "studentClass": { "type": "string" },
+        "selectedService": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "status": { "type": "string", "enum": ["Yeni", "İncelendi", "Görüşüldü", "Tamamlandı"] }
+      },
+      "required": ["fullName", "phone", "studentClass"]
+    },
+    "StudentAccount": {
+      "title": "StudentAccount",
+      "description": "Gamze Tosun Eğitim Danışmanlığı ve Hızlı Okuma kayıtlı öğrenci hesapları",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "fullName": { "type": "string" },
+        "studentClass": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "lastLogin": { "type": "string" }
+      },
+      "required": ["username", "password", "fullName", "studentClass"]
+    },
+    "ParentAccount": {
+      "title": "ParentAccount",
+      "description": "Gamze Hanım tarafından tanımlanan veli hesapları ve eşleştirilen öğrenciler",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "fullName": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "linkedStudentUsername": { "type": "string" },
+        "linkedStudentFullName": { "type": "string" },
+        "linkedStudentClass": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "lastLogin": { "type": "string" }
+      },
+      "required": ["username", "password", "fullName", "linkedStudentUsername"]
+    },
+    "DailyStudyLog": {
+      "title": "DailyStudyLog",
+      "description": "Öğrencilerin günlük çözdüğü ders, konu, soru sayısı ve süre kayıtları",
+      "type": "object",
+      "properties": {
+        "studentUsername": { "type": "string" },
+        "studentFullName": { "type": "string" },
+        "studentClass": { "type": "string" },
+        "date": { "type": "string" },
+        "subject": { "type": "string" },
+        "topic": { "type": "string" },
+        "questionsSolved": { "type": "number" },
+        "correctCount": { "type": "number" },
+        "incorrectCount": { "type": "number" },
+        "durationMinutes": { "type": "number" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["studentUsername", "date", "subject", "questionsSolved", "durationMinutes"]
+    },
+    "MockExamLog": {
+      "title": "MockExamLog",
+      "description": "Öğrenci deneme sınavı sonuçları, ders netleri ve puan analizleri",
+      "type": "object",
+      "properties": {
+        "studentUsername": { "type": "string" },
+        "studentFullName": { "type": "string" },
+        "studentClass": { "type": "string" },
+        "examName": { "type": "string" },
+        "date": { "type": "string" },
+        "groupType": { "type": "string" },
+        "subjectNets": { "type": "object" },
+        "totalNet": { "type": "number" },
+        "score": { "type": "number" },
+        "targetScore": { "type": "number" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["studentUsername", "examName", "date", "totalNet"]
+    },
+    "BookReadingLog": {
+      "title": "BookReadingLog",
+      "description": "Öğrenci günlük kitap okuma, sayfa sayısı ve süre takipleri",
+      "type": "object",
+      "properties": {
+        "studentUsername": { "type": "string" },
+        "studentFullName": { "type": "string" },
+        "studentClass": { "type": "string" },
+        "date": { "type": "string" },
+        "bookTitle": { "type": "string" },
+        "author": { "type": "string" },
+        "pagesRead": { "type": "number" },
+        "durationMinutes": { "type": "number" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["studentUsername", "date", "bookTitle", "pagesRead"]
+    },
+    "StudentScheduleRecord": {
+      "title": "StudentScheduleRecord",
+      "description": "Öğrencinin koç tarafından hazırlanan haftalık çalışma ve ders programı",
+      "type": "object",
+      "properties": {
+        "studentUsername": { "type": "string" },
+        "studentName": { "type": "string" },
+        "examGroup": { "type": "string" },
+        "targetGoal": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "schedule": { "type": "object" },
+        "hasUnreadNotification": { "type": "boolean" }
+      },
+      "required": ["studentUsername", "schedule"]
+    }
+  },
+  "firestore": {
+    "/inquiries/{inquiryId}": {
+      "schema": "ContactSubmission",
+      "description": "İletişim ve başvuru kayıtları"
+    },
+    "/speed_reading_students/{studentId}": {
+      "schema": "StudentAccount",
+      "description": "Hızlı Okuma öğrencileri"
+    },
+    "/coaching_students/{studentId}": {
+      "schema": "StudentAccount",
+      "description": "Koçluk öğrencileri"
+    },
+    "/coaching_parents/{parentId}": {
+      "schema": "ParentAccount",
+      "description": "Koçluk veli hesapları"
+    },
+    "/daily_study_logs/{logId}": {
+      "schema": "DailyStudyLog",
+      "description": "Günlük soru çözüm ve çalışma kayıtları"
+    },
+    "/coaching_mock_exams/{examId}": {
+      "schema": "MockExamLog",
+      "description": "Deneme sınavı sonuçları"
+    },
+    "/coaching_book_readings/{readingId}": {
+      "schema": "BookReadingLog",
+      "description": "Kitap okuma takip kayıtları"
+    },
+    "/coaching_student_schedules/{studentUsername}": {
+      "schema": "StudentScheduleRecord",
+      "description": "Haftalık öğrenci ders çalışma programı"
+    }
+  }
+}

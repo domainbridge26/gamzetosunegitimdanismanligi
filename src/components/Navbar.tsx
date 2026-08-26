@@ -288,7 +288,7 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, o
                     </span>
                     <span className="text-[9px] font-bold text-[#2D2D2D]/55 uppercase tracking-widest">Site ziyaret sayısı</span>
                   </div>
-                  <span className="text-sm font-black text-[#2D2D2D] font-mono">{pageViews.totalViews}</span>
+                  <span className="text-sm font-black text-[#2D2D2D] font-mono">{pageViews.totalViews.toLocaleString('tr-TR')}</span>
                 </div>
 
                 {/* KOÇLUK ÖZEL PANELİ - MOBİL ANA BUTONU */}
@@ -306,7 +306,7 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, o
                     </div>
                     <div>
                       <div className="text-slate-950 font-black tracking-wide text-[13px] leading-tight">KOÇLUK ÖZEL PANELİ</div>
-                      <div className="text-[10px] text-slate-900 font-bold lowercase tracking-normal">öğrenci & eğitmen girişi</div>
+                      <div className="text-[10px] text-slate-900 font-bold lowercase tracking-normal">öğrenci, veli & koç girişi</div>
                     </div>
                   </div>
                   <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-slate-900 text-white rounded">Giriş Yap</span>

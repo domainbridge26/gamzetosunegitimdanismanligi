@@ -145,3 +145,45 @@ export interface CurriculumProgress {
   updatedAt: string;
 }
 
+export interface ParentAccount {
+  id: string;
+  username: string;
+  password: string;
+  fullName: string;
+  phone?: string;
+  email?: string;
+  linkedStudentUsername: string; // The username of the student this parent is linked to
+  linkedStudentFullName?: string; // Student full name cache
+  linkedStudentClass?: string; // Student class cache
+  createdAt: string;
+  lastLogin?: string;
+}
+
+export interface BookReadingLog {
+  id: string;
+  studentUsername: string;
+  studentFullName: string;
+  studentClass: string;
+  date: string; // Turkish format "26.08.2026"
+  bookTitle: string;
+  author?: string;
+  pageCount: number;
+  durationMinutes: number;
+  notes?: string;
+  createdAt?: string;
+}
+
+export interface TopicCumulativeStat {
+  subject: string;
+  topic: string;
+  sessionCount: number; // Kaç kez çalışıldı
+  totalDurationMinutes: number; // Toplam çalışma süresi (dk)
+  totalQuestions: number; // Toplam soru sayısı
+  totalCorrect: number; // Toplam doğru
+  totalWrong: number; // Toplam yanlış
+  totalEmpty: number; // Toplam boş
+  accuracyRate: number; // Başarı / Doğruluk yüzdesi (%)
+  lastStudiedDate: string;
+}
+
+

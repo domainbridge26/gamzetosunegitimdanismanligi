@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, User, Lock, Key, LogOut, CheckCircle2, AlertCircle, Plus, Trash2, Edit, Save, 
   Calendar, BookOpen, Clock, BarChart2, Award, Sparkles, Filter, RefreshCw, ChevronRight, 
-  Search, Shield, GraduationCap, Check, FileText, Sliders, ArrowUpRight, TrendingUp, HeartPulse, Eye
+  Search, Shield, GraduationCap, Check, FileText, Sliders, ArrowUpRight, TrendingUp, HeartPulse, Eye, Users, Printer, Bookmark
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  StudentAccount, StudentExerciseLog, DailyStudyLog, MockExamLog 
+  StudentAccount, StudentExerciseLog, DailyStudyLog, MockExamLog,
+  ParentAccount, BookReadingLog, TopicCumulativeStat
 } from '../types';
 import { 
   dbGetCoachingStudents, dbAddCoachingStudent, dbUpdateCoachingStudent, dbDeleteCoachingStudent, DEFAULT_COACHING_STUDENTS,
@@ -15,10 +16,17 @@ import {
   dbGetDailyStudyLogs, dbAddDailyStudyLog, dbUpdateDailyStudyLog, dbDeleteDailyStudyLog,
   dbGetMockExamLogs, dbAddMockExamLog, dbUpdateMockExamLog, dbDeleteMockExamLog,
   dbGetCurriculumProgress, dbSaveCurriculumProgress, dbAddStudentLog,
-  dbGetStudentSchedule, dbMarkScheduleAsRead, StudentScheduleRecord
+  dbGetStudentSchedule, dbMarkScheduleAsRead, StudentScheduleRecord,
+  dbGetCoachingParents, dbAddCoachingParent, dbUpdateCoachingParent, dbDeleteCoachingParent,
+  dbGetBookReadingLogs, dbAddBookReadingLog, dbUpdateBookReadingLog, dbDeleteBookReadingLog
 } from '../lib/firebase';
 import AnxietyControlPanel from './AnxietyControlPanel';
 import SchedulePlanner from './SchedulePlanner';
+import TopicAnalyticsBarChart from './TopicAnalyticsBarChart';
+import BookReadingTracker from './BookReadingTracker';
+import ParentManagementTab from './ParentManagementTab';
+import StudentReportPdfModal from './StudentReportPdfModal';
+import ParentPortalView from './ParentPortalView';
 
 interface CoachingPanelProps {
   isOpen: boolean;
@@ -260,19 +268,20 @@ export const CURRICULUM_DATA: Record<string, { subject: string; topics: string[]
 
 export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
   // Authentication State
-  const [userRole, setUserRole] = useState<'none' | 'student' | 'coach'>('none');
+  const [userRole, setUserRole] = useState<'none' | 'student' | 'coach' | 'parent'>('none');
   const [currentStudent, setCurrentStudent] = useState<StudentAccount | null>(null);
+  const [currentParent, setCurrentParent] = useState<ParentAccount | null>(null);
 
   // LoginForm inputs
-  const [loginTab, setLoginTab] = useState<'student' | 'coach'>('student');
+  const [loginTab, setLoginTab] = useState<'student' | 'parent' | 'coach'>('student');
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
 
   // Active Main Tabs
-  const [studentActiveTab, setStudentActiveTab] = useState<'program' | 'kaygi' | 'gunluk' | 'deneme' | 'mufredat'>('program');
-  const [coachActiveTab, setCoachActiveTab] = useState<'ogrenciler' | 'ders_programi' | 'egzersiz_raporu' | 'gunluk_rapor' | 'deneme_rapor' | 'mufredat_rapor'>('ogrenciler');
+  const [studentActiveTab, setStudentActiveTab] = useState<'program' | 'kaygi' | 'gunluk' | 'kitap' | 'analiz' | 'deneme' | 'mufredat'>('program');
+  const [coachActiveTab, setCoachActiveTab] = useState<'ogrenciler' | 'veliler' | 'ders_programi' | 'konu_raporlari' | 'kitap_okuma' | 'egzersiz_raporu' | 'gunluk_rapor' | 'deneme_rapor'>('ogrenciler');
 
   // Student Schedule State
   const [studentSchedule, setStudentSchedule] = useState<StudentScheduleRecord | null>(null);
@@ -280,10 +289,16 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
 
   // Database State Collections
   const [studentsList, setStudentsList] = useState<StudentAccount[]>([]);
+  const [parentsList, setParentsList] = useState<ParentAccount[]>([]);
   const [exerciseLogs, setExerciseLogs] = useState<StudentExerciseLog[]>([]);
   const [dailyLogs, setDailyLogs] = useState<DailyStudyLog[]>([]);
   const [mockLogs, setMockLogs] = useState<MockExamLog[]>([]);
+  const [bookLogs, setBookLogs] = useState<BookReadingLog[]>([]);
   const [completedTopics, setCompletedTopics] = useState<string[]>([]);
+
+  // PDF Modal State
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [selectedStudentForPdf, setSelectedStudentForPdf] = useState<StudentAccount | null>(null);
 
   // Selected Student for Schedule & Student Tracking Modal
   const [selectedStudentForSchedule, setSelectedStudentForSchedule] = useState<string>('');
@@ -337,6 +352,9 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
       const sts = await dbGetCoachingStudents();
       setStudentsList(sts);
 
+      const prts = await dbGetCoachingParents();
+      setParentsList(prts);
+
       const logs = await dbGetStudentLogs();
       setExerciseLogs(logs);
 
@@ -345,6 +363,9 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
 
       const mLogs = await dbGetMockExamLogs();
       setMockLogs(mLogs);
+
+      const bLogs = await dbGetBookReadingLogs();
+      setBookLogs(bLogs);
     } catch (e) {
       console.error(e);
     }
@@ -360,8 +381,14 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
           if (parsed.userRole === 'coach') {
             setUserRole('coach');
             setCurrentStudent(null);
+            setCurrentParent(null);
           } else if (parsed.userRole === 'student' && parsed.student) {
             setUserRole('student');
+            setCurrentStudent(parsed.student);
+            setCurrentParent(null);
+          } else if (parsed.userRole === 'parent' && parsed.parent && parsed.student) {
+            setUserRole('parent');
+            setCurrentParent(parsed.parent);
             setCurrentStudent(parsed.student);
           }
         }
@@ -371,7 +398,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
     }
   }, [isOpen]);
 
-  // Load student progress and schedule when logged in as student
+  // Load student progress and schedule when logged in as student or parent
   useEffect(() => {
     if (currentStudent) {
       dbGetCurriculumProgress(currentStudent.username).then((topics) => {
@@ -430,6 +457,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
       if ((u === 'gamze' || u === 'admin') && (p === 'Gamze1283' || p === '123456' || p === 'Gamze!2026')) {
         setUserRole('coach');
         setCurrentStudent(null);
+        setCurrentParent(null);
         setLoginUsername('');
         setLoginPassword('');
         if (rememberMe) {
@@ -440,6 +468,49 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
         loadAllData();
       } else {
         setLoginError('Hatalı eğitmen kullanıcı adı veya şifresi. (Örn: Gamze / Gamze1283)');
+      }
+    } else if (loginTab === 'parent') {
+      // Parent Login
+      const allParents = await dbGetCoachingParents();
+      const allSts = await dbGetCoachingStudents();
+      const inputUser = loginUsername.trim().toLowerCase();
+      const inputPass = loginPassword.trim();
+
+      const matchParent = allParents.find(
+        p => p.username.toLowerCase() === inputUser && p.password === inputPass
+      );
+
+      if (matchParent) {
+        // Find linked student
+        const linkedStudent = allSts.find(
+          s => s.username.toLowerCase() === matchParent.linkedStudentUsername.toLowerCase()
+        ) || {
+          id: 'temp-' + matchParent.linkedStudentUsername,
+          username: matchParent.linkedStudentUsername,
+          password: '',
+          fullName: matchParent.linkedStudentFullName || matchParent.linkedStudentUsername,
+          studentClass: matchParent.linkedStudentClass || 'LGS Grubu',
+          createdAt: ''
+        };
+
+        setUserRole('parent');
+        setCurrentParent(matchParent);
+        setCurrentStudent(linkedStudent);
+        setLoginUsername('');
+        setLoginPassword('');
+
+        if (rememberMe) {
+          localStorage.setItem('gamze_coaching_auth_session', JSON.stringify({ 
+            userRole: 'parent', 
+            parent: matchParent, 
+            student: linkedStudent 
+          }));
+        } else {
+          localStorage.removeItem('gamze_coaching_auth_session');
+        }
+        loadAllData();
+      } else {
+        setLoginError('Veli kullanıcı adı veya şifresi hatalı. Lütfen Eğitmen Gamze Hanım tarafından tanımlanan veli giriş bilgilerinizi kontrol ediniz.');
       }
     } else {
       // Student login
@@ -452,6 +523,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
       if (match) {
         setUserRole('student');
         setCurrentStudent(match);
+        setCurrentParent(null);
         setLoginUsername('');
         setLoginPassword('');
         if (rememberMe) {
@@ -663,7 +735,13 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                 </span>
               </div>
               <p className="text-slate-300 text-[11px] sm:text-xs truncate max-w-[200px] xs:max-w-[260px] sm:max-w-md">
-                {userRole === 'coach' ? 'Gamze Hanım Yönetici ve Öğrenci Rapor Portalı' : userRole === 'student' ? `${currentStudent?.fullName} (${currentStudent?.studentClass}) Özel Sayfası` : 'Kullanıcı ve Eğitmen Giriş Portalı'}
+                {userRole === 'coach' 
+                  ? 'Gamze Hanım Yönetici, Veli ve Öğrenci Rapor Portalı' 
+                  : userRole === 'parent' 
+                    ? `Veli Portalı - ${currentParent?.parentFullName || 'Sayın Velimiz'} (${currentStudent?.fullName || 'Öğrenci'} Takibi)`
+                    : userRole === 'student' 
+                      ? `${currentStudent?.fullName} (${currentStudent?.studentClass}) Özel Sayfası` 
+                      : 'Öğrenci, Veli ve Eğitmen Giriş Portalı'}
               </p>
             </div>
           </div>
@@ -674,6 +752,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                 onClick={() => {
                   setUserRole('none');
                   setCurrentStudent(null);
+                  setCurrentParent(null);
                   localStorage.removeItem('gamze_coaching_auth_session');
                 }}
                 className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-300 hover:text-white text-xs font-bold rounded transition-colors cursor-pointer"
@@ -710,35 +789,47 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                   Koçluk Özel Paneline Hoş Geldiniz
                 </h3>
                 <p className="text-slate-600 text-xs sm:text-sm mt-1">
-                  Öğrenci veya Eğitmen hesabınızla giriş yaparak günlük çalışmalarınızı, sınav takibinizi ve kaygı egzersizlerinizi yönetebilirsiniz.
+                  Öğrenci, Veli veya Eğitmen hesabınızla giriş yaparak günlük çalışma, kitap okuma, sınav grafikleri ve raporlarınıza erişebilirsiniz.
                 </p>
               </div>
 
-              {/* Login Tab selector */}
-              <div className="flex bg-stone-100 p-1 rounded-xl mb-6 border border-stone-200">
+              {/* Login Tab selector - 3 Tabs: Öğrenci | Veli | Eğitmen */}
+              <div className="grid grid-cols-3 bg-stone-100 p-1 rounded-xl mb-6 border border-stone-200 gap-1">
                 <button
                   type="button"
                   onClick={() => { setLoginTab('student'); setLoginError(''); }}
-                  className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
+                  className={`py-2.5 px-2 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     loginTab === 'student'
-                      ? 'bg-[#C5A059] text-slate-950 shadow-md'
+                      ? 'bg-[#C5A059] text-slate-950 shadow-md font-extrabold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  <User className="w-4 h-4 inline mr-1.5" />
-                  Öğrenci Girişi
+                  <User className="w-4 h-4 shrink-0" />
+                  <span className="truncate">Öğrenci</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setLoginTab('parent'); setLoginError(''); }}
+                  className={`py-2.5 px-2 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    loginTab === 'parent'
+                      ? 'bg-amber-800 text-white shadow-md font-extrabold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Users className="w-4 h-4 shrink-0" />
+                  <span className="truncate">Veli Girişi</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => { setLoginTab('coach'); setLoginError(''); }}
-                  className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
+                  className={`py-2.5 px-2 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     loginTab === 'coach'
-                      ? 'bg-slate-900 text-white shadow-md'
+                      ? 'bg-slate-900 text-white shadow-md font-extrabold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  <Shield className="w-4 h-4 inline mr-1.5 text-[#C5A059]" />
-                  Eğitmen Girişi
+                  <Shield className="w-4 h-4 shrink-0 text-[#C5A059]" />
+                  <span className="truncate">Eğitmen</span>
                 </button>
               </div>
 
@@ -762,7 +853,13 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                       type="text"
                       value={loginUsername}
                       onChange={(e) => setLoginUsername(e.target.value)}
-                      placeholder={loginTab === 'coach' ? 'Gamze' : 'Örn: lgs_ogrenci veya zeynep'}
+                      placeholder={
+                        loginTab === 'coach' 
+                          ? 'Gamze' 
+                          : loginTab === 'parent'
+                            ? 'Gamze Hanım tarafından verilen veli kullanıcı adınız'
+                            : 'Örn: lgs_ogrenci veya zeynep'
+                      }
                       className="w-full pl-9 pr-3 py-2.5 bg-stone-50 border border-stone-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059]"
                       required
                     />
@@ -804,17 +901,37 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                   className={`w-full py-3 font-bold text-sm uppercase tracking-wider rounded-lg shadow-lg transition-all cursor-pointer ${
                     loginTab === 'coach'
                       ? 'bg-slate-900 hover:bg-slate-800 text-white'
-                      : 'bg-[#C5A059] hover:bg-[#b08d4b] text-slate-950'
+                      : loginTab === 'parent'
+                        ? 'bg-amber-800 hover:bg-amber-900 text-white'
+                        : 'bg-[#C5A059] hover:bg-[#b08d4b] text-slate-950'
                   }`}
                 >
-                  {loginTab === 'coach' ? 'Eğitmen Paneline Giriş Yap' : 'Öğrenci Paneline Giriş Yap'}
+                  {loginTab === 'coach' 
+                    ? 'Eğitmen Paneline Giriş Yap' 
+                    : loginTab === 'parent'
+                      ? 'Veli Portalı Girişi'
+                      : 'Öğrenci Paneline Giriş Yap'}
                 </button>
               </form>
             </div>
           )}
 
           {/* ========================================================================= */}
-          {/* 2. STUDENT DASHBOARD (LOGGED IN AS STUDENT)                               */}
+          {/* 2. PARENT DASHBOARD VIEW (LOGGED IN AS PARENT)                             */}
+          {/* ========================================================================= */}
+          {userRole === 'parent' && currentParent && currentStudent && (
+            <ParentPortalView
+              parent={currentParent}
+              student={currentStudent}
+              dailyLogs={dailyLogs.filter(d => d.studentUsername.toLowerCase() === currentStudent.username.toLowerCase())}
+              mockLogs={mockLogs.filter(m => m.studentUsername.toLowerCase() === currentStudent.username.toLowerCase())}
+              bookLogs={bookLogs.filter(b => b.studentUsername.toLowerCase() === currentStudent.username.toLowerCase())}
+              scheduleRecord={studentSchedule}
+            />
+          )}
+
+          {/* ========================================================================= */}
+          {/* 3. STUDENT DASHBOARD (LOGGED IN AS STUDENT)                               */}
           {/* ========================================================================= */}
           {userRole === 'student' && currentStudent && (
             <div className="space-y-6">
@@ -841,6 +958,17 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedStudentForPdf(currentStudent);
+                      setIsPdfModalOpen(true);
+                    }}
+                    className="px-3.5 py-2 bg-[#2D2D2D] hover:bg-slate-900 text-[#C5A059] text-xs font-bold rounded-xl shadow transition-all cursor-pointer flex items-center gap-2"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Gelişim Raporu Al (PDF)</span>
+                  </button>
                 </div>
               </div>
 
@@ -895,6 +1023,30 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                 </button>
 
                 <button
+                  onClick={() => setStudentActiveTab('kitap')}
+                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    studentActiveTab === 'kitap'
+                      ? 'bg-[#C5A059] text-slate-950 shadow-md'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
+                  }`}
+                >
+                  <Bookmark className="w-4 h-4 shrink-0 text-amber-800" />
+                  <span>Kitap Okuma</span>
+                </button>
+
+                <button
+                  onClick={() => setStudentActiveTab('analiz')}
+                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    studentActiveTab === 'analiz'
+                      ? 'bg-[#C5A059] text-slate-950 shadow-md'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
+                  }`}
+                >
+                  <BarChart2 className="w-4 h-4 shrink-0" />
+                  <span>Konu & Sütun Analizi</span>
+                </button>
+
+                <button
                   onClick={() => setStudentActiveTab('deneme')}
                   className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-4 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     studentActiveTab === 'deneme'
@@ -902,7 +1054,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
                   }`}
                 >
-                  <BarChart2 className="w-4 h-4 shrink-0" />
+                  <TrendingUp className="w-4 h-4 shrink-0" />
                   <span>Deneme Sınavı</span>
                 </button>
 
@@ -1304,6 +1456,35 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                 </div>
               )}
 
+              {/* TAB: GÜNLÜK KİTAP OKUMA TAKİBİ */}
+              {studentActiveTab === 'kitap' && currentStudent && (
+                <BookReadingTracker
+                  logs={bookLogs.filter(b => b.studentUsername.toLowerCase() === currentStudent.username.toLowerCase())}
+                  student={currentStudent}
+                  userRole="student"
+                  onAddLog={async (newLog) => {
+                    const created = await dbAddBookReadingLog(newLog);
+                    setBookLogs(prev => [created, ...prev]);
+                  }}
+                  onDeleteLog={async (id) => {
+                    await dbDeleteBookReadingLog(id);
+                    setBookLogs(prev => prev.filter(b => b.id !== id));
+                  }}
+                />
+              )}
+
+              {/* TAB: KONU BAZLI KÜMÜLATİF ANALİZ & SÜTUN GRAFİĞİ */}
+              {studentActiveTab === 'analiz' && currentStudent && (
+                <div className="space-y-6">
+                  <TopicAnalyticsBarChart
+                    logs={dailyLogs.filter(d => d.studentUsername.toLowerCase() === currentStudent.username.toLowerCase())}
+                    studentName={currentStudent.fullName}
+                    studentClass={currentStudent.studentClass}
+                    title={`${currentStudent.fullName} - Konu Bazlı Kümülatif Soru Çözüm & Süre Grafiği`}
+                  />
+                </div>
+              )}
+
               {/* TAB 3: DENEME SINAVI TAKİBİ */}
               {studentActiveTab === 'deneme' && (
                 <div className="space-y-6">
@@ -1568,44 +1749,64 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
             <div className="space-y-6">
               
               {/* Coach Summary Cards Header */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white p-4 rounded-xl shadow border border-stone-200 flex items-center gap-3">
-                  <div className="p-3 bg-amber-100 text-[#C5A059] rounded-lg">
-                    <User className="w-6 h-6" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="bg-white p-3.5 rounded-xl shadow-xs border border-stone-200 flex items-center gap-2.5">
+                  <div className="p-2.5 bg-amber-100 text-[#C5A059] rounded-lg shrink-0">
+                    <User className="w-5 h-5" />
                   </div>
-                  <div>
-                    <span className="text-xs text-slate-500 font-bold uppercase">Kayıtlı Öğrenciler</span>
-                    <h4 className="text-2xl font-black text-slate-900">{studentsList.length} Öğrenci</h4>
-                  </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-xl shadow border border-stone-200 flex items-center gap-3">
-                  <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
-                    <Calendar className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-500 font-bold uppercase">Günlük Çalışma Kayıtları</span>
-                    <h4 className="text-2xl font-black text-slate-900">{dailyLogs.length} Kayıt</h4>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase truncate block">Öğrenciler</span>
+                    <h4 className="text-xl font-black text-slate-900 leading-none mt-0.5">{studentsList.length}</h4>
                   </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-xl shadow border border-stone-200 flex items-center gap-3">
-                  <div className="p-3 bg-purple-100 text-purple-600 rounded-lg">
-                    <BarChart2 className="w-6 h-6" />
+                <div className="bg-white p-3.5 rounded-xl shadow-xs border border-stone-200 flex items-center gap-2.5">
+                  <div className="p-2.5 bg-emerald-100 text-emerald-700 rounded-lg shrink-0">
+                    <Users className="w-5 h-5" />
                   </div>
-                  <div>
-                    <span className="text-xs text-slate-500 font-bold uppercase">Deneme Sınavları</span>
-                    <h4 className="text-2xl font-black text-slate-900">{mockLogs.length} Deneme</h4>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase truncate block">Veliler</span>
+                    <h4 className="text-xl font-black text-slate-900 leading-none mt-0.5">{parentsList.length}</h4>
                   </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-xl shadow border border-stone-200 flex items-center gap-3">
-                  <div className="p-3 bg-rose-100 text-rose-600 rounded-lg">
-                    <HeartPulse className="w-6 h-6" />
+                <div className="bg-white p-3.5 rounded-xl shadow-xs border border-stone-200 flex items-center gap-2.5">
+                  <div className="p-2.5 bg-blue-100 text-blue-600 rounded-lg shrink-0">
+                    <Calendar className="w-5 h-5" />
                   </div>
-                  <div>
-                    <span className="text-xs text-slate-500 font-bold uppercase">Egzersiz Performansları</span>
-                    <h4 className="text-2xl font-black text-slate-900">{exerciseLogs.length} Performans</h4>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase truncate block">Günlük Çalışma</span>
+                    <h4 className="text-xl font-black text-slate-900 leading-none mt-0.5">{dailyLogs.length}</h4>
+                  </div>
+                </div>
+
+                <div className="bg-white p-3.5 rounded-xl shadow-xs border border-stone-200 flex items-center gap-2.5">
+                  <div className="p-2.5 bg-purple-100 text-purple-600 rounded-lg shrink-0">
+                    <BarChart2 className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase truncate block">Denemeler</span>
+                    <h4 className="text-xl font-black text-slate-900 leading-none mt-0.5">{mockLogs.length}</h4>
+                  </div>
+                </div>
+
+                <div className="bg-white p-3.5 rounded-xl shadow-xs border border-stone-200 flex items-center gap-2.5">
+                  <div className="p-2.5 bg-teal-100 text-teal-700 rounded-lg shrink-0">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase truncate block">Kitap Kaydı</span>
+                    <h4 className="text-xl font-black text-slate-900 leading-none mt-0.5">{bookLogs.length}</h4>
+                  </div>
+                </div>
+
+                <div className="bg-white p-3.5 rounded-xl shadow-xs border border-stone-200 flex items-center gap-2.5">
+                  <div className="p-2.5 bg-rose-100 text-rose-600 rounded-lg shrink-0">
+                    <HeartPulse className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase truncate block">Egzersizler</span>
+                    <h4 className="text-xl font-black text-slate-900 leading-none mt-0.5">{exerciseLogs.length}</h4>
                   </div>
                 </div>
               </div>
@@ -1614,7 +1815,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
               <div className="flex overflow-x-auto no-scrollbar scrollbar-none bg-white p-1.5 rounded-xl shadow border border-stone-200 gap-1.5 snap-x">
                 <button
                   onClick={() => setCoachActiveTab('ogrenciler')}
-                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`shrink-0 min-w-max py-2 sm:py-2.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     coachActiveTab === 'ogrenciler'
                       ? 'bg-slate-900 text-white shadow'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
@@ -1625,8 +1826,20 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                 </button>
 
                 <button
+                  onClick={() => setCoachActiveTab('veliler')}
+                  className={`shrink-0 min-w-max py-2 sm:py-2.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    coachActiveTab === 'veliler'
+                      ? 'bg-slate-900 text-white shadow'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
+                  }`}
+                >
+                  <Users className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Veli Yönetimi</span>
+                </button>
+
+                <button
                   onClick={() => setCoachActiveTab('ders_programi')}
-                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`shrink-0 min-w-max py-2 sm:py-2.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     coachActiveTab === 'ders_programi'
                       ? 'bg-slate-900 text-white shadow'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
@@ -1637,20 +1850,32 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                 </button>
 
                 <button
-                  onClick={() => setCoachActiveTab('egzersiz_raporu')}
-                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                    coachActiveTab === 'egzersiz_raporu'
+                  onClick={() => setCoachActiveTab('konu_raporlari')}
+                  className={`shrink-0 min-w-max py-2 sm:py-2.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    coachActiveTab === 'konu_raporlari'
                       ? 'bg-slate-900 text-white shadow'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
                   }`}
                 >
-                  <HeartPulse className="w-4 h-4 text-[#C5A059] shrink-0" />
-                  <span>Egzersiz Raporları</span>
+                  <BarChart2 className="w-4 h-4 text-indigo-400 shrink-0" />
+                  <span>Konu & Sütun Analizi</span>
+                </button>
+
+                <button
+                  onClick={() => setCoachActiveTab('kitap_okuma')}
+                  className={`shrink-0 min-w-max py-2 sm:py-2.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    coachActiveTab === 'kitap_okuma'
+                      ? 'bg-slate-900 text-white shadow'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4 text-teal-400 shrink-0" />
+                  <span>Kitap Okuma Takibi</span>
                 </button>
 
                 <button
                   onClick={() => setCoachActiveTab('gunluk_rapor')}
-                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`shrink-0 min-w-max py-2 sm:py-2.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     coachActiveTab === 'gunluk_rapor'
                       ? 'bg-slate-900 text-white shadow'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
@@ -1662,14 +1887,26 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
 
                 <button
                   onClick={() => setCoachActiveTab('deneme_rapor')}
-                  className={`shrink-0 sm:flex-1 min-w-max sm:min-w-0 py-2.5 sm:py-3 px-3.5 sm:px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`shrink-0 min-w-max py-2 sm:py-2.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     coachActiveTab === 'deneme_rapor'
                       ? 'bg-slate-900 text-white shadow'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
                   }`}
                 >
-                  <BarChart2 className="w-4 h-4 text-[#C5A059] shrink-0" />
+                  <TrendingUp className="w-4 h-4 text-purple-400 shrink-0" />
                   <span>Deneme Sınavları</span>
+                </button>
+
+                <button
+                  onClick={() => setCoachActiveTab('egzersiz_raporu')}
+                  className={`shrink-0 min-w-max py-2 sm:py-2.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    coachActiveTab === 'egzersiz_raporu'
+                      ? 'bg-slate-900 text-white shadow'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-stone-50'
+                  }`}
+                >
+                  <HeartPulse className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>Egzersiz Raporları</span>
                 </button>
               </div>
 
@@ -1808,14 +2045,38 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                                 <div className="flex items-center justify-center gap-1.5 flex-wrap">
                                   <button
                                     onClick={() => {
+                                      setSelectedStudentForPdf(st);
+                                      setIsPdfModalOpen(true);
+                                    }}
+                                    className="px-2.5 py-1.5 bg-[#C5A059] hover:bg-[#b08d4b] text-slate-950 text-[11px] font-extrabold rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                                    title="Öğrenci Gelişim Raporu İndir / Yazdır (PDF)"
+                                  >
+                                    <FileText className="w-3.5 h-3.5" />
+                                    <span>Gelişim Raporu (PDF)</span>
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
                                       setSelectedStudentForSchedule(st.username);
                                       setCoachActiveTab('ders_programi');
                                     }}
-                                    className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-[#C5A059] text-[11px] font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                                    className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-[#C5A059] text-[11px] font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-xs"
                                     title="Ders Programını Görüntüle ve Düzenle"
                                   >
                                     <Sparkles className="w-3.5 h-3.5" />
                                     <span>Ders Programı</span>
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      setSelectedStudentFilter(st.username);
+                                      setCoachActiveTab('konu_raporlari');
+                                    }}
+                                    className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 text-[11px] font-bold rounded-lg border border-indigo-200 transition-all cursor-pointer flex items-center gap-1"
+                                    title="Konu Bazlı Sütun Grafiği ve Kümülatif Analiz"
+                                  >
+                                    <BarChart2 className="w-3.5 h-3.5 text-indigo-600" />
+                                    <span>Konu Analizi</span>
                                   </button>
 
                                   <button
@@ -1839,7 +2100,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                                     title="Deneme Sınavı Raporları"
                                   >
                                     <BarChart2 className="w-3.5 h-3.5 text-blue-600" />
-                                    <span>Raporlar</span>
+                                    <span>Denemeler</span>
                                   </button>
 
                                   <button
@@ -1937,10 +2198,22 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                             Öğrenci Takip & Yönlendirme Modülü
                           </h4>
                           <p className="text-xs text-slate-600">
-                            Öğrencinin haftalık ders programını güncellemek, günlük çalışma detaylarını veya deneme sınavı gelişim grafiklerini incelemek için aşağıdaki hızlı yönlendirme butonlarını kullanabilirsiniz:
+                            Öğrencinin haftalık ders programını güncellemek, gelişim raporunu PDF olarak almak veya sütun analizlerini incelemek için aşağıdaki butonları kullanabilirsiniz:
                           </p>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-2">
+                            <button
+                              onClick={() => {
+                                setSelectedStudentForPdf(inspectingStudent);
+                                setIsPdfModalOpen(true);
+                                setInspectingStudent(null);
+                              }}
+                              className="py-2.5 px-3 bg-[#C5A059] hover:bg-[#b08d4b] text-slate-950 text-xs font-black rounded-xl shadow transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                              <FileText className="w-4 h-4" />
+                              <span>Gelişim Raporu (PDF)</span>
+                            </button>
+
                             <button
                               onClick={() => {
                                 setSelectedStudentForSchedule(inspectingStudent.username);
@@ -1950,7 +2223,19 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                               className="py-2.5 px-3 bg-[#2D2D2D] hover:bg-slate-900 text-[#C5A059] text-xs font-bold rounded-xl shadow transition-all cursor-pointer flex items-center justify-center gap-1.5"
                             >
                               <Calendar className="w-4 h-4" />
-                              <span>Ders Programını Aç / Düzenle</span>
+                              <span>Ders Programı</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setSelectedStudentFilter(inspectingStudent.username);
+                                setCoachActiveTab('konu_raporlari');
+                                setInspectingStudent(null);
+                              }}
+                              className="py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 text-xs font-bold rounded-xl border border-indigo-200 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                              <BarChart2 className="w-4 h-4 text-indigo-600" />
+                              <span>Konu & Sütun Analizi</span>
                             </button>
 
                             <button
@@ -1962,19 +2247,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                               className="py-2.5 px-3 bg-white hover:bg-stone-100 text-slate-800 text-xs font-bold rounded-xl border border-stone-300 transition-all cursor-pointer flex items-center justify-center gap-1.5"
                             >
                               <TrendingUp className="w-4 h-4 text-emerald-600" />
-                              <span>Günlük Çalışma Performansı</span>
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setSelectedStudentFilter(inspectingStudent.username);
-                                setCoachActiveTab('deneme_rapor');
-                                setInspectingStudent(null);
-                              }}
-                              className="py-2.5 px-3 bg-white hover:bg-stone-100 text-slate-800 text-xs font-bold rounded-xl border border-stone-300 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                            >
-                              <BarChart2 className="w-4 h-4 text-blue-600" />
-                              <span>Deneme Sınavı Raporu</span>
+                              <span>Günlük Çalışmalar</span>
                             </button>
                           </div>
                         </div>
@@ -1982,6 +2255,186 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                     </div>
                   )}
 
+                </div>
+              )}
+
+              {/* COACH TAB: VELİ YÖNETİMİ */}
+              {coachActiveTab === 'veliler' && (
+                <ParentManagementTab
+                  parents={parentsList}
+                  students={studentsList}
+                  onAddParent={async (newParent) => {
+                    const created = await dbAddCoachingParent(newParent);
+                    setParentsList(prev => [...prev, created]);
+                  }}
+                  onUpdateParent={async (id, updates) => {
+                    await dbUpdateCoachingParent(id, updates);
+                    setParentsList(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+                  }}
+                  onDeleteParent={async (id, name) => {
+                    if (confirm(`${name} isimli veli hesabını silmek istediğinize emin misiniz?`)) {
+                      await dbDeleteCoachingParent(id);
+                      setParentsList(prev => prev.filter(p => p.id !== id));
+                    }
+                  }}
+                />
+              )}
+
+              {/* COACH TAB: KONU & SÜTUN GRAFİK ANALİZLERİ */}
+              {coachActiveTab === 'konu_raporlari' && (
+                <div className="bg-white p-6 rounded-2xl shadow-md border border-stone-200 space-y-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 pb-4">
+                    <div>
+                      <h4 className="font-serif font-bold text-lg text-slate-900 flex items-center gap-2">
+                        <BarChart2 className="w-5 h-5 text-[#C5A059]" />
+                        Öğrenci Konu Bazlı Kümülatif Soru & Süre Analizi
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Öğrencilerin çalıştığı konuların toplam oturum sayısı, çalışma süresi, soru sayısı ve başarı oranlarını sütun grafiklerle takip edin.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-4 h-4 text-slate-400" />
+                      <select
+                        value={selectedStudentFilter}
+                        onChange={(e) => setSelectedStudentFilter(e.target.value)}
+                        className="p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-xs font-bold text-slate-800"
+                      >
+                        <option value="all">Tüm Öğrencilerin Toplamı</option>
+                        {studentsList.map((st) => (
+                          <option key={st.username} value={st.username}>
+                            {st.fullName} ({st.studentClass})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <TopicAnalyticsBarChart
+                    logs={dailyLogs.filter(d => selectedStudentFilter === 'all' || d.studentUsername.toLowerCase() === selectedStudentFilter.toLowerCase())}
+                    title={
+                      selectedStudentFilter === 'all'
+                        ? 'Tüm Öğrencilerin Konu Bazlı Toplam Çalışma & Soru Çözüm Analizi'
+                        : `${studentsList.find(s => s.username === selectedStudentFilter)?.fullName || selectedStudentFilter} - Konu Bazlı Soru & Süre Grafiği`
+                    }
+                  />
+                </div>
+              )}
+
+              {/* COACH TAB: KİTAP OKUMA TAKİBİ */}
+              {coachActiveTab === 'kitap_okuma' && (
+                <div className="bg-white p-6 rounded-2xl shadow-md border border-stone-200 space-y-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 pb-4">
+                    <div>
+                      <h4 className="font-serif font-bold text-lg text-slate-900 flex items-center gap-2">
+                        <BookOpen className="w-5 h-5 text-[#C5A059]" />
+                        Öğrencilerin Günlük Kitap Okuma Takip Raporları
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Öğrencilerin okudukları kitaplar, sayfa sayıları, günlük okuma süreleri ve kitap hakkındaki özet/yorumları.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-4 h-4 text-slate-400" />
+                      <select
+                        value={selectedStudentFilter}
+                        onChange={(e) => setSelectedStudentFilter(e.target.value)}
+                        className="p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-xs font-bold text-slate-800"
+                      >
+                        <option value="all">Tüm Öğrenciler</option>
+                        {studentsList.map((st) => (
+                          <option key={st.username} value={st.username}>
+                            {st.fullName} ({st.studentClass})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Summary Metric Cards for Books */}
+                  {(() => {
+                    const filteredBooks = bookLogs.filter(b => selectedStudentFilter === 'all' || b.studentUsername.toLowerCase() === selectedStudentFilter.toLowerCase());
+                    const totalPages = filteredBooks.reduce((acc, curr) => acc + (curr.pagesRead || 0), 0);
+                    const totalDuration = filteredBooks.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0);
+                    const uniqueBooks = new Set(filteredBooks.map(b => b.bookTitle.toLowerCase().trim())).size;
+
+                    return (
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                        <div className="bg-stone-50 p-4 rounded-xl border border-stone-200">
+                          <span className="text-[10px] uppercase font-bold text-slate-500 block">Okunan Toplam Sayfa</span>
+                          <span className="font-serif text-2xl font-black text-slate-900">{totalPages.toLocaleString('tr-TR')} Sayfa</span>
+                        </div>
+                        <div className="bg-stone-50 p-4 rounded-xl border border-stone-200">
+                          <span className="text-[10px] uppercase font-bold text-slate-500 block">Toplam Okuma Süresi</span>
+                          <span className="font-serif text-2xl font-black text-[#C5A059]">{Math.round(totalDuration / 60)} sa {totalDuration % 60} dk</span>
+                        </div>
+                        <div className="bg-stone-50 p-4 rounded-xl border border-stone-200">
+                          <span className="text-[10px] uppercase font-bold text-slate-500 block">Farklı Kitap Çeşidi</span>
+                          <span className="font-serif text-2xl font-black text-teal-700">{uniqueBooks} Kitap</span>
+                        </div>
+                        <div className="bg-stone-50 p-4 rounded-xl border border-stone-200">
+                          <span className="text-[10px] uppercase font-bold text-slate-500 block">Toplam Okuma Oturumu</span>
+                          <span className="font-serif text-2xl font-black text-indigo-700">{filteredBooks.length} Kayıt</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Book Logs Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-stone-100 text-slate-700 uppercase font-bold border-b border-stone-200">
+                        <tr>
+                          <th className="p-3">Tarih</th>
+                          <th className="p-3">Öğrenci</th>
+                          <th className="p-3">Kitap Adı</th>
+                          <th className="p-3">Yazar</th>
+                          <th className="p-3">Okunan Sayfa</th>
+                          <th className="p-3">Süre</th>
+                          <th className="p-3">Özet & Düşünceler</th>
+                          <th className="p-3 text-right">İşlem</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-200">
+                        {bookLogs
+                          .filter(b => selectedStudentFilter === 'all' || b.studentUsername.toLowerCase() === selectedStudentFilter.toLowerCase())
+                          .map((log) => (
+                            <tr key={log.id} className="hover:bg-stone-50">
+                              <td className="p-3 font-bold text-slate-900">{log.date}</td>
+                              <td className="p-3 font-bold text-[#C5A059]">{log.studentFullName || log.studentUsername}</td>
+                              <td className="p-3 font-bold text-slate-900">{log.bookTitle}</td>
+                              <td className="p-3 text-slate-600">{log.author || '-'}</td>
+                              <td className="p-3 font-extrabold text-teal-700">{log.pagesRead} Sayfa</td>
+                              <td className="p-3 font-bold text-slate-700">{log.durationMinutes} dk</td>
+                              <td className="p-3 text-slate-600 max-w-xs truncate">{log.summaryNotes || '-'}</td>
+                              <td className="p-3 text-right">
+                                <button
+                                  onClick={async () => {
+                                    if (confirm('Bu kitap okuma kaydını silmek istediğinize emin misiniz?')) {
+                                      await dbDeleteBookReadingLog(log.id);
+                                      setBookLogs(prev => prev.filter(b => b.id !== log.id));
+                                    }
+                                  }}
+                                  className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded transition-colors cursor-pointer"
+                                  title="Kaydı Sil"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        {bookLogs.filter(b => selectedStudentFilter === 'all' || b.studentUsername.toLowerCase() === selectedStudentFilter.toLowerCase()).length === 0 && (
+                          <tr>
+                            <td colSpan={8} className="p-8 text-center text-slate-400">
+                              Kayıtlı kitap okuma oturumu bulunmamaktadır.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 
@@ -2211,6 +2664,22 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
         </div>
 
       </div>
+
+      {/* PDF REPORT MODAL */}
+      {isPdfModalOpen && selectedStudentForPdf && (
+        <StudentReportPdfModal
+          student={selectedStudentForPdf}
+          parent={parentsList.find(p => p.studentUsername.toLowerCase() === selectedStudentForPdf.username.toLowerCase()) || null}
+          dailyLogs={dailyLogs.filter(d => d.studentUsername.toLowerCase() === selectedStudentForPdf.username.toLowerCase())}
+          mockLogs={mockLogs.filter(m => m.studentUsername.toLowerCase() === selectedStudentForPdf.username.toLowerCase())}
+          bookLogs={bookLogs.filter(b => b.studentUsername.toLowerCase() === selectedStudentForPdf.username.toLowerCase())}
+          isOpen={isPdfModalOpen}
+          onClose={() => {
+            setIsPdfModalOpen(false);
+            setSelectedStudentForPdf(null);
+          }}
+        />
+      )}
     </div>
   );
 }

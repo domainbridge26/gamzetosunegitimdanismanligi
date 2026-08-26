@@ -15,7 +15,17 @@ import {
   increment,
   onSnapshot
 } from 'firebase/firestore';
-import { ContactSubmission, Testimonial } from '../types';
+import { 
+  ContactSubmission, 
+  Testimonial, 
+  StudentAccount, 
+  StudentExerciseLog, 
+  DailyStudyLog, 
+  MockExamLog,
+  ParentAccount,
+  BookReadingLog,
+  CurriculumProgress
+} from '../types';
 import { TESTIMONIALS_DATA } from '../data';
 
 const firebaseConfig = {
@@ -501,8 +511,6 @@ export function dbSubscribeToPageViews(callback: (views: PageViews) => void): ()
 // ==========================================
 // STUDENT ACCOUNTS MANAGEMENT SERVICES
 // ==========================================
-
-import { StudentAccount, StudentExerciseLog, DailyStudyLog, MockExamLog, CurriculumProgress } from '../types';
 
 export const DEFAULT_STUDENT_LOGS: StudentExerciseLog[] = [
   {
@@ -1434,6 +1442,321 @@ export async function dbDeleteStudentSchedule(studentUsername: string): Promise<
     localStorage.removeItem(`gamze_student_schedule_${usernameKey}`);
   } catch (e) {}
 }
+
+// ==========================================
+// COACHING PARENT ACCOUNTS SERVICES
+// ==========================================
+
+export const DEFAULT_COACHING_PARENTS: ParentAccount[] = [
+  {
+    id: 'parent-1',
+    username: 'veli_ali',
+    password: '123',
+    fullName: 'Mehmet Yılmaz (Veli)',
+    phone: '0532 555 11 22',
+    email: 'mehmet.yilmaz@gmail.com',
+    linkedStudentUsername: 'ali_lgs',
+    linkedStudentFullName: 'Ali Yılmaz',
+    linkedStudentClass: '8. Sınıf (LGS)',
+    createdAt: '01.08.2026'
+  },
+  {
+    id: 'parent-2',
+    username: 'veli_zeynep',
+    password: '123',
+    fullName: 'Fatma Kaya (Veli)',
+    phone: '0542 444 33 22',
+    email: 'fatma.kaya@gmail.com',
+    linkedStudentUsername: 'zeynep_yks',
+    linkedStudentFullName: 'Zeynep Kaya',
+    linkedStudentClass: '12. Sınıf (YKS Sayısal)',
+    createdAt: '01.08.2026'
+  },
+  {
+    id: 'parent-3',
+    username: 'veli_emir',
+    password: '123',
+    fullName: 'Hasan Demir (Veli)',
+    phone: '0555 333 22 11',
+    email: 'hasan.demir@gmail.com',
+    linkedStudentUsername: 'emir_ilkokul',
+    linkedStudentFullName: 'Emir Demir',
+    linkedStudentClass: '4. Sınıf (İlkokul)',
+    createdAt: '01.08.2026'
+  }
+];
+
+export async function dbGetCoachingParents(): Promise<ParentAccount[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'coaching_parents'));
+    const result: ParentAccount[] = [];
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      result.push({
+        id: docSnap.id,
+        username: data.username || '',
+        password: data.password || '',
+        fullName: data.fullName || '',
+        phone: data.phone || '',
+        email: data.email || '',
+        linkedStudentUsername: data.linkedStudentUsername || '',
+        linkedStudentFullName: data.linkedStudentFullName || '',
+        linkedStudentClass: data.linkedStudentClass || '',
+        createdAt: data.createdAt || new Date().toLocaleDateString('tr-TR'),
+        lastLogin: data.lastLogin
+      });
+    });
+
+    if (result.length === 0) {
+      const batch = writeBatch(db);
+      DEFAULT_COACHING_PARENTS.forEach((p) => {
+        const docRef = doc(db, 'coaching_parents', p.id);
+        batch.set(docRef, p);
+      });
+      await batch.commit();
+      localStorage.setItem('gamze_coaching_parents', JSON.stringify(DEFAULT_COACHING_PARENTS));
+      return DEFAULT_COACHING_PARENTS;
+    }
+
+    localStorage.setItem('gamze_coaching_parents', JSON.stringify(result));
+    return result;
+  } catch (error) {
+    console.error('Failed to fetch coaching parents from Firestore, falling back to local storage:', error);
+    const raw = localStorage.getItem('gamze_coaching_parents');
+    return raw ? JSON.parse(raw) : DEFAULT_COACHING_PARENTS;
+  }
+}
+
+export async function dbAddCoachingParent(parent: Omit<ParentAccount, 'id'>): Promise<ParentAccount> {
+  const newParentData = {
+    ...parent,
+    username: parent.username.toLowerCase(),
+    linkedStudentUsername: parent.linkedStudentUsername.toLowerCase(),
+    createdAt: parent.createdAt || new Date().toLocaleDateString('tr-TR')
+  };
+  try {
+    const docRef = await addDoc(collection(db, 'coaching_parents'), newParentData);
+    const created: ParentAccount = { ...newParentData, id: docRef.id };
+    
+    const raw = localStorage.getItem('gamze_coaching_parents');
+    const local: ParentAccount[] = raw ? JSON.parse(raw) : DEFAULT_COACHING_PARENTS;
+    local.push(created);
+    localStorage.setItem('gamze_coaching_parents', JSON.stringify(local));
+    return created;
+  } catch (error) {
+    console.error('Failed to add coaching parent to Firestore:', error);
+    const id = 'coach-parent-' + Math.random().toString(36).substring(2, 8);
+    const created: ParentAccount = { ...newParentData, id };
+    const raw = localStorage.getItem('gamze_coaching_parents');
+    const local: ParentAccount[] = raw ? JSON.parse(raw) : DEFAULT_COACHING_PARENTS;
+    local.push(created);
+    localStorage.setItem('gamze_coaching_parents', JSON.stringify(local));
+    return created;
+  }
+}
+
+export async function dbUpdateCoachingParent(id: string, updates: Partial<ParentAccount>): Promise<void> {
+  try {
+    const ref = doc(db, 'coaching_parents', id);
+    await updateDoc(ref, updates);
+  } catch (error) {
+    console.error(`Failed to update coaching parent ${id} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_coaching_parents');
+    if (raw) {
+      const local: ParentAccount[] = JSON.parse(raw);
+      const updated = local.map(p => p.id === id ? { ...p, ...updates } : p);
+      localStorage.setItem('gamze_coaching_parents', JSON.stringify(updated));
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export async function dbDeleteCoachingParent(id: string): Promise<void> {
+  try {
+    const ref = doc(db, 'coaching_parents', id);
+    await deleteDoc(ref);
+  } catch (error) {
+    console.error(`Failed to delete coaching parent ${id} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_coaching_parents');
+    if (raw) {
+      const local: ParentAccount[] = JSON.parse(raw);
+      const updated = local.filter(p => p.id !== id);
+      localStorage.setItem('gamze_coaching_parents', JSON.stringify(updated));
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// ==========================================
+// COACHING BOOK READING LOGS SERVICES
+// ==========================================
+
+export const DEFAULT_BOOK_READING_LOGS: BookReadingLog[] = [
+  {
+    id: 'book-1',
+    studentUsername: 'ali_lgs',
+    studentFullName: 'Ali Yılmaz',
+    studentClass: '8. Sınıf (LGS)',
+    date: '25.08.2026',
+    bookTitle: 'Şeker Portakalı',
+    author: 'José Mauro de Vasconcelos',
+    pageCount: 35,
+    durationMinutes: 30,
+    notes: 'Ana fikir ve karakter tahlili yapıldı, çok akıcıydı.',
+    createdAt: '2026-08-25T16:30:00.000Z'
+  },
+  {
+    id: 'book-2',
+    studentUsername: 'ali_lgs',
+    studentFullName: 'Ali Yılmaz',
+    studentClass: '8. Sınıf (LGS)',
+    date: '24.08.2026',
+    bookTitle: 'Küçük Prens',
+    author: 'Antoine de Saint-Exupéry',
+    pageCount: 40,
+    durationMinutes: 35,
+    notes: 'Hızlı okuma taktiğiyle göz sıçrama egzersizi yaparak okundu.',
+    createdAt: '2026-08-24T18:00:00.000Z'
+  },
+  {
+    id: 'book-3',
+    studentUsername: 'zeynep_yks',
+    studentFullName: 'Zeynep Kaya',
+    studentClass: '12. Sınıf (YKS Sayısal)',
+    date: '25.08.2026',
+    bookTitle: 'Simyacı',
+    author: 'Paulo Coelho',
+    pageCount: 50,
+    durationMinutes: 45,
+    notes: 'Paragraf okuma hızını artırma amaçlı günlük okuma seansı.',
+    createdAt: '2026-08-25T20:15:00.000Z'
+  }
+];
+
+export async function dbGetBookReadingLogs(targetUsername?: string): Promise<BookReadingLog[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'coaching_book_readings'));
+    let result: BookReadingLog[] = [];
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      result.push({
+        id: docSnap.id,
+        studentUsername: data.studentUsername || '',
+        studentFullName: data.studentFullName || '',
+        studentClass: data.studentClass || '',
+        date: data.date || new Date().toLocaleDateString('tr-TR'),
+        bookTitle: data.bookTitle || '',
+        author: data.author || '',
+        pageCount: Number(data.pageCount || 0),
+        durationMinutes: Number(data.durationMinutes || 0),
+        notes: data.notes || '',
+        createdAt: data.createdAt || new Date().toISOString()
+      });
+    });
+
+    if (result.length === 0) {
+      const batch = writeBatch(db);
+      DEFAULT_BOOK_READING_LOGS.forEach((b) => {
+        const docRef = doc(db, 'coaching_book_readings', b.id);
+        batch.set(docRef, b);
+      });
+      await batch.commit();
+      localStorage.setItem('gamze_book_readings', JSON.stringify(DEFAULT_BOOK_READING_LOGS));
+      result = DEFAULT_BOOK_READING_LOGS;
+    } else {
+      localStorage.setItem('gamze_book_readings', JSON.stringify(result));
+    }
+
+    if (targetUsername) {
+      result = result.filter(r => r.studentUsername.toLowerCase() === targetUsername.toLowerCase());
+    }
+
+    result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    return result;
+  } catch (error) {
+    console.error('Failed to fetch book reading logs from Firestore, falling back to local storage:', error);
+    const raw = localStorage.getItem('gamze_book_readings');
+    let local: BookReadingLog[] = raw ? JSON.parse(raw) : DEFAULT_BOOK_READING_LOGS;
+    if (targetUsername) {
+      local = local.filter(r => r.studentUsername.toLowerCase() === targetUsername.toLowerCase());
+    }
+    return local;
+  }
+}
+
+export async function dbAddBookReadingLog(logData: Omit<BookReadingLog, 'id'>): Promise<BookReadingLog> {
+  const fullLog = {
+    ...logData,
+    createdAt: logData.createdAt || new Date().toISOString()
+  };
+  try {
+    const docRef = await addDoc(collection(db, 'coaching_book_readings'), fullLog);
+    const created: BookReadingLog = { ...fullLog, id: docRef.id };
+
+    try {
+      const raw = localStorage.getItem('gamze_book_readings');
+      const local: BookReadingLog[] = raw ? JSON.parse(raw) : DEFAULT_BOOK_READING_LOGS;
+      local.unshift(created);
+      localStorage.setItem('gamze_book_readings', JSON.stringify(local));
+    } catch(e) {}
+
+    return created;
+  } catch (error) {
+    console.error('Failed to add book reading log to Firestore:', error);
+    const id = 'reading-' + Math.random().toString(36).substring(2, 8);
+    const created: BookReadingLog = { ...fullLog, id };
+    const raw = localStorage.getItem('gamze_book_readings');
+    const local: BookReadingLog[] = raw ? JSON.parse(raw) : DEFAULT_BOOK_READING_LOGS;
+    local.unshift(created);
+    localStorage.setItem('gamze_book_readings', JSON.stringify(local));
+    return created;
+  }
+}
+
+export async function dbUpdateBookReadingLog(id: string, updates: Partial<BookReadingLog>): Promise<void> {
+  try {
+    const ref = doc(db, 'coaching_book_readings', id);
+    await updateDoc(ref, updates);
+  } catch (error) {
+    console.error(`Failed to update book reading log ${id} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_book_readings');
+    if (raw) {
+      const local: BookReadingLog[] = JSON.parse(raw);
+      const updated = local.map(item => item.id === id ? { ...item, ...updates } : item);
+      localStorage.setItem('gamze_book_readings', JSON.stringify(updated));
+    }
+  } catch (e) {}
+}
+
+export async function dbDeleteBookReadingLog(id: string): Promise<void> {
+  try {
+    const ref = doc(db, 'coaching_book_readings', id);
+    await deleteDoc(ref);
+  } catch (error) {
+    console.error(`Failed to delete book reading log ${id} in Firestore:`, error);
+  }
+
+  try {
+    const raw = localStorage.getItem('gamze_book_readings');
+    if (raw) {
+      const local: BookReadingLog[] = JSON.parse(raw);
+      const updated = local.filter(item => item.id !== id);
+      localStorage.setItem('gamze_book_readings', JSON.stringify(updated));
+    }
+  } catch (e) {}
+}
+
 
 
 
