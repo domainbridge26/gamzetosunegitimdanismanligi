@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, User, Lock, Key, LogOut, CheckCircle2, AlertCircle, Plus, Trash2, Edit, Save, 
   Calendar, BookOpen, Clock, BarChart2, Award, Sparkles, Filter, RefreshCw, ChevronRight, 
-  Search, Shield, GraduationCap, Check, FileText, Sliders, ArrowUpRight, TrendingUp, HeartPulse, Eye, Users, Printer, Bookmark
+  Search, Shield, GraduationCap, Check, FileText, Sliders, ArrowUpRight, TrendingUp, HeartPulse, Eye, Users, Printer, Bookmark,
+  FileUp, Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   StudentAccount, StudentExerciseLog, DailyStudyLog, MockExamLog,
-  ParentAccount, BookReadingLog, TopicCumulativeStat
+  ParentAccount, BookReadingLog, TopicCumulativeStat, StudentScheduleRecord
 } from '../types';
 import { 
   dbGetCoachingStudents, dbAddCoachingStudent, dbUpdateCoachingStudent, dbDeleteCoachingStudent, DEFAULT_COACHING_STUDENTS,
@@ -16,7 +17,7 @@ import {
   dbGetDailyStudyLogs, dbAddDailyStudyLog, dbUpdateDailyStudyLog, dbDeleteDailyStudyLog,
   dbGetMockExamLogs, dbAddMockExamLog, dbUpdateMockExamLog, dbDeleteMockExamLog,
   dbGetCurriculumProgress, dbSaveCurriculumProgress, dbAddStudentLog,
-  dbGetStudentSchedule, dbMarkScheduleAsRead, StudentScheduleRecord,
+  dbGetStudentSchedule, dbMarkScheduleAsRead,
   dbGetCoachingParents, dbAddCoachingParent, dbUpdateCoachingParent, dbDeleteCoachingParent,
   dbGetBookReadingLogs, dbAddBookReadingLog, dbUpdateBookReadingLog, dbDeleteBookReadingLog
 } from '../lib/firebase';
@@ -26,6 +27,7 @@ import TopicAnalyticsBarChart from './TopicAnalyticsBarChart';
 import BookReadingTracker from './BookReadingTracker';
 import ParentManagementTab from './ParentManagementTab';
 import StudentReportPdfModal from './StudentReportPdfModal';
+import UploadStudentSchedulePdfModal from './UploadStudentSchedulePdfModal';
 import ParentPortalView from './ParentPortalView';
 
 interface CoachingPanelProps {
@@ -251,16 +253,94 @@ export const CURRICULUM_DATA: Record<string, { subject: string; topics: string[]
       ]
     },
     {
-      subject: 'AYT Edebiyat & Sosyal',
+      subject: 'AYT Türk Dili ve Edebiyatı',
       topics: [
-        'Edebiyat: Şiir Bilgisi & Edebi Sanatlar',
-        'Edebiyat: İslamiyet Öncesi & Divan Edebiyatı',
-        'Edebiyat: Tanzimat, Servet-i Fünun, Milli Edebiyat',
-        'Edebiyat: Cumhuriyet Dönemi Türk Edebiyatı',
-        'Tarih: İlk ve Orta Çağda Türk Dünyası & İslam Tarihi',
-        'Tarih: Osmanlı Devleti Siyaseti ve Kültürü',
-        'Tarih: Milli Mücadele ve İnkılap Tarihi',
-        'Coğrafya: Biyoçeşitlilik, Şehirler, Bölgesel Kalkınma'
+        'Şiir Bilgisi & Edebi Sanatlar',
+        'İslamiyet Öncesi & Divan Edebiyatı',
+        'Tanzimat, Servet-i Fünun, Milli Edebiyat',
+        'Cumhuriyet Dönemi Şiir ve Roman',
+        'Dünya Edebiyatı & Akımlar'
+      ]
+    },
+    {
+      subject: 'TYT Tarih',
+      topics: [
+        'Tarih ve Zaman & Takvim Sistemleri',
+        'İlk ve Orta Çağlarda Türk Dünyası',
+        'İslam Medeniyetinin Doğuşu ve İlk Türk-İslam Devletleri',
+        'Orta Çağ’da Dünya ve Anadolu Selçuklu',
+        'Beylikten Devlete Osmanlı Siyaseti (Kuruluş ve Yükselme)',
+        'Klasik Çağda Osmanlı Devlet Teşkilatı',
+        'Değişen Dünya Dengeleri Karşısında Osmanlı',
+        'En Uzun Yüzyıl (19. Yüzyıl Islahatlar ve Dağılma)',
+        '20. Yüzyıl Başlarında Osmanlı ve I. Dünya Savaşı',
+        'Milli Mücadele Hazırlık (Genelgeler ve Kongreler)',
+        'I. TBMM Dönemi ve Kurtuluş Savaşı Cepheleri',
+        'Mudanya, Lozan Barış Antlaşması ve Cumhuriyet',
+        'Atatürkçülük, Atatürk İnkılapları ve İlkeleri',
+        'Atatürk Dönemi Türk Dış Politikası'
+      ]
+    },
+    {
+      subject: 'AYT Tarih',
+      topics: [
+        'Tarih Bilimi & İlk Çağ Medeniyetleri',
+        'Orta Çağ’da Feodalite, Hukuk ve Ticaret',
+        'İlk Türk Devletleri Kültür ve Medeniyeti',
+        'İslam Tarihi (Dört Halife, Emeviler, Abbasiler, Endülüs)',
+        'Selçuklu Tarihi, Haçlı Seferleri ve Anadolu Beylikleri',
+        'Osmanlı Kuruluş, Fetihler ve Gaza Anlayışı',
+        'Dünya Gücü Osmanlı (1453-1595 Siyasi/Diplomatik Gelişmeler)',
+        'Merkez ve Taşra Teşkilatı, Divan, Tımar ve Vakıflar',
+        'Yeni ve Yakın Çağda Avrupa Siyasi Tarihi',
+        '17. ve 18. Yüzyıl Osmanlı Islahatları ve Antlaşmalar',
+        'Tanzimat, Meşrutiyet ve Kanun-i Esasi',
+        'I. Dünya Savaşı Cepheleri ve Gizli Antlaşmalar',
+        'Mondros, Kuva-yı Milliye ve Cemiyetler',
+        'Kurtuluş Savaşı Muharebeler Dönemi (İnönü, Sakarya, Büyük Taarruz)',
+        'Lozan Barış Görüşmeleri ve Diplomatik Zafer',
+        'Cumhuriyet Dönemi İç Olaylar ve Çok Partili Hayat',
+        'Atatürk Dış Politikası (Boğazlar, Hatay, Musul)',
+        'İki Savaş Arası Dünya ve II. Dünya Savaşı',
+        'Soğuk Savaş, Yumuşama ve Küreselleşen Dünya'
+      ]
+    },
+    {
+      subject: 'TYT Coğrafya',
+      topics: [
+        'Doğa ve İnsan Etkileşimi & Coğrafi Konum',
+        'Dünyanın Şekli, Hareketleri ve Eksen Eğikliği',
+        'Harita Bilgisi ve İzohips Analizi',
+        'Atmosfer, Sıcaklık, Basınç ve Rüzgarlar',
+        'Nem, Yağış ve Büyük İklim Tipleri',
+        'Türkiye’nin İklimi ve Yağış Rejimi',
+        'Yerin Yapısı ve İç Kuvvetler (Deprem, Volkanizma, Orojenez)',
+        'Dış Kuvvetler (Akarsular, Rüzgarlar, Buzullar, Karstik Şekiller)',
+        'Türkiye’nin Yer Şekilleri, Gölleri ve Akarsuları',
+        'Su, Toprak ve Bitki Varlığı',
+        'Nüfus Özellikleri, Piramitler ve Göçler',
+        'Türkiye’de Yerleşme ve Nüfus Dağılışı',
+        'Ekonomik Faaliyetler ve Bölge Türleri',
+        'Doğal Afetler ve Korunma Yolları'
+      ]
+    },
+    {
+      subject: 'AYT Coğrafya',
+      topics: [
+        'Ekosistemler ve Madde Döngüleri',
+        'Su Ekosistemleri ve Biyoçeşitlilik',
+        'Dünya Nüfus Politikaları ve Şehirlerin Fonksiyonları',
+        'Türkiye’de Şehirleşme ve Kır Yerleşmeleri',
+        'Türkiye’de Tarım ve Hayvancılık',
+        'Türkiye’nin Madenleri ve Enerji Kaynakları',
+        'Türkiye’de Sanayi ve Ulaşım Sistemleri',
+        'Türkiye’de Ticaret ve Turizm',
+        'Bölgesel Kalkınma Projeleri (GAP, DAP, KOP, DOKAP)',
+        'İlk Medeniyetler ve Kültür Bölgeleri',
+        'Küresel Ticaret, Ham Madde ve Pazar Alanları',
+        'Stratejik Boğazlar, Kanallar ve Jeopolitik',
+        'Küresel ve Bölgesel Örgütler (BM, NATO, AB vb.)',
+        'Çevre Sorunları ve Sürdürülebilir Doğal Kaynaklar'
       ]
     }
   ]
@@ -299,6 +379,10 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
   // PDF Modal State
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [selectedStudentForPdf, setSelectedStudentForPdf] = useState<StudentAccount | null>(null);
+
+  // Upload Schedule PDF Modal State
+  const [isUploadSchedulePdfModalOpen, setIsUploadSchedulePdfModalOpen] = useState(false);
+  const [selectedStudentForSchedulePdf, setSelectedStudentForSchedulePdf] = useState<StudentAccount | null>(null);
 
   // Selected Student for Schedule & Student Tracking Modal
   const [selectedStudentForSchedule, setSelectedStudentForSchedule] = useState<string>('');
@@ -1074,6 +1158,56 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
               {/* TAB: DERS PROGRAMIM */}
               {studentActiveTab === 'program' && (
                 <div className="space-y-6">
+                  {/* Uploaded PDF Card (if coach uploaded custom PDF) */}
+                  {studentSchedule?.uploadedPdf && (
+                    <div className="bg-gradient-to-r from-amber-500/10 via-stone-50 to-amber-500/10 border-2 border-[#C5A059] rounded-2xl p-5 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4 text-left animate-in fade-in">
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-12 h-12 rounded-xl bg-[#C5A059] text-slate-950 flex items-center justify-center shrink-0 shadow mt-0.5">
+                          <FileText className="w-6 h-6" />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] uppercase font-black tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-700 text-white">
+                              Gamze Hoca Özel PDF Programı
+                            </span>
+                            <span className="text-xs text-stone-500 font-mono">
+                              {studentSchedule.uploadedPdf.uploadedAt}
+                            </span>
+                          </div>
+                          <h4 className="font-serif font-bold text-base text-slate-900">
+                            {studentSchedule.uploadedPdf.title || studentSchedule.uploadedPdf.fileName}
+                          </h4>
+                          <p className="text-xs text-stone-600">
+                            Dosya: <span className="font-mono text-slate-800 font-bold">{studentSchedule.uploadedPdf.fileName}</span> ({studentSchedule.uploadedPdf.fileSize})
+                          </p>
+                          {studentSchedule.uploadedPdf.note && (
+                            <p className="text-xs text-amber-950 bg-amber-100/80 rounded-lg p-2 font-medium border-l-2 border-[#C5A059]">
+                              💡 Koç Notu: {studentSchedule.uploadedPdf.note}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <a
+                          href={studentSchedule.uploadedPdf.dataUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-[#C5A059] rounded-xl text-xs font-bold transition-all shadow flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span>Görüntüle / Aç</span>
+                        </a>
+                        <a
+                          href={studentSchedule.uploadedPdf.dataUrl}
+                          download={studentSchedule.uploadedPdf.fileName}
+                          className="px-4 py-2.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white rounded-xl text-xs font-bold transition-all shadow flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Download className="w-4 h-4" />
+                          <span>İndir (PDF)</span>
+                        </a>
+                      </div>
+                    </div>
+                  )}
                   {studentSchedule && studentSchedule.schedule ? (
                     <div className="bg-white rounded-2xl shadow-lg border border-stone-200 overflow-hidden">
                       {/* Banner */}
@@ -1189,7 +1323,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                         )}
                       </div>
                     </div>
-                  ) : (
+                  ) : !studentSchedule?.uploadedPdf ? (
                     <div className="bg-white rounded-2xl p-12 text-center border border-stone-200 shadow-sm space-y-4">
                       <div className="w-16 h-16 bg-amber-50 text-[#C5A059] rounded-2xl flex items-center justify-center mx-auto border border-amber-200">
                         <Sparkles className="w-8 h-8" />
@@ -1197,11 +1331,11 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                       <div className="space-y-1.5 max-w-md mx-auto">
                         <h4 className="font-serif text-lg font-bold text-slate-900">Henüz Ders Programınız Eklenmedi</h4>
                         <p className="text-xs text-slate-500 leading-relaxed">
-                          Eğitmeniniz Gamze Tosun sizin için haftalık özel ders programınızı hazırladığında burada detaylı tablo olarak görüntülenecektir.
+                          Eğitmeniniz Gamze Tosun sizin için haftalık özel ders programınızı hazırladığında veya sisteme PDF olarak yüklediğinde burada görüntülenecektir.
                         </p>
                       </div>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               )}
 
@@ -2057,6 +2191,18 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
 
                                   <button
                                     onClick={() => {
+                                      setSelectedStudentForSchedulePdf(st);
+                                      setIsUploadSchedulePdfModalOpen(true);
+                                    }}
+                                    className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 text-[11px] font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                                    title="Öğrenciye hazırladığınız ders programını PDF olarak sisteme yükleyin"
+                                  >
+                                    <FileUp className="w-3.5 h-3.5 text-rose-600" />
+                                    <span>PDF Program Yükle</span>
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
                                       setSelectedStudentForSchedule(st.username);
                                       setCoachActiveTab('ders_programi');
                                     }}
@@ -2201,7 +2347,7 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                             Öğrencinin haftalık ders programını güncellemek, gelişim raporunu PDF olarak almak veya sütun analizlerini incelemek için aşağıdaki butonları kullanabilirsiniz:
                           </p>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 pt-2">
                             <button
                               onClick={() => {
                                 setSelectedStudentForPdf(inspectingStudent);
@@ -2212,6 +2358,19 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                             >
                               <FileText className="w-4 h-4" />
                               <span>Gelişim Raporu (PDF)</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setSelectedStudentForSchedulePdf(inspectingStudent);
+                                setIsUploadSchedulePdfModalOpen(true);
+                                setInspectingStudent(null);
+                              }}
+                              className="py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 text-xs font-bold rounded-xl shadow transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                              title="Öğrenciye hazırladığınız ders programını PDF olarak sisteme yükleyin"
+                            >
+                              <FileUp className="w-4 h-4 text-rose-600" />
+                              <span>Ders Programı Yükle (PDF)</span>
                             </button>
 
                             <button
@@ -2677,6 +2836,23 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
           onClose={() => {
             setIsPdfModalOpen(false);
             setSelectedStudentForPdf(null);
+          }}
+        />
+      )}
+
+      {/* UPLOAD SCHEDULE PDF MODAL */}
+      {isUploadSchedulePdfModalOpen && selectedStudentForSchedulePdf && (
+        <UploadStudentSchedulePdfModal
+          student={selectedStudentForSchedulePdf}
+          isOpen={isUploadSchedulePdfModalOpen}
+          onClose={() => {
+            setIsUploadSchedulePdfModalOpen(false);
+            setSelectedStudentForSchedulePdf(null);
+          }}
+          onScheduleUpdated={async (updatedRecord) => {
+            if (currentStudent && currentStudent.username.toLowerCase() === selectedStudentForSchedulePdf.username.toLowerCase()) {
+              setStudentSchedule(updatedRecord);
+            }
           }}
         />
       )}

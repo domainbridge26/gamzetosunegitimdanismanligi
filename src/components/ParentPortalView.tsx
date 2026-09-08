@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
   User, GraduationCap, Clock, CheckCircle2, BookOpen, Award, 
-  BarChart2, Calendar, FileText, Printer, ArrowUpRight, TrendingUp, Sparkles, Filter, Bookmark 
+  BarChart2, Calendar, FileText, Printer, ArrowUpRight, TrendingUp, Sparkles, Filter, Bookmark,
+  Download, Eye 
 } from 'lucide-react';
 import { 
   ParentAccount, StudentAccount, DailyStudyLog, MockExamLog, BookReadingLog 
@@ -470,10 +471,63 @@ export default function ParentPortalView({
             </p>
           </div>
 
-          {!scheduleRecord?.schedule ? (
-            <div className="text-center py-10 text-slate-400 text-xs sm:text-sm">
-              Bu öğrenci için henüz haftalık ders programı tanımlanmamış.
+          {/* Uploaded PDF Schedule for Parent View */}
+          {scheduleRecord?.uploadedPdf && (
+            <div className="bg-gradient-to-r from-amber-50 via-stone-50 to-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#C5A059] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                      Özel PDF Ders Programı
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      {scheduleRecord.uploadedPdf.uploadedAt}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-xs text-slate-800 mt-0.5">
+                    {scheduleRecord.uploadedPdf.title || scheduleRecord.uploadedPdf.fileName}
+                  </h4>
+                  <p className="text-[10px] text-slate-500">
+                    {scheduleRecord.uploadedPdf.fileName} ({scheduleRecord.uploadedPdf.fileSize})
+                  </p>
+                  {scheduleRecord.uploadedPdf.note && (
+                    <p className="text-[11px] text-amber-900 bg-amber-100/60 rounded p-1.5 mt-1 border-l-2 border-[#C5A059]">
+                      💡 Gamze Hoca Notu: {scheduleRecord.uploadedPdf.note}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={scheduleRecord.uploadedPdf.dataUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-[#C5A059] rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Görüntüle</span>
+                </a>
+                <a
+                  href={scheduleRecord.uploadedPdf.dataUrl}
+                  download={scheduleRecord.uploadedPdf.fileName}
+                  className="px-3 py-1.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>İndir (PDF)</span>
+                </a>
+              </div>
             </div>
+          )}
+
+          {!scheduleRecord?.schedule ? (
+            !scheduleRecord?.uploadedPdf && (
+              <div className="text-center py-10 text-slate-400 text-xs sm:text-sm">
+                Bu öğrenci için henüz haftalık ders programı tanımlanmamış.
+              </div>
+            )
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-3">
               {['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'].map((day) => {

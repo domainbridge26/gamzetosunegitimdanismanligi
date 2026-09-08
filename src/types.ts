@@ -186,4 +186,24 @@ export interface TopicCumulativeStat {
   lastStudiedDate: string;
 }
 
+export interface UploadedSchedulePdf {
+  fileName: string;
+  fileSize: string; // e.g. "320 KB"
+  uploadedAt: string; // e.g. "08.09.2026 15:45"
+  dataUrl: string; // Base64 data url (data:application/pdf;base64,...)
+  title?: string;
+  notes?: string;
+}
+
+export interface StudentScheduleRecord {
+  studentUsername: string;
+  studentName: string;
+  examGroup: string;
+  targetGoal: string;
+  createdAt: string;
+  schedule: Record<string, any>;
+  hasUnreadNotification?: boolean;
+  uploadedPdf?: UploadedSchedulePdf | null;
+}
+
 

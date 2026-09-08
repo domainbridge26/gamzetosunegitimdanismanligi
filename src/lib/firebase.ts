@@ -24,7 +24,9 @@ import {
   MockExamLog,
   ParentAccount,
   BookReadingLog,
-  CurriculumProgress
+  CurriculumProgress,
+  StudentScheduleRecord,
+  UploadedSchedulePdf
 } from '../types';
 import { TESTIMONIALS_DATA } from '../data';
 
@@ -1356,16 +1358,6 @@ export async function dbSaveCurriculumProgress(studentUsername: string, complete
 // COACHING STUDENT SCHEDULE SERVICES
 // ==========================================
 
-export interface StudentScheduleRecord {
-  studentUsername: string;
-  studentName: string;
-  examGroup: string;
-  targetGoal: string;
-  createdAt: string;
-  schedule: Record<string, any>;
-  hasUnreadNotification?: boolean;
-}
-
 export async function dbSaveStudentSchedule(studentUsername: string, record: Omit<StudentScheduleRecord, 'studentUsername'>): Promise<void> {
   const usernameKey = studentUsername.toLowerCase();
   const scheduleData: StudentScheduleRecord = {
@@ -1386,6 +1378,65 @@ export async function dbSaveStudentSchedule(studentUsername: string, record: Omi
     // Also dispatch custom event for real-time notification in open tabs
     window.dispatchEvent(new CustomEvent('gamze-schedule-updated', { detail: { studentUsername: usernameKey } }));
   } catch (e) {}
+}
+
+export async function dbSaveStudentUploadedPdf(
+  studentUsername: string, 
+  pdf: UploadedSchedulePdf, 
+  extraInfo?: { studentName?: string; examGroup?: string; targetGoal?: string }
+): Promise<StudentScheduleRecord> {
+  const usernameKey = studentUsername.toLowerCase();
+  const existing = await dbGetStudentSchedule(usernameKey);
+  
+  const scheduleData: StudentScheduleRecord = {
+    studentUsername: usernameKey,
+    studentName: extraInfo?.studentName || existing?.studentName || 'Öğrenci',
+    examGroup: extraInfo?.examGroup || existing?.examGroup || 'Genel Koçluk',
+    targetGoal: extraInfo?.targetGoal || existing?.targetGoal || 'Bireysel Başarı Hedefi',
+    createdAt: existing?.createdAt || new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }),
+    schedule: existing?.schedule || {},
+    hasUnreadNotification: true,
+    uploadedPdf: pdf
+  };
+
+  try {
+    const ref = doc(db, 'coaching_student_schedules', usernameKey);
+    await setDoc(ref, scheduleData, { merge: true });
+  } catch (error) {
+    console.error('Failed to save uploaded PDF schedule in Firestore:', error);
+  }
+
+  try {
+    localStorage.setItem(`gamze_student_schedule_${usernameKey}`, JSON.stringify(scheduleData));
+    window.dispatchEvent(new CustomEvent('gamze-schedule-updated', { detail: { studentUsername: usernameKey } }));
+  } catch (e) {}
+
+  return scheduleData;
+}
+
+export async function dbRemoveStudentUploadedPdf(studentUsername: string): Promise<StudentScheduleRecord | null> {
+  const usernameKey = studentUsername.toLowerCase();
+  const existing = await dbGetStudentSchedule(usernameKey);
+  if (!existing) return null;
+
+  const scheduleData: StudentScheduleRecord = {
+    ...existing,
+    uploadedPdf: null
+  };
+
+  try {
+    const ref = doc(db, 'coaching_student_schedules', usernameKey);
+    await setDoc(ref, scheduleData);
+  } catch (error) {
+    console.error('Failed to remove uploaded PDF schedule from Firestore:', error);
+  }
+
+  try {
+    localStorage.setItem(`gamze_student_schedule_${usernameKey}`, JSON.stringify(scheduleData));
+    window.dispatchEvent(new CustomEvent('gamze-schedule-updated', { detail: { studentUsername: usernameKey } }));
+  } catch (e) {}
+
+  return scheduleData;
 }
 
 export async function dbGetStudentSchedule(studentUsername: string): Promise<StudentScheduleRecord | null> {

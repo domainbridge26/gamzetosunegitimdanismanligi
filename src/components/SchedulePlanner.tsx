@@ -3,11 +3,12 @@ import {
   Sparkles, Calendar, Plus, Trash2, Edit2, Copy, Download, Save, 
   RefreshCw, Printer, BookOpen, Clock, AlertCircle, CheckCircle, 
   FileText, Share2, Send, ChevronRight, GraduationCap, X, Check,
-  FileSpreadsheet, UserCheck
+  FileSpreadsheet, UserCheck, FileUp, Eye, Upload, ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { StudentAccount } from '../types';
+import { StudentAccount, StudentScheduleRecord } from '../types';
 import { dbSaveStudentSchedule, dbGetStudentSchedule, dbDeleteStudentSchedule } from '../lib/firebase';
+import UploadStudentSchedulePdfModal from './UploadStudentSchedulePdfModal';
 
 interface SchedulePlannerProps {
   studentsList?: StudentAccount[];
@@ -159,6 +160,54 @@ const EXAM_SUBJECTS: Record<string, SubjectTemplate[]> = {
         'Fiiller, Fiilimsiler ve Fiilde Çatı (Özne/Nesneye Göre Çatı)',
         'Cümlenin Ögeleri (Yüklem, Özne, Nesne, Tümleçler) & Cümle Türleri'
       ] 
+    },
+    { 
+      name: 'TYT Tarih', 
+      color: 'bg-amber-50 border-amber-200 text-amber-800', 
+      focusTopics: [
+        'Tarih Bilimine Giriş, Zaman ve Takvim Sistemleri',
+        'İlk ve Orta Çağlarda Türk Dünyası (Kültür, Teşkilat, Yaşam)',
+        'İslam Medeniyetinin Doğuşu ve İlk Türk-İslam Devletleri',
+        'Orta Çağ’da Anadolu ve Türkiye Selçuklu Devleti',
+        'Beylikten Devlete Osmanlı Siyaseti (Kuruluş ve Yükselme)',
+        'Klasik Çağda Osmanlı Devlet Teşkilatı, Askeri ve Toprak Düzeni',
+        'Değişen Dünya Dengeleri Karşısında Osmanlı (17. ve 18. Yüzyıl)',
+        'En Uzun Yüzyıl (19. Yüzyıl Osmanlı Islahatları ve Dağılma Süreci)',
+        '20. Yüzyıl Başlarında Osmanlı (Trablusgarp ve Balkan Savaşları)',
+        'I. Dünya Savaşı, Cepheler ve Mondros Ateşkes Antlaşması',
+        'Milli Mücadele Hazırlık Dönemi (Genelgeler, Kongreler, Misakımilli)',
+        'I. TBMM Dönemi, Ayaklanmalar ve Kurtuluş Savaşı Cepheleri',
+        'Mudanya Ateşkesi, Lozan Barış Antlaşması ve Cumhuriyetin İlanı',
+        'Atatürk İnkılapları (Siyasi, Hukuk, Eğitim, Sosyal, Ekonomi)',
+        'Atatürk İlkeleri ve Atatürk Dönemi Türk Dış Politikası'
+      ] 
+    },
+    { 
+      name: 'TYT Coğrafya', 
+      color: 'bg-emerald-50 border-emerald-200 text-emerald-800', 
+      focusTopics: [
+        'Doğa ve İnsan Etkileşimi, Coğrafyanın Konusu ve Bölümleri',
+        'Dünyanın Şekli, Günlük ve Yıllık Hareketleri, Eksen Eğikliği',
+        'Coğrafi Konum: Paralel-Meridyen, Yerel Saat ve Türkiye’nin Konumu',
+        'Harita Bilgisi: Ölçekler, İzdüşüm Yöntemleri ve İzohips Analizi',
+        'Atmosferin Katmanları ve Sıcaklık (Güneş Işınları, Yükselti, Bakı)',
+        'Basınç ve Rüzgarlar (Alçak-Yüksek Basınç, Sürekli ve Yerel Rüzgarlar)',
+        'Nem ve Yağış (Mutlak, Maksimum, Bağıl Nem, Yağış Oluşum Tipleri)',
+        'Büyük İklim Tipleri (Ekvatoral, Akdeniz, Muson, Tundra, Step vb.)',
+        'Türkiye’nin İklimi, Sıcaklık ve Yağış Dağılış Grafikleri',
+        'Yerin İç Yapısı, Levha Hareketleri ve İç Kuvvetler (Orojenez, Epirojenez, Volkanizma, Deprem)',
+        'Dış Kuvvetler: Akarsu Aşınım-Birikim (Vadi, Menderes, Delta, Peri Bacası)',
+        'Dış Kuvvetler: Rüzgar, Buzul, Karstik Şekiller ve Kıyı Tipleri',
+        'Türkiye’nin Yer Şekilleri: Dağlar, Platolar, Ovalar ve Akarsu Havzaları',
+        'Su Varlığı: Okyanuslar, Denizler, Göller ve Türkiye’nin Yer Altı Suları',
+        'Toprak Tipleri (Zonal, Azonal, İntrazonal) ve Türkiye’de Erozyon',
+        'Bitki Örtüsü Formasyonları (Ağaç, Çalı, Ot) ve Türkiye’de Dağılımı',
+        'Nüfusun Özellikleri, Nüfus Piramitleri, Demografik Dönüşüm ve Göçler',
+        'Türkiye’de Nüfusun Dağılışı, Yoğunluğu ve Yerleşme Tipleri',
+        'Ekonomik Faaliyetlerin Sınıflandırılması (Birincil, İkincil, Üçüncül)',
+        'Bölge Sınıflandırması (Şekilsel ve İşlevsel Bölgeler)',
+        'Doğal Afetler (Deprem, Tsunami, Heyelan, Sel, Çığ, Orman Yangını)'
+      ] 
     }
   ],
   'YKS Eşit Ağırlık': [
@@ -215,36 +264,111 @@ const EXAM_SUBJECTS: Record<string, SubjectTemplate[]> = {
       ] 
     },
     { 
-      name: 'Tarih', 
+      name: 'TYT Tarih', 
       color: 'bg-amber-50 border-amber-200 text-amber-800', 
       focusTopics: [
         'Tarih Bilimine Giriş, Zaman ve Takvim Sistemleri',
-        'İlk ve Orta Çağlarda Türk Dünyası (Kültür ve Uygarlık)',
+        'İlk ve Orta Çağlarda Türk Dünyası (Kültür, Teşkilat, Yaşam)',
         'İslam Medeniyetinin Doğuşu ve İlk Türk-İslam Devletleri',
-        'Osmanlı Devlet Anlayışı, Kuruluş ve Yükselme Dönemi',
-        'Dünya Gücü Osmanlı, Arayış Yılları ve Osmanlı Diplomasisi',
-        'En Uzun Yüzyıl (19. Yüzyıl Osmanlı Islahatları ve Dağılma)',
-        '20. Yüzyıl Başlarında Osmanlı (Trablusgarp, Balkan ve I. Dünya Savaşı)',
-        'Milli Mücadele Hazırlık Dönemi (Genelgeler ve Kongreler)',
-        'TBMM’nin Açılması, Doğu, Güney ve Batı Cepheleri',
-        'Atatürk İnkılapları (Siyasi, Toplumsal, Hukuk, Eğitim) & İlkeler',
-        'İki Dünya Savaşı Arasındaki Dönem ve II. Dünya Savaşı Tarihi'
+        'Orta Çağ’da Anadolu ve Türkiye Selçuklu Devleti',
+        'Beylikten Devlete Osmanlı Siyaseti (Kuruluş ve Yükselme)',
+        'Klasik Çağda Osmanlı Devlet Teşkilatı, Askeri ve Toprak Düzeni',
+        'Değişen Dünya Dengeleri Karşısında Osmanlı (17. ve 18. Yüzyıl)',
+        'En Uzun Yüzyıl (19. Yüzyıl Osmanlı Islahatları ve Dağılma Süreci)',
+        '20. Yüzyıl Başlarında Osmanlı (Trablusgarp ve Balkan Savaşları)',
+        'I. Dünya Savaşı, Cepheler ve Mondros Ateşkes Antlaşması',
+        'Milli Mücadele Hazırlık Dönemi (Genelgeler, Kongreler, Misakımilli)',
+        'I. TBMM Dönemi, Ayaklanmalar ve Kurtuluş Savaşı Cepheleri',
+        'Mudanya Ateşkesi, Lozan Barış Antlaşması ve Cumhuriyetin İlanı',
+        'Atatürk İnkılapları (Siyasi, Hukuk, Eğitim, Sosyal, Ekonomi)',
+        'Atatürk İlkeleri ve Atatürk Dönemi Türk Dış Politikası'
       ] 
     },
     { 
-      name: 'Coğrafya', 
-      color: 'bg-orange-50 border-orange-200 text-orange-800', 
+      name: 'AYT Tarih', 
+      color: 'bg-orange-50 border-orange-200 text-orange-900', 
       focusTopics: [
-        'Doğa ve İnsan Etkileşimi, Coğrafi Konum ve Paralel-Meridyenler',
-        'Dünyanın Şekli, Günlük-Yıllık Hareketleri ve Eksen Eğikliği',
-        'Harita Bilgisi, Ölçek Türleri ve İzohips Yöntemleri',
-        'İklim Bilgisi: Sıcaklık, Basınç, Rüzgarlar, Nem ve Yağış',
-        'Dünyadaki Büyük İklim Tipleri ve Türkiye İklimi',
-        'İç ve Dış Kuvvetler (Dağlar, Platolar, Akarsular, Karstik Şekiller)',
-        'Nüfusun Özellikleri, Dağılışı, Piramitler ve Göç Türleri',
-        'Türkiye’nin Yer Şekilleri, Su, Toprak ve Bitki Varlığı',
-        'Ekonomik Faaliyet Türleri, Tarım, Hayvancılık ve Sanayi',
-        'Küresel Ortam: Bölgeler, Ulaşım Hatları ve Çevre Sorunları'
+        'Tarih ve Zaman, İnsanlığın İlk Dönemleri & İlk Çağ Medeniyetleri',
+        'Orta Çağ’da Dünya, Feodalite ve Ticaret Yolları',
+        'İlk Türk Devletlerinde Töre, Ordu, Hukuk ve Devlet Yönetimi',
+        'İslam Tarihi ve Medeniyeti (Dört Halife, Emeviler, Abbasiler, Endülüs)',
+        'Büyük Selçuklu Devleti, Malazgirt Savaşı ve Haçlı Seferleri',
+        'Osmanlı Devleti Kuruluş, Balkan Fetihleri ve Gaza Anlayışı',
+        'Dünya Gücü Osmanlı Devleti (1453-1595 Siyasi ve Diplomatik Gelişmeler)',
+        'Sultan ve Osmanlı Merkez Teşkilatı, Divan-ı Hümayun ve Eyalet Sistemi',
+        'Klasik Çağda Osmanlı Toplum Yapısı, Lonca ve Vakıf Müessesesi',
+        'Yeni Çağ Avrupası: Rönesans, Reform, Coğrafi Keşifler ve Merkantilizm',
+        '17. ve 18. Yüzyıl Osmanlı Islahat Hareketleri ve Pasarofça/Küçük Kaynarca',
+        'Yakın Çağ Avrupası: Fransız İhtilali, Sanayi Devrimi ve 1848 İhtilalleri',
+        'Tanzimat Fermanı, Islahat Fermanı ve Kanun-i Esasi (I. ve II. Meşrutiyet)',
+        'I. Dünya Savaşı: Gizli Antlaşmalar, Çanakkale, Kafkas ve Hicaz Cepheleri',
+        'Mondros Sonrası İşgaller, Cemiyetler ve Kuva-yı Milliye Ruhu',
+        'Amasya, Erzurum ve Sivas Kongreleri & Son Osmanlı Mebusan Meclisi',
+        'Kurtuluş Savaşı: Doğu, Güney ve Batı Cepheleri (İnönü, Sakarya, Başkomutanlık)',
+        'Lozan Barış Antlaşması Maddeleri ve Diplomatik Önemi',
+        'Atatürkçülük, Türk İnkılabının Temel Esasları ve 6 Temel İlke',
+        'Cumhuriyet Dönemi Çok Partili Hayat Denemeleri ve İç Olaylar',
+        'Atatürk Dönemi Dış Politika (Musul, Boğazlar/Montrö, Hatay Meselesi)',
+        'İki Savaş Arasındaki Dönem (Totaliter Rejimler, 1929 Ekonomik Buhranı)',
+        'II. Dünya Savaşı: Cepheler, Konferanslar ve Türkiye’nin Tutumu',
+        'Soğuk Savaş Dönemi: Doğu-Batı Blokları, NATO, Varşova Paktı ve Kore Savaşı',
+        'Yumuşama Dönemi (Detant), Kıbrıs Barış Harekatı ve Türk-Yunan İlişkileri',
+        'Küreselleşen Dünya: SSCB’nin Dağılması, Türk Cumhuriyetleri ve Güncel Olaylar'
+      ] 
+    },
+    { 
+      name: 'TYT Coğrafya', 
+      color: 'bg-emerald-50 border-emerald-200 text-emerald-800', 
+      focusTopics: [
+        'Doğa ve İnsan Etkileşimi, Coğrafyanın Konusu ve Bölümleri',
+        'Dünyanın Şekli, Günlük ve Yıllık Hareketleri, Eksen Eğikliği',
+        'Coğrafi Konum: Paralel-Meridyen, Yerel Saat ve Türkiye’nin Konumu',
+        'Harita Bilgisi: Ölçekler, İzdüşüm Yöntemleri ve İzohips Analizi',
+        'Atmosferin Katmanları ve Sıcaklık (Güneş Işınları, Yükselti, Bakı)',
+        'Basınç ve Rüzgarlar (Alçak-Yüksek Basınç, Sürekli ve Yerel Rüzgarlar)',
+        'Nem ve Yağış (Mutlak, Maksimum, Bağıl Nem, Yağış Oluşum Tipleri)',
+        'Büyük İklim Tipleri (Ekvatoral, Akdeniz, Muson, Tundra, Step vb.)',
+        'Türkiye’nin İklimi, Sıcaklık ve Yağış Dağılış Grafikleri',
+        'Yerin İç Yapısı, Levha Hareketleri ve İç Kuvvetler (Orojenez, Epirojenez, Volkanizma, Deprem)',
+        'Dış Kuvvetler: Akarsu Aşınım-Birikim (Vadi, Menderes, Delta, Peri Bacası)',
+        'Dış Kuvvetler: Rüzgar, Buzul, Karstik Şekiller ve Kıyı Tipleri',
+        'Türkiye’nin Yer Şekilleri: Dağlar, Platolar, Ovalar ve Akarsu Havzaları',
+        'Su Varlığı: Okyanuslar, Denizler, Göller ve Türkiye’nin Yer Altı Suları',
+        'Toprak Tipleri (Zonal, Azonal, İntrazonal) ve Türkiye’de Erozyon',
+        'Bitki Örtüsü Formasyonları (Ağaç, Çalı, Ot) ve Türkiye’de Dağılımı',
+        'Nüfusun Özellikleri, Nüfus Piramitleri, Demografik Dönüşüm ve Göçler',
+        'Türkiye’de Nüfusun Dağılışı, Yoğunluğu ve Yerleşme Tipleri',
+        'Ekonomik Faaliyetlerin Sınıflandırılması (Birincil, İkincil, Üçüncül)',
+        'Bölge Sınıflandırması (Şekilsel ve İşlevsel Bölgeler)',
+        'Doğal Afetler (Deprem, Tsunami, Heyelan, Sel, Çığ, Orman Yangını)'
+      ] 
+    },
+    { 
+      name: 'AYT Coğrafya', 
+      color: 'bg-teal-50 border-teal-200 text-teal-800', 
+      focusTopics: [
+        'Ekosistemlerin Unsurları, Madde Döngüleri (Karbon, Azot, Su, Oksijen)',
+        'Su Ekosistemleri ve Canlı Hayatına Etkileri (Akarsu, Göl, Deniz, Sulak Alanlar)',
+        'Nüfus Politikaları (Artırıcı, Azaltıcı, Nitelik İyileştirici) ve Ülkeler',
+        'Şehirlerin Tarihsel Gelişimi, Fonksiyonları ve Etki Alanları (Küresel/Bölgesel)',
+        'Türkiye’de Şehirleşme, Kır Yerleşmeleri (Köy ve Köy Altı Yerleşmeleri)',
+        'Türkiye’de Tarım: Tarımı Etkileyen Faktörler, Sulama, Gübreleme, Islah',
+        'Türkiye’de Tarım Ürünleri (Tahıllar, Sanayi Bitkileri, Baklagiller, Meyveler)',
+        'Türkiye’de Hayvancılık (Büyükbaş, Küçükbaş, Mera, Besi, Kümes, Arıcılık)',
+        'Türkiye’nin Madenleri (Demir, Bakır, Krom, Boksit, Bor, Mermer, Tuz)',
+        'Türkiye’nin Enerji Kaynakları (Taşkömürü, Linyit, Petrol, Doğalgaz, Hidroelektrik, Güneş, Rüzgar)',
+        'Türkiye’de Sanayi Tesisleri, Dağılışı ve Sanayiyi Etkileyen Şartlar',
+        'Türkiye’nin Ulaşım Sistemleri (Kara, Demir, Deniz, Hava Yolları)',
+        'Türkiye’de Ticaret: İç Ticaret, Dış Ticaret Açığı ve Serbest Bölgeler',
+        'Türkiye’de Turizm: Doğal ve Tarihi Varlıklar, UNESCO Miras Alanları',
+        'Türkiye’nin Bölgesel Kalkınma Projeleri (GAP, DAP, DOKAP, KOP, ZBK, YHGP)',
+        'İlk Medeniyet Odakları ve Kültür Bölgeleri (Türk Kültürü, İslam, Batı vb.)',
+        'Küresel Ticaret: Ham Madde, Üretim ve Pazar Alanları',
+        'Dünya’nın Önemli Boğazları ve Kanalları (Süveyş, Panama, Hürmüz, Malakka vb.)',
+        'Jeopolitik Konum, Türk Dünyası ve Türkiye’nin Stratejik Gücü',
+        'Küresel ve Bölgesel Örgütler (BM, NATO, AB, İİT, D-8, OECD, KEİ)',
+        'Çevre Sorunları, Katı Atıklar, Su Kirliliği, Asit Yağmurları ve Ozon Tabakası',
+        'Sürdürülebilir Doğal Kaynak Kullanımı, Karbon Ayak İzi ve Geleceğe Yatırım'
       ] 
     },
     { 
@@ -291,29 +415,111 @@ const EXAM_SUBJECTS: Record<string, SubjectTemplate[]> = {
       ] 
     },
     { 
-      name: 'Tarih-1 & Tarih-2', 
+      name: 'TYT Tarih', 
       color: 'bg-amber-50 border-amber-200 text-amber-800', 
       focusTopics: [
-        'Tarih Bilimi, İlk Çağ Uygarlıkları ve Türk Devletleri',
-        'İslam Tarihi, Emeviler, Abbasiler ve Büyük Selçuklu Devleti',
-        'Osmanlı Devleti Kuruluş, Yükselme ve Teşkilat Yapısı',
-        'Osmanlı Kültür ve Medeniyeti, Eyalet ve Tımar Sistemi',
-        '19. Yüzyıl Osmanlı Siyasi Gelişmeleri ve Islahatlar',
-        'I. Dünya Savaşı, Cepheler ve Mondros Mütarekesi',
-        'Milli Mücadele Dönemi, Erzurum-Sivas Kongreleri ve Amasya Genelgesi',
-        'Atatürk İnkılapları, Dış Politika ve Çağdaş Türk/Dünya Tarihi'
+        'Tarih Bilimine Giriş, Zaman ve Takvim Sistemleri',
+        'İlk ve Orta Çağlarda Türk Dünyası (Kültür, Teşkilat, Yaşam)',
+        'İslam Medeniyetinin Doğuşu ve İlk Türk-İslam Devletleri',
+        'Orta Çağ’da Anadolu ve Türkiye Selçuklu Devleti',
+        'Beylikten Devlete Osmanlı Siyaseti (Kuruluş ve Yükselme)',
+        'Klasik Çağda Osmanlı Devlet Teşkilatı, Askeri ve Toprak Düzeni',
+        'Değişen Dünya Dengeleri Karşısında Osmanlı (17. ve 18. Yüzyıl)',
+        'En Uzun Yüzyıl (19. Yüzyıl Osmanlı Islahatları ve Dağılma Süreci)',
+        '20. Yüzyıl Başlarında Osmanlı (Trablusgarp ve Balkan Savaşları)',
+        'I. Dünya Savaşı, Cepheler ve Mondros Ateşkes Antlaşması',
+        'Milli Mücadele Hazırlık Dönemi (Genelgeler, Kongreler, Misakımilli)',
+        'I. TBMM Dönemi, Ayaklanmalar ve Kurtuluş Savaşı Cepheleri',
+        'Mudanya Ateşkesi, Lozan Barış Antlaşması ve Cumhuriyetin İlanı',
+        'Atatürk İnkılapları (Siyasi, Hukuk, Eğitim, Sosyal, Ekonomi)',
+        'Atatürk İlkeleri ve Atatürk Dönemi Türk Dış Politikası'
       ] 
     },
     { 
-      name: 'Coğrafya-1 & Coğrafya-2', 
-      color: 'bg-orange-50 border-orange-200 text-orange-800', 
+      name: 'AYT Tarih', 
+      color: 'bg-orange-50 border-orange-200 text-orange-900', 
       focusTopics: [
-        'Ekosistemler, Madde Döngüleri ve Biyoçeşitlilik',
-        'Nüfus Politikaları, Şehirlerin Fonksiyonları ve Etki Alanları',
-        'Türkiye’de Tarım, Hayvancılık, Madencilik ve Enerji',
-        'Türkiye’de Sanayi, Ulaşım, Ticaret ve Turizm Sektörleri',
-        'Küresel ve Bölgesel Örgütler (Birleşmiş Milletler, NATO, AB)',
-        'Çevresel Örgütler, Doğal Afetler ve Sürdürülebilir Çevre'
+        'Tarih ve Zaman, İnsanlığın İlk Dönemleri & İlk Çağ Medeniyetleri',
+        'Orta Çağ’da Dünya, Feodalite ve Ticaret Yolları',
+        'İlk Türk Devletlerinde Töre, Ordu, Hukuk ve Devlet Yönetimi',
+        'İslam Tarihi ve Medeniyeti (Dört Halife, Emeviler, Abbasiler, Endülüs)',
+        'Büyük Selçuklu Devleti, Malazgirt Savaşı ve Haçlı Seferleri',
+        'Osmanlı Devleti Kuruluş, Balkan Fetihleri ve Gaza Anlayışı',
+        'Dünya Gücü Osmanlı Devleti (1453-1595 Siyasi ve Diplomatik Gelişmeler)',
+        'Sultan ve Osmanlı Merkez Teşkilatı, Divan-ı Hümayun ve Eyalet Sistemi',
+        'Klasik Çağda Osmanlı Toplum Yapısı, Lonca ve Vakıf Müessesesi',
+        'Yeni Çağ Avrupası: Rönesans, Reform, Coğrafi Keşifler ve Merkantilizm',
+        '17. ve 18. Yüzyıl Osmanlı Islahat Hareketleri ve Pasarofça/Küçük Kaynarca',
+        'Yakın Çağ Avrupası: Fransız İhtilali, Sanayi Devrimi ve 1848 İhtilalleri',
+        'Tanzimat Fermanı, Islahat Fermanı ve Kanun-i Esasi (I. ve II. Meşrutiyet)',
+        'I. Dünya Savaşı: Gizli Antlaşmalar, Çanakkale, Kafkas ve Hicaz Cepheleri',
+        'Mondros Sonrası İşgaller, Cemiyetler ve Kuva-yı Milliye Ruhu',
+        'Amasya, Erzurum ve Sivas Kongreleri & Son Osmanlı Mebusan Meclisi',
+        'Kurtuluş Savaşı: Doğu, Güney ve Batı Cepheleri (İnönü, Sakarya, Başkomutanlık)',
+        'Lozan Barış Antlaşması Maddeleri ve Diplomatik Önemi',
+        'Atatürkçülük, Türk İnkılabının Temel Esasları ve 6 Temel İlke',
+        'Cumhuriyet Dönemi Çok Partili Hayat Denemeleri ve İç Olaylar',
+        'Atatürk Dönemi Dış Politika (Musul, Boğazlar/Montrö, Hatay Meselesi)',
+        'İki Savaş Arasındaki Dönem (Totaliter Rejimler, 1929 Ekonomik Buhranı)',
+        'II. Dünya Savaşı: Cepheler, Konferanslar ve Türkiye’nin Tutumu',
+        'Soğuk Savaş Dönemi: Doğu-Batı Blokları, NATO, Varşova Paktı ve Kore Savaşı',
+        'Yumuşama Dönemi (Detant), Kıbrıs Barış Harekatı ve Türk-Yunan İlişkileri',
+        'Küreselleşen Dünya: SSCB’nin Dağılması, Türk Cumhuriyetleri ve Güncel Olaylar'
+      ] 
+    },
+    { 
+      name: 'TYT Coğrafya', 
+      color: 'bg-emerald-50 border-emerald-200 text-emerald-800', 
+      focusTopics: [
+        'Doğa ve İnsan Etkileşimi, Coğrafyanın Konusu ve Bölümleri',
+        'Dünyanın Şekli, Günlük ve Yıllık Hareketleri, Eksen Eğikliği',
+        'Coğrafi Konum: Paralel-Meridyen, Yerel Saat ve Türkiye’nin Konumu',
+        'Harita Bilgisi: Ölçekler, İzdüşüm Yöntemleri ve İzohips Analizi',
+        'Atmosferin Katmanları ve Sıcaklık (Güneş Işınları, Yükselti, Bakı)',
+        'Basınç ve Rüzgarlar (Alçak-Yüksek Basınç, Sürekli ve Yerel Rüzgarlar)',
+        'Nem ve Yağış (Mutlak, Maksimum, Bağıl Nem, Yağış Oluşum Tipleri)',
+        'Büyük İklim Tipleri (Ekvatoral, Akdeniz, Muson, Tundra, Step vb.)',
+        'Türkiye’nin İklimi, Sıcaklık ve Yağış Dağılış Grafikleri',
+        'Yerin İç Yapısı, Levha Hareketleri ve İç Kuvvetler (Orojenez, Epirojenez, Volkanizma, Deprem)',
+        'Dış Kuvvetler: Akarsu Aşınım-Birikim (Vadi, Menderes, Delta, Peri Bacası)',
+        'Dış Kuvvetler: Rüzgar, Buzul, Karstik Şekiller ve Kıyı Tipleri',
+        'Türkiye’nin Yer Şekilleri: Dağlar, Platolar, Ovalar ve Akarsu Havzaları',
+        'Su Varlığı: Okyanuslar, Denizler, Göller ve Türkiye’nin Yer Altı Suları',
+        'Toprak Tipleri (Zonal, Azonal, İntrazonal) ve Türkiye’de Erozyon',
+        'Bitki Örtüsü Formasyonları (Ağaç, Çalı, Ot) ve Türkiye’de Dağılımı',
+        'Nüfusun Özellikleri, Nüfus Piramitleri, Demografik Dönüşüm ve Göçler',
+        'Türkiye’de Nüfusun Dağılışı, Yoğunluğu ve Yerleşme Tipleri',
+        'Ekonomik Faaliyetlerin Sınıflandırılması (Birincil, İkincil, Üçüncül)',
+        'Bölge Sınıflandırması (Şekilsel ve İşlevsel Bölgeler)',
+        'Doğal Afetler (Deprem, Tsunami, Heyelan, Sel, Çığ, Orman Yangını)'
+      ] 
+    },
+    { 
+      name: 'AYT Coğrafya', 
+      color: 'bg-teal-50 border-teal-200 text-teal-800', 
+      focusTopics: [
+        'Ekosistemlerin Unsurları, Madde Döngüleri (Karbon, Azot, Su, Oksijen)',
+        'Su Ekosistemleri ve Canlı Hayatına Etkileri (Akarsu, Göl, Deniz, Sulak Alanlar)',
+        'Nüfus Politikaları (Artırıcı, Azaltıcı, Nitelik İyileştirici) ve Ülkeler',
+        'Şehirlerin Tarihsel Gelişimi, Fonksiyonları ve Etki Alanları (Küresel/Bölgesel)',
+        'Türkiye’de Şehirleşme, Kır Yerleşmeleri (Köy ve Köy Altı Yerleşmeleri)',
+        'Türkiye’de Tarım: Tarımı Etkileyen Faktörler, Sulama, Gübreleme, Islah',
+        'Türkiye’de Tarım Ürünleri (Tahıllar, Sanayi Bitkileri, Baklagiller, Meyveler)',
+        'Türkiye’de Hayvancılık (Büyükbaş, Küçükbaş, Mera, Besi, Kümes, Arıcılık)',
+        'Türkiye’nin Madenleri (Demir, Bakır, Krom, Boksit, Bor, Mermer, Tuz)',
+        'Türkiye’nin Enerji Kaynakları (Taşkömürü, Linyit, Petrol, Doğalgaz, Hidroelektrik, Güneş, Rüzgar)',
+        'Türkiye’de Sanayi Tesisleri, Dağılışı ve Sanayiyi Etkileyen Şartlar',
+        'Türkiye’nin Ulaşım Sistemleri (Kara, Demir, Deniz, Hava Yolları)',
+        'Türkiye’de Ticaret: İç Ticaret, Dış Ticaret Açığı ve Serbest Bölgeler',
+        'Türkiye’de Turizm: Doğal ve Tarihi Varlıklar, UNESCO Miras Alanları',
+        'Türkiye’nin Bölgesel Kalkınma Projeleri (GAP, DAP, DOKAP, KOP, ZBK, YHGP)',
+        'İlk Medeniyet Odakları ve Kültür Bölgeleri (Türk Kültürü, İslam, Batı vb.)',
+        'Küresel Ticaret: Ham Madde, Üretim ve Pazar Alanları',
+        'Dünya’nın Önemli Boğazları ve Kanalları (Süveyş, Panama, Hürmüz, Malakka vb.)',
+        'Jeopolitik Konum, Türk Dünyası ve Türkiye’nin Stratejik Gücü',
+        'Küresel ve Bölgesel Örgütler (BM, NATO, AB, İİT, D-8, OECD, KEİ)',
+        'Çevre Sorunları, Katı Atıklar, Su Kirliliği, Asit Yağmurları ve Ozon Tabakası',
+        'Sürdürülebilir Doğal Kaynak Kullanımı, Karbon Ayak İzi ve Geleceğe Yatırım'
       ] 
     },
     { 
@@ -799,11 +1005,16 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
   const [selectedDay, setSelectedDay] = useState('Pazartesi');
   const [savedSchedules, setSavedSchedules] = useState<SavedSchedule[]>([]);
   const [isGenerated, setIsGenerated] = useState(false);
+  const [currentStudentRecord, setCurrentStudentRecord] = useState<StudentScheduleRecord | null>(null);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
   // Helper to load student schedule from database
   const handleSelectStudent = async (un: string) => {
     setSelectedStudentUsername(un);
-    if (!un) return;
+    if (!un) {
+      setCurrentStudentRecord(null);
+      return;
+    }
 
     const found = studentsList.find(s => s.username === un);
     if (found) {
@@ -815,6 +1026,8 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
 
     // Attempt to load stored schedule for this student
     const existing = await dbGetStudentSchedule(un);
+    setCurrentStudentRecord(existing);
+
     if (existing && existing.schedule) {
       if (existing.studentName) setStudentName(existing.studentName);
       if (existing.examGroup) setExamGroup(existing.examGroup);
@@ -1506,6 +1719,75 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
               </div>
             )}
 
+            {/* Custom PDF Schedule Upload Button & Status */}
+            <div className="bg-gradient-to-br from-amber-500/10 via-stone-50 to-amber-500/5 p-3 rounded-xl border border-amber-200/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-amber-900 tracking-wider flex items-center gap-1.5">
+                  <FileUp className="w-3.5 h-3.5 text-[#C5A059]" />
+                  <span>Özel PDF Ders Programı</span>
+                </span>
+                {currentStudentRecord?.uploadedPdf && (
+                  <span className="text-[9px] font-extrabold uppercase bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
+                    Yayında
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-stone-500 leading-tight">
+                Kendiniz ayriyeten hazırladığınız ders çalışma programını PDF olarak sisteme yükleyebilirsiniz.
+              </p>
+
+              {currentStudentRecord?.uploadedPdf ? (
+                <div className="bg-white p-2.5 rounded-lg border border-amber-300/80 space-y-2 shadow-2xs">
+                  <div className="flex items-start justify-between gap-1.5">
+                    <div className="truncate">
+                      <p className="text-xs font-bold text-slate-900 truncate">
+                        {currentStudentRecord.uploadedPdf.title || currentStudentRecord.uploadedPdf.fileName}
+                      </p>
+                      <p className="text-[10px] text-stone-400 font-mono">
+                        {currentStudentRecord.uploadedPdf.fileName} ({currentStudentRecord.uploadedPdf.fileSize})
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <a
+                      href={currentStudentRecord.uploadedPdf.dataUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-1.5 bg-stone-100 hover:bg-stone-200 text-slate-800 rounded-md text-[10px] font-bold transition-colors text-center flex items-center justify-center gap-1"
+                    >
+                      <Eye className="w-3 h-3 text-[#C5A059]" />
+                      <span>Önizle</span>
+                    </a>
+                    <a
+                      href={currentStudentRecord.uploadedPdf.dataUrl}
+                      download={currentStudentRecord.uploadedPdf.fileName}
+                      className="flex-1 py-1.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white rounded-md text-[10px] font-bold transition-colors text-center flex items-center justify-center gap-1"
+                    >
+                      <Download className="w-3 h-3" />
+                      <span>İndir</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setIsPdfModalOpen(true)}
+                      className="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 text-[#C5A059] rounded-md text-[10px] font-bold transition-colors cursor-pointer"
+                      title="Yeni PDF Yükle veya Değiştir"
+                    >
+                      Değiştir
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsPdfModalOpen(true)}
+                  className="w-full py-2 px-3 bg-white hover:bg-amber-50 text-slate-800 hover:text-[#C5A059] border border-amber-300 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                >
+                  <Upload className="w-3.5 h-3.5 text-[#C5A059]" />
+                  <span>PDF Olarak Ders Programı Yükle</span>
+                </button>
+              )}
+            </div>
+
             {/* Student Name */}
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Öğrenci Ad Soyad</label>
@@ -1683,8 +1965,75 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
                   <Printer className="w-3.5 h-3.5" />
                   <span>Yazdır / PDF</span>
                 </button>
+
+                <button
+                  onClick={() => setIsPdfModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/60 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  title="Öğrenciye harici hazırladığınız PDF ders programını yükleyin"
+                >
+                  <FileUp className="w-3.5 h-3.5 text-[#C5A059]" />
+                  <span>PDF Yükle</span>
+                </button>
               </div>
             </div>
+
+            {/* Active Uploaded PDF Banner (if exists) */}
+            {currentStudentRecord?.uploadedPdf && (
+              <div className="bg-gradient-to-r from-amber-50 via-stone-50 to-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left shadow-xs">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#C5A059] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] uppercase font-black tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                        Öğrenciye Özel PDF Programı
+                      </span>
+                      <span className="text-[10px] text-stone-400 font-mono">
+                        {currentStudentRecord.uploadedPdf.uploadedAt}
+                      </span>
+                    </div>
+                    <h4 className="font-serif font-bold text-sm text-slate-800 mt-1">
+                      {currentStudentRecord.uploadedPdf.title || currentStudentRecord.uploadedPdf.fileName}
+                    </h4>
+                    <p className="text-xs text-stone-500">
+                      Dosya: <span className="font-mono text-stone-700">{currentStudentRecord.uploadedPdf.fileName}</span> ({currentStudentRecord.uploadedPdf.fileSize})
+                    </p>
+                    {currentStudentRecord.uploadedPdf.note && (
+                      <p className="text-xs text-amber-900 bg-amber-100/60 rounded-lg p-1.5 mt-1.5 font-medium border-l-2 border-[#C5A059]">
+                        💡 Koç Notu: {currentStudentRecord.uploadedPdf.note}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <a
+                    href={currentStudentRecord.uploadedPdf.dataUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 bg-white hover:bg-stone-100 text-slate-800 border border-stone-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-[#C5A059]" />
+                    <span>Önizle</span>
+                  </a>
+                  <a
+                    href={currentStudentRecord.uploadedPdf.dataUrl}
+                    download={currentStudentRecord.uploadedPdf.fileName}
+                    className="px-3 py-1.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>İndir</span>
+                  </a>
+                  <button
+                    onClick={() => setIsPdfModalOpen(true)}
+                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-[#C5A059] rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                    title="PDF Programını Güncelle veya Sil"
+                  >
+                    Yönet
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Print Friendly Page (Hidden on screen, shown on print) */}
             <div className="hidden print:block bg-white text-black p-8 text-left space-y-6">
@@ -2059,6 +2408,39 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
           </div>
         )}
       </AnimatePresence>
+
+      {/* PDF Upload Modal */}
+      {isPdfModalOpen && (
+        <UploadStudentSchedulePdfModal
+          student={
+            selectedStudentUsername 
+              ? (studentsList.find(s => s.username === selectedStudentUsername) || {
+                  id: 'temp',
+                  username: selectedStudentUsername,
+                  fullName: studentName || 'Öğrenci',
+                  studentClass: examGroup,
+                  password: '',
+                  createdAt: ''
+                })
+              : (studentName ? {
+                  id: 'temp',
+                  username: studentName.toLowerCase().replace(/\s+/g, ''),
+                  fullName: studentName,
+                  studentClass: examGroup,
+                  password: '',
+                  createdAt: ''
+                } : null)
+          }
+          isOpen={isPdfModalOpen}
+          onClose={() => setIsPdfModalOpen(false)}
+          onScheduleUpdated={async (updatedRecord) => {
+            setCurrentStudentRecord(updatedRecord);
+            if (onScheduleSavedForStudent && selectedStudentUsername) {
+              onScheduleSavedForStudent(selectedStudentUsername);
+            }
+          }}
+        />
+      )}
 
     </div>
   );
