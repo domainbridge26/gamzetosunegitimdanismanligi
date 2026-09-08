@@ -200,7 +200,7 @@ async function startServer() {
       return res.status(400).json({ error: "pdfBase64 is required" });
     }
 
-    const cleanBase64 = pdfBase64.replace(/^data:application\/pdf;base64,/, "").trim();
+    const cleanBase64 = pdfBase64.replace(/^data:[^;]+;base64,/, "").trim();
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {

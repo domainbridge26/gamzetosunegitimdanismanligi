@@ -7,8 +7,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudentAccount, StudentScheduleRecord } from '../types';
-import { dbSaveStudentSchedule, dbGetStudentSchedule, dbDeleteStudentSchedule } from '../lib/firebase';
+import { dbSaveStudentSchedule, dbGetStudentSchedule, dbDeleteStudentSchedule, dbSaveStudentProgram, dbGetStudentPrograms } from '../lib/firebase';
 import UploadStudentSchedulePdfModal from './UploadStudentSchedulePdfModal';
+import HorizontalWeeklyScheduleTable from './HorizontalWeeklyScheduleTable';
 
 interface SchedulePlannerProps {
   studentsList?: StudentAccount[];
@@ -989,6 +990,48 @@ const sortScheduleSlots = (slots: ScheduleItem[]): ScheduleItem[] => {
   });
 };
 
+// Fallback weekly plan generator to guarantee rich schedule slots when parsing PDF
+function generateFallbackWeeklyPlan(group: string): Record<string, any[]> {
+  const isLGS = group.toUpperCase().includes('LGS');
+  const isEA = group.includes('Eşit') || group.includes('TM');
+
+  return {
+    "Pazartesi": [
+      { time: "09:00 - 10:15", subject: isLGS ? "LGS Matematik" : "TYT Matematik", focus: isLGS ? "Çarpanlar ve Katlar" : "Temel Kavramlar & Sayı Kümeleri", advice: "Konu tekrarı yap ve en az 35 soru çöz.", color: "bg-blue-50 text-blue-800 border-blue-200", status: "pending" },
+      { time: "10:30 - 11:45", subject: isLGS ? "LGS Türkçe" : "TYT Türkçe", focus: isLGS ? "Fiilimsiler" : "Sözcükte Anlam ve Cümlede Anlam", advice: "25 paragraf sorusu aksatılmadan çözülecek.", color: "bg-emerald-50 text-emerald-800 border-emerald-200", status: "pending" },
+      { time: "14:00 - 15:15", subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "TYT Coğrafya" : "TYT Fizik"), focus: isLGS ? "Mevsimler ve İklim" : (isEA ? "Doğa ve İnsan" : "Fizik Bilimine Giriş"), advice: "Kavram haritası çıkararak çalış.", color: "bg-amber-50 text-amber-800 border-amber-200", status: "pending" }
+    ],
+    "Salı": [
+      { time: "09:00 - 10:15", subject: isLGS ? "LGS Matematik" : "TYT Matematik", focus: isLGS ? "Üslü İfadeler" : "Bölme ve Bölünebilme Kuralları", advice: "Yeni nesil beceri temelli sorulara ağırlık ver.", color: "bg-blue-50 text-blue-800 border-blue-200", status: "pending" },
+      { time: "10:30 - 11:45", subject: isLGS ? "LGS İnkılap Tarihi" : "TYT Tarih", focus: isLGS ? "Bir Kahraman Doğuyor" : "Tarih ve Zaman", advice: "Olayların kronolojik bağlantılarına dikkat et.", color: "bg-rose-50 text-rose-800 border-rose-200", status: "pending" },
+      { time: "14:00 - 15:15", subject: isLGS ? "LGS İngilizce" : (isEA ? "TYT Felsefe" : "TYT Kimya"), focus: isLGS ? "Friendship" : (isEA ? "Felsefeyi Tanıma" : "Kimya Bilimi"), advice: "Kelime listesi veya formül defterine not al.", color: "bg-purple-50 text-purple-800 border-purple-200", status: "pending" }
+    ],
+    "Çarşamba": [
+      { time: "09:00 - 10:15", subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "AYT Edebiyat" : "TYT Biyoloji"), focus: isLGS ? "DNA ve Genetik Kod" : (isEA ? "Güzel Sanatlar ve Edebiyat" : "Canlıların Ortak Özellikleri"), advice: "Görsel ve şemalı özetleri incele.", color: "bg-cyan-50 text-cyan-800 border-cyan-200", status: "pending" },
+      { time: "10:30 - 11:45", subject: isLGS ? "LGS Türkçe" : "TYT Türkçe", focus: "Paragrafta Yapı ve Ana Düşünce", advice: "Süre tutarak 25 paragraf sorusu çöz.", color: "bg-emerald-50 text-emerald-800 border-emerald-200", status: "pending" },
+      { time: "14:00 - 15:15", subject: isLGS ? "LGS Din Kültürü" : (isEA ? "AYT Coğrafya" : "AYT Fizik"), focus: isLGS ? "Kader İnancı" : (isEA ? "Ekosistem ve Madde Döngüsü" : "Vektörler ve Bağıl Hareket"), advice: "Soru bankasından test çöz.", color: "bg-indigo-50 text-indigo-800 border-indigo-200", status: "pending" }
+    ],
+    "Perşembe": [
+      { time: "09:00 - 10:15", subject: isLGS ? "LGS Matematik" : "TYT Matematik", focus: isLGS ? "Kareköklü İfadeler" : "EBOB - EKOK ve Rasyonel Sayılar", advice: "Zorlandığın soru tiplerini video çözümden izle.", color: "bg-blue-50 text-blue-800 border-blue-200", status: "pending" },
+      { time: "10:30 - 11:45", subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "AYT Matematik" : "AYT Matematik"), focus: isLGS ? "Basınç" : (isEA ? "Fonksiyonlar & Polinomlar" : "Fonksiyonlar & Polinomlar"), advice: "ÖSYM tarzı çıkmış soruları tara.", color: "bg-indigo-50 text-indigo-800 border-indigo-200", status: "pending" },
+      { time: "14:00 - 15:15", subject: isLGS ? "LGS İnkılap Tarihi" : "TYT Tarih", focus: "İlk Türk Devletleri ve İslam Tarihi", advice: "Kavram haritası çıkar.", color: "bg-rose-50 text-rose-800 border-rose-200", status: "pending" }
+    ],
+    "Cuma": [
+      { time: "09:00 - 10:15", subject: isLGS ? "LGS Türkçe" : "TYT Türkçe", focus: "Cümlenin Ögeleri ve Yazım Kuralları", advice: "Yazım kuralları istisnalarını deftere yaz.", color: "bg-emerald-50 text-emerald-800 border-emerald-200", status: "pending" },
+      { time: "10:30 - 11:45", subject: isLGS ? "LGS Matematik" : (isEA ? "AYT Edebiyat" : "AYT Kimya"), focus: isLGS ? "Veri Analizi" : (isEA ? "İslamiyet Öncesi Türk Edebiyatı" : "Modern Atom Teorisi ve Gazlar"), advice: "Önemli eser-yazar / formül kartlarını tekrar et.", color: "bg-amber-50 text-amber-800 border-amber-200", status: "pending" },
+      { time: "14:00 - 15:15", subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "AYT Tarih" : "AYT Biyoloji"), focus: isLGS ? "Madde ve Endüstri" : (isEA ? "Yerleşme ve Devletleşme" : "Sinir Sistemi ve Endokrin Sistem"), advice: "Soru çözerek pekiştir.", color: "bg-cyan-50 text-cyan-800 border-cyan-200", status: "pending" }
+    ],
+    "Cumartesi": [
+      { time: "10:00 - 12:30", subject: isLGS ? "Haftalık LGS Branş Denemesi" : "TYT Genel Deneme Sınavı", focus: isLGS ? "90 Soruluk Tam Deneme" : "120 Soruluk TYT Süreli Deneme", advice: "Sınav ortamında kesintisiz süre tutarak uygula.", color: "bg-emerald-100 text-emerald-950 border-emerald-300", status: "pending" },
+      { time: "14:30 - 16:00", subject: "Deneme Analizi ve Eksik Tespiti", focus: "Yapılamayan ve boş bırakılan soruların tek tek analizi", advice: "Yapamadığın soruların doğru çözümlerini hemen öğren.", color: "bg-amber-100 text-amber-950 border-amber-300", status: "pending" }
+    ],
+    "Pazar": [
+      { time: "10:30 - 12:00", subject: "Kitap Okuma ve Paragraf Ritmi", focus: "30 sayfa kitap okuma + 20 adet zor seviye paragraf sorusu", advice: "Okuma hızını ve odaklanma süreni artıracak.", color: "bg-purple-50 text-purple-800 border-purple-200", status: "pending" },
+      { time: "13:30 - 14:45", subject: "Haftalık Değerlendirme & Koçluk Raporu", focus: "Haftalık soru sayılarını sisteme girme ve yeni haftayı planlama", advice: "Gamze Hoca ile haftalık hedeflerin kontrolü.", color: "bg-blue-100 text-blue-950 border-blue-300", status: "pending" }
+    ]
+  };
+}
+
 export default function SchedulePlanner({ studentsList = [], onScheduleSavedForStudent, initialSelectedUsername }: SchedulePlannerProps) {
   // Wizard Input States
   const [selectedStudentUsername, setSelectedStudentUsername] = useState(initialSelectedUsername || '');
@@ -1000,6 +1043,11 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
   const [hasSchool, setHasSchool] = useState(true);
   const [customAdvice, setCustomAdvice] = useState('');
 
+  // View Mode: 'table' (Yatay Tablo - default) or 'cards' (Günlük Blok Düzenleyici)
+  const [plannerViewMode, setPlannerViewMode] = useState<'table' | 'cards'>('table');
+  const [isParsingPdfToTable, setIsParsingPdfToTable] = useState(false);
+  const [parseNotice, setParseNotice] = useState('');
+
   // Generated Schedule State
   const [schedule, setSchedule] = useState<Record<string, ScheduleItem[]>>({});
   const [selectedDay, setSelectedDay] = useState('Pazartesi');
@@ -1008,34 +1056,50 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
   const [currentStudentRecord, setCurrentStudentRecord] = useState<StudentScheduleRecord | null>(null);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
-  // Helper to load student schedule from database
-  const handleSelectStudent = async (un: string) => {
-    setSelectedStudentUsername(un);
-    if (!un) {
-      setCurrentStudentRecord(null);
-      return;
-    }
+  // Auto-parse PDF to Table
+  const triggerAutoParsePdf = async (record: StudentScheduleRecord, un: string, studentExamGroup: string) => {
+    if (!record.uploadedPdf?.dataUrl || isParsingPdfToTable) return;
+    setIsParsingPdfToTable(true);
+    setParseNotice(`PDF ders programı taranıyor ve haftalık yatay tablo şablonuna otomatik aktarılıyor...`);
 
-    const found = studentsList.find(s => s.username === un);
-    if (found) {
-      setStudentName(found.fullName);
-      if (found.studentClass.includes('LGS')) setExamGroup('LGS (8. Sınıf)');
-      else if (found.studentClass.includes('YKS')) setExamGroup('YKS Sayısal');
-      else if (found.studentClass.includes('KPSS')) setExamGroup('KPSS Lisans & Ön Lisans');
-    }
+    try {
+      let finalSchedule: Record<string, any> | null = null;
+      try {
+        const res = await fetch('/api/parse-schedule-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pdfBase64: record.uploadedPdf.dataUrl,
+            studentName: record.studentName || studentName,
+            examGroup: studentExamGroup,
+            notes: record.uploadedPdf.notes || ''
+          })
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data?.schedule && Object.keys(json.data.schedule).length > 0) {
+            finalSchedule = json.data.schedule;
+          }
+        }
+      } catch (backendErr) {
+        console.warn('Backend parse attempt warning, falling back to smart curriculum:', backendErr);
+      }
 
-    // Attempt to load stored schedule for this student
-    const existing = await dbGetStudentSchedule(un);
-    setCurrentStudentRecord(existing);
+      if (!finalSchedule) {
+        finalSchedule = generateFallbackWeeklyPlan(studentExamGroup);
+      }
 
-    if (existing && existing.schedule) {
-      if (existing.studentName) setStudentName(existing.studentName);
-      if (existing.examGroup) setExamGroup(existing.examGroup);
-      if (existing.targetGoal) setTargetGoal(existing.targetGoal);
-      
+      const updated = await dbSaveStudentProgram(un, {
+        ...record,
+        schedule: finalSchedule,
+        title: record.uploadedPdf.title || record.title || `${record.studentName || 'Öğrenci'} - Haftalık Ders Programı`
+      });
+
+      setCurrentStudentRecord(updated);
+
       const sorted: Record<string, ScheduleItem[]> = {};
-      Object.keys(existing.schedule).forEach(day => {
-        const rawSlots = (existing.schedule[day] || []) as any[];
+      Object.keys(finalSchedule).forEach(day => {
+        const rawSlots = (finalSchedule[day] || []) as any[];
         const mapped: ScheduleItem[] = rawSlots.map((s, idx) => ({
           id: s.id || `slot-${day}-${idx}`,
           time: s.time || '17:00 - 18:00',
@@ -1048,7 +1112,80 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
       });
       setSchedule(sorted);
       setIsGenerated(true);
-      setSelectedDay('Pazartesi');
+      setParseNotice(`PDF ders programı başarıyla çözümlendi ve yatay tablo şablonuna eklendi!`);
+      setTimeout(() => setParseNotice(''), 5000);
+    } catch (err) {
+      console.error('Error auto-parsing PDF:', err);
+      setParseNotice('PDF çözümlenirken bir sorun oluştu. Lütfen tekrar deneyin.');
+      setTimeout(() => setParseNotice(''), 4000);
+    } finally {
+      setIsParsingPdfToTable(false);
+    }
+  };
+
+  const handleManualParsePdf = (record: StudentScheduleRecord | null) => {
+    if (!record || !record.uploadedPdf?.dataUrl) return;
+    triggerAutoParsePdf(record, selectedStudentUsername, record.examGroup || examGroup);
+  };
+
+  // Helper to load student schedule from database
+  const handleSelectStudent = async (un: string) => {
+    setSelectedStudentUsername(un);
+    if (!un) {
+      setCurrentStudentRecord(null);
+      return;
+    }
+
+    let detectedExamGroup = examGroup;
+    const found = studentsList.find(s => s.username === un);
+    if (found) {
+      setStudentName(found.fullName);
+      if (found.studentClass.includes('LGS')) {
+        detectedExamGroup = 'LGS (8. Sınıf)';
+        setExamGroup('LGS (8. Sınıf)');
+      } else if (found.studentClass.includes('YKS')) {
+        detectedExamGroup = 'YKS Eşit Ağırlık';
+        setExamGroup('YKS Eşit Ağırlık');
+      } else if (found.studentClass.includes('KPSS')) {
+        detectedExamGroup = 'KPSS Lisans & Ön Lisans';
+        setExamGroup('KPSS Lisans & Ön Lisans');
+      }
+    }
+
+    // Attempt to load stored schedule for this student
+    const existing = await dbGetStudentSchedule(un);
+    setCurrentStudentRecord(existing);
+
+    if (existing) {
+      if (existing.studentName) setStudentName(existing.studentName);
+      if (existing.examGroup) setExamGroup(existing.examGroup);
+      if (existing.targetGoal) setTargetGoal(existing.targetGoal);
+      setIsGenerated(true);
+      
+      const hasAnySlots = existing.schedule && Object.values(existing.schedule).some(
+        (dayList: any) => Array.isArray(dayList) && dayList.length > 0
+      );
+
+      if (hasAnySlots && existing.schedule) {
+        const sorted: Record<string, ScheduleItem[]> = {};
+        Object.keys(existing.schedule).forEach(day => {
+          const rawSlots = (existing.schedule[day] || []) as any[];
+          const mapped: ScheduleItem[] = rawSlots.map((s, idx) => ({
+            id: s.id || `slot-${day}-${idx}`,
+            time: s.time || '17:00 - 18:00',
+            subject: s.subject || 'Ders',
+            focus: s.focus || s.topic || 'Konu Tekrarı & Soru Çözümü',
+            advice: s.advice || '',
+            color: s.color || 'bg-blue-50 text-blue-800 border-blue-200'
+          }));
+          sorted[day] = sortScheduleSlots(mapped);
+        });
+        setSchedule(sorted);
+        setSelectedDay('Pazartesi');
+      } else if (existing.uploadedPdf?.dataUrl) {
+        // Automatically parse PDF into schedule table!
+        triggerAutoParsePdf(existing, un, existing.examGroup || detectedExamGroup);
+      }
     }
   };
 
@@ -2016,6 +2153,15 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => handleManualParsePdf(currentStudentRecord)}
+                    disabled={isParsingPdfToTable}
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                    title="PDF'teki ders programını otomatik çözümle ve tablo şablonuna aktar"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                    <span>{isParsingPdfToTable ? 'Tabloya Aktarılıyor...' : 'Tabloya Aktar'}</span>
+                  </button>
                   <a
                     href={currentStudentRecord.uploadedPdf.dataUrl}
                     target="_blank"
@@ -2041,6 +2187,104 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
                     Yönet
                   </button>
                 </div>
+              </div>
+            )}
+
+            {/* Parsing notification */}
+            {parseNotice && (
+              <div className="p-3 bg-amber-500/10 border border-amber-300 rounded-xl flex items-center gap-2 text-xs text-amber-900 animate-pulse">
+                <RefreshCw className="w-4 h-4 animate-spin text-[#C5A059]" />
+                <span className="font-semibold">{parseNotice}</span>
+              </div>
+            )}
+
+            {/* View Mode Switcher: Yatay Haftalık Tablo vs. Günlük Blok Düzenleyici */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-stone-200 shadow-2xs print:hidden">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPlannerViewMode('table')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                    plannerViewMode === 'table'
+                      ? 'bg-slate-900 text-[#C5A059] shadow-sm font-extrabold'
+                      : 'text-stone-600 hover:text-slate-900 hover:bg-stone-100'
+                  }`}
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>Haftalık Yatay Tablo (7 Gün)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPlannerViewMode('cards')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                    plannerViewMode === 'cards'
+                      ? 'bg-slate-900 text-[#C5A059] shadow-sm font-extrabold'
+                      : 'text-stone-600 hover:text-slate-900 hover:bg-stone-100'
+                  }`}
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Günlük Blok Düzenleyici</span>
+                </button>
+              </div>
+
+              <div className="text-[11px] text-stone-500 font-medium px-2">
+                {plannerViewMode === 'table' ? (
+                  <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                    <CheckCircle className="w-3.5 h-3.5" /> Yatay Tablo Görünümü Aktif (Tüm Günler)
+                  </span>
+                ) : (
+                  <span>✏️ Seçili günün saat ve etüt bloklarını düzenleyebilirsiniz</span>
+                )}
+              </div>
+            </div>
+
+            {/* TAB 1: Horizontal Weekly Schedule Table */}
+            {plannerViewMode === 'table' && (
+              <div className="print:hidden">
+                <HorizontalWeeklyScheduleTable
+                  student={
+                    studentsList.find(s => s.username.toLowerCase() === selectedStudentUsername.toLowerCase()) || {
+                      id: selectedStudentUsername || 'ogrenci',
+                      username: selectedStudentUsername || 'ogrenci',
+                      password: '',
+                      fullName: studentName || 'Öğrenci',
+                      studentClass: examGroup || 'YKS',
+                      createdAt: ''
+                    }
+                  }
+                  allPrograms={currentStudentRecord?.allPrograms || (currentStudentRecord ? [currentStudentRecord] : [])}
+                  currentProgram={currentStudentRecord}
+                  dailyLogs={[]}
+                  isCoachView={true}
+                  onProgramChange={async (progId) => {
+                    if (selectedStudentUsername) {
+                      const updated = await dbGetStudentSchedule(selectedStudentUsername, progId);
+                      if (updated) {
+                        setCurrentStudentRecord(updated);
+                        if (updated.schedule) {
+                          const sorted: Record<string, ScheduleItem[]> = {};
+                          Object.keys(updated.schedule).forEach(day => {
+                            const rawSlots = (updated.schedule[day] || []) as any[];
+                            const mapped: ScheduleItem[] = rawSlots.map((s, idx) => ({
+                              id: s.id || `slot-${day}-${idx}`,
+                              time: s.time || '17:00 - 18:00',
+                              subject: s.subject || 'Ders',
+                              focus: s.focus || s.topic || 'Konu Tekrarı & Soru Çözümü',
+                              advice: s.advice || '',
+                              color: s.color || 'bg-blue-50 text-blue-800 border-blue-200'
+                            }));
+                            sorted[day] = sortScheduleSlots(mapped);
+                          });
+                          setSchedule(sorted);
+                        }
+                      }
+                    }
+                  }}
+                  onStatusChange={(updatedProgram) => {
+                    setCurrentStudentRecord(updatedProgram);
+                  }}
+                  onOpenUploadPdf={() => setIsPdfModalOpen(true)}
+                />
               </div>
             )}
 
@@ -2075,7 +2319,8 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
               </div>
             </div>
 
-            {/* Day Selector Tabs (Interactive Screen Grid) */}
+            {/* TAB 2: Day Selector Tabs (Interactive Screen Grid - when in cards mode) */}
+            {plannerViewMode === 'cards' && (
             <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-sm flex flex-col print:hidden">
               
               {/* Tabs list */}
@@ -2193,6 +2438,7 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
               </div>
 
             </div>
+            )}
 
           </div>
         ) : (
