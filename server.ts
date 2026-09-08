@@ -204,49 +204,70 @@ async function startServer() {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      console.warn("GEMINI_API_KEY is not configured. Serving smart fallback schedule.");
+      console.warn("GEMINI_API_KEY is not configured.");
       return res.json({
-        success: true,
-        fallback: true,
+        success: false,
+        error: "GEMINI_API_KEY is not configured",
         data: {
-          title: `Gamze Tosun Özel Ders Programı (${examGroup})`,
+          title: `${studentName} - Haftalık Ders Programı`,
           examGroup: examGroup,
-          targetGoal: "Haftalık Soru ve Konu Bitirme Hedefi",
-          schedule: generateFallbackWeeklySchedule(examGroup, studentName)
+          targetGoal: "Haftalık Çalışma Programı",
+          schedule: {
+            "Pazartesi": [],
+            "Salı": [],
+            "Çarşamba": [],
+            "Perşembe": [],
+            "Cuma": [],
+            "Cumartesi": [],
+            "Pazar": []
+          }
         }
       });
     }
 
     try {
       const ai = new GoogleGenAI({ apiKey });
-      const prompt = `Sen Gamze Tosun Eğitim Danışmanlığı için çalışan uzman bir akademik eğitim koçusun.
-Ekte sana iletilen haftalık ders programı PDF dosyasını dikkatlice incele.
-Bu PDF belgesindeki haftalık çalışma programını Pazartesi, Salı, Çarşamba, Perşembe, Cuma, Cumartesi ve Pazar günlerine göre tam ve detaylı olarak çözümle.
+      const prompt = `Sen Gamze Tosun Eğitim Danışmanlığı sistemi için çalışan uzman ve son derece titiz bir veri aktarım uzmanısın.
+GÖREVİN: Ekte sunulan PDF haftalık ders programı belgesini okuyup, içindeki ders, kaynak, konu, test ve görevleri HİÇBİR DEĞİŞİKLİK, KISALTMA VEYA KAFANDAN İLAVE YAPMADAN AYNEN haftalık çizelgeye aktarmaktır.
 
-Kurallar:
-1. Pazartesi, Salı, Çarşamba, Perşembe, Cuma, Cumartesi, Pazar günlerinin her biri için çalışma seanslarını çıkar.
-2. Her seans için:
-   - "time": Saat aralığı (örn: "09:00 - 10:15", "10:30 - 11:45", "14:00 - 15:15" vb. PDF'te saat yoksa günün olağan etüt sırasına göre mantıklı saatler belirle).
-   - "subject": Ders adı (örn: "TYT Matematik", "AYT Tarih", "TYT Coğrafya", "LGS Fen Bilimleri" vb.).
-   - "topic": Konu başlığı (örn: "Fonksiyonlar", "Hücre Bölünmeleri", "Paragrafta Anlam" vb.).
-   - "advice": Varsa Gamze Hoca'nın yazdığı tavsiye veya not (örn: "En az 40 soru çözülecek", "Video tekrarı izlenecek").
-   - "targetQuestions": Varsa sayısal soru hedefi (sayı olarak, örn: 40).
-   - "status": Başlangıçta "pending".
-3. PDF'teki başlığı ve hedefleri de tespit et.
+ÇOK KESİN VE KATI TALİMATLAR:
+1. SAAT KURALI (EN KRİTİK KURAL):
+   - PDF belgesinde bir ders/çalışma/etüt için AÇIKÇA ve BELİRGİN bir saat aralığı (örn: "09:00 - 10:15", "18:00 - 19:30" vb.) yazılmamışsa, "time" alanını KESİNLİKLE BOŞ BIRAK: "time": ""
+   - ASLA ve ASLA kafandan saat uydurma! "09:00", "10:00", "17:00" gibi tahmini saatler KESİNLİKLE EKLEME! Herhangi bir saat yazmıyorsa saat alanı mutlaka "" (boş dize) olmalıdır.
+   - Sadece ve sadece PDF'te açıkça saat/zaman aralığı belirtilmişse o saati yaz.
 
-ÇIKTIYI SADECE AŞAĞIDAKİ JSON ŞEMASINDA DÖNDÜR (markdown backtick vb. KULLANMA, yalnızca saf JSON):
+2. DERS VE KAYNAK BİLGİSİNİ AYNEN VE BİREBİR AKTARMA KURALI:
+   - PDF'te hangi ders yazıyorsa "subject" alanına harfi harfine o dersin adını yaz (Örn: "Matematik", "TYT Matematik", "AYT Matematik", "Geometri", "Türkçe", "Fizik", "Kimya", "Biyoloji", "Tarih", "Coğrafya", "Felsefe", "Din Kültürü", "Paragraf", "Fen Bilimleri", "İnkılap Tarihi", "İngilizce" vb.).
+   - PDF'te dersin altında, yanında veya içeriğinde hangi kaynak (kitap, soru bankası, fasikül, yayın, deneme, youtube kanalı/hocası vb.) ve hangi ödev/test/sayfa/soru yazıyorsa AYNEN aktar:
+     * "topic": PDF'te yazan konunun, test numaralarının, sayfa aralıklarının, videoların veya ödevin tam metni (örn: "3D Soru Bankası Test 4-5", "Limit-Türev Apotemi Fasikülü s. 24-38", "25 Paragraf Sorusu", "Kenan Kara Üçgende Açılar 2 Video").
+     * "resource": Varsa belirtilen kaynak / kitap / yayın / hoca adı (örn: "3D Soru Bankası", "Apotemi", "Bilgi Sarmal", "Karekökk", "Hız ve Renk", "MEB Kazanım", "Kenan Kara", "Eyüp B." vb.). Yoksa "" bırak.
+     * "advice": Varsa PDF'te öğrenciye yönelik yazılmış koç notu, tavsiye veya direktif (örn: "Süre tutularak çözülecek", "Video çözümden yanlışlara bakılacak"). Yoksa "" bırak.
+     * "targetQuestions": PDF'te açıkça belirtilmişse soru sayısı (sayı olarak, örn: 40). Belirtilmemişse 0.
+   - PDF'te yazmayan HİÇBİR konuyu veya dersi kafandan uydurma. PDF'teki metni özetleme, değiştirme veya standart müfredat başlıklarıyla değiştirme. PDF'te ne yazıyorsa aynen aktar.
+
+3. GÜNLER VE BOŞ GÜNLER:
+   - "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar" günleri sırayla nesnede yer almalıdır.
+   - PDF'te bir gün için herhangi bir çalışma yazılmamışsa veya boş bırakılmışsa, o gün için boş dizi [] döndür. Asla boş günlere kafandan ders veya çalışma ekleme!
+
+4. BAŞLIK VE HEDEF:
+   - PDF'te belirtilen başlığı "title" alanına yaz (örn. "${studentName} - Haftalık Ders Programı").
+   - Varsa haftalık soru hedefi veya genel notu "targetGoal" alanına yaz.
+
+ÇIKTI FORMATI:
+Sadece aşağıdaki JSON formatında saf JSON döndür (başka hiçbir metin veya markdown backtick ekleme):
 {
-  "title": "Gamze Tosun Haftalık Özel Ders Programı",
+  "title": "${studentName} - Haftalık Ders Programı",
   "examGroup": "${examGroup}",
   "targetGoal": "Haftalık Çalışma ve Soru Hedefi",
   "schedule": {
     "Pazartesi": [
       {
-        "time": "09:00 - 10:15",
-        "subject": "TYT Matematik",
-        "topic": "Fonksiyonlar",
-        "advice": "40 soru çözülecek",
-        "targetQuestions": 40,
+        "time": "",
+        "subject": "PDF'teki ders adı",
+        "topic": "PDF'teki kaynak/konu/test metni",
+        "resource": "PDF'teki kaynak kitap/yayın adı",
+        "advice": "PDF'teki koç notu",
+        "targetQuestions": 0,
         "status": "pending"
       }
     ],
@@ -288,10 +309,18 @@ Kurallar:
 
       if (!parsedJson || !parsedJson.schedule || Object.keys(parsedJson.schedule).length === 0) {
         parsedJson = {
-          title: `Gamze Tosun Özel Ders Programı (${examGroup})`,
+          title: `${studentName} - Haftalık Ders Programı`,
           examGroup: examGroup,
-          targetGoal: "Haftalık Soru ve Konu Bitirme Hedefi",
-          schedule: generateFallbackWeeklySchedule(examGroup, studentName)
+          targetGoal: "Haftalık Çalışma Programı",
+          schedule: {
+            "Pazartesi": [],
+            "Salı": [],
+            "Çarşamba": [],
+            "Perşembe": [],
+            "Cuma": [],
+            "Cumartesi": [],
+            "Pazar": []
+          }
         };
       }
 
@@ -301,17 +330,22 @@ Kurallar:
       });
     } catch (apiError: any) {
       console.error("Gemini API Error in PDF parsing:", apiError);
-      // Fallback cleanly so user experience never fails
-      const fallbackSchedule = generateFallbackWeeklySchedule(examGroup, studentName);
       return res.json({
-        success: true,
-        fallback: true,
+        success: false,
         error: apiError.message,
         data: {
-          title: `Gamze Tosun Özel Ders Programı (${examGroup})`,
+          title: `${studentName} - Haftalık Ders Programı`,
           examGroup: examGroup,
-          targetGoal: "Haftalık Soru ve Konu Bitirme Hedefi",
-          schedule: fallbackSchedule
+          targetGoal: "Haftalık Çalışma Programı",
+          schedule: {
+            "Pazartesi": [],
+            "Salı": [],
+            "Çarşamba": [],
+            "Perşembe": [],
+            "Cuma": [],
+            "Cumartesi": [],
+            "Pazar": []
+          }
         }
       });
     }

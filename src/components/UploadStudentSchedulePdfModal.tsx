@@ -82,47 +82,16 @@ export default function UploadStudentSchedulePdfModal({
 
   if (!isOpen || !student) return null;
 
-  // Client-side fallback generator if backend/AI is unreachable
-  const generateClientFallbackSchedule = (group: string): Record<string, ScheduleItem[]> => {
-    const isLGS = group.toUpperCase().includes('LGS');
-    const isEA = group.includes('Eşit') || group.includes('TM');
-
-    return {
-      "Pazartesi": [
-        { time: "09:00 - 10:15", subject: isLGS ? "LGS Matematik" : "TYT Matematik", topic: isLGS ? "Çarpanlar ve Katlar" : "Temel Kavramlar & Sayılar", advice: "Konu tekrarı + 35 soru", targetQuestions: 35, status: "pending" },
-        { time: "10:30 - 11:45", subject: isLGS ? "LGS Türkçe" : "TYT Türkçe", topic: "Paragrafta Anlam ve Yapı", advice: "25 paragraf sorusu aksatılmadan çözülecek", targetQuestions: 25, status: "pending" },
-        { time: "14:00 - 15:15", subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "TYT Coğrafya" : "TYT Fizik"), topic: isLGS ? "Mevsimler ve İklim" : (isEA ? "Doğa ve İnsan" : "Fizik Bilimine Giriş"), advice: "Kavram haritası çıkararak çalış", targetQuestions: 30, status: "pending" }
-      ],
-      "Salı": [
-        { time: "09:00 - 10:15", subject: isLGS ? "LGS Matematik" : "TYT Matematik", topic: isLGS ? "Üslü İfadeler" : "Bölünebilme & EBOB-EKOK", advice: "Yeni nesil beceri temelli sorulara ağırlık ver", targetQuestions: 40, status: "pending" },
-        { time: "10:30 - 11:45", subject: isLGS ? "LGS İnkılap Tarihi" : "TYT Tarih", topic: isLGS ? "Bir Kahraman Doğuyor" : "Tarih ve Zaman Kavramı", advice: "Kronolojik bağlantılara dikkat et", targetQuestions: 25, status: "pending" },
-        { time: "14:00 - 15:15", subject: isLGS ? "LGS İngilizce" : (isEA ? "TYT Felsefe" : "TYT Kimya"), topic: isLGS ? "Friendship" : (isEA ? "Felsefeyi Tanıma" : "Kimya Bilimi"), advice: "Formül ve terim listesi hazırla", targetQuestions: 25, status: "pending" }
-      ],
-      "Çarşamba": [
-        { time: "09:00 - 10:15", subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "AYT Edebiyat" : "TYT Biyoloji"), topic: isLGS ? "DNA ve Genetik Kod" : (isEA ? "Güzel Sanatlar ve Edebiyat" : "Canlıların Ortak Özellikleri"), advice: "Görsel ve şemalı özetleri incele", targetQuestions: 35, status: "pending" },
-        { time: "10:30 - 11:45", subject: isLGS ? "LGS Türkçe" : "TYT Türkçe", topic: "Sözcükte ve Cümlede Anlam", advice: "Zaman tutarak soru çöz", targetQuestions: 25, status: "pending" },
-        { time: "14:00 - 15:15", subject: isLGS ? "LGS Din Kültürü" : (isEA ? "AYT Coğrafya" : "AYT Fizik"), topic: isLGS ? "Kader İnancı" : (isEA ? "Ekosistem ve Madde Döngüsü" : "Vektörler ve Bağıl Hareket"), advice: "Test çöz ve analizi tamamla", targetQuestions: 30, status: "pending" }
-      ],
-      "Perşembe": [
-        { time: "09:00 - 10:15", subject: isLGS ? "LGS Matematik" : "TYT Matematik", topic: isLGS ? "Kareköklü İfadeler" : "Rasyonel Sayılar & Basit Eşitsizlikler", advice: "Zorlandığın soru tiplerini video çözümden izle", targetQuestions: 40, status: "pending" },
-        { time: "10:30 - 11:45", subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "AYT Tarih" : "TYT Kimya"), topic: isLGS ? "Basınç" : (isEA ? "İlk ve Orta Çağlarda Türk Dünyası" : "Atom ve Periyodik Sistem"), advice: "Önemli maddelerin altını çiz", targetQuestions: 30, status: "pending" },
-        { time: "14:00 - 15:15", subject: isLGS ? "LGS Türkçe" : "TYT Geometri", topic: isLGS ? "Yazım Kuralları" : "Doğruda ve Üçgende Açılar", advice: "Şekil çizerek çözmeyi öğren", targetQuestions: 30, status: "pending" }
-      ],
-      "Cuma": [
-        { time: "09:00 - 10:15", subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "AYT Matematik" : "AYT Fizik"), topic: isLGS ? "Madde ve Endüstri" : (isEA ? "Polinomlar" : "Newton'un Hareket Yasaları"), advice: "Pekiştirme testleri çözülecek", targetQuestions: 35, status: "pending" },
-        { time: "10:30 - 11:45", subject: isLGS ? "LGS İnkılap Tarihi" : "TYT Türkçe", topic: isLGS ? "Milli Uyanış" : "Noktalama İşaretleri ve Dil Bilgisi", advice: "Örnek cümleler üzerinden git", targetQuestions: 30, status: "pending" },
-        { time: "14:00 - 15:15", subject: "Haftalık Soru Tekrarı", topic: "Hafta boyu yapılamayan veya boş bırakılan soruların analizi", advice: "Gamze Hoca eksik soru defterini doldur", targetQuestions: 20, status: "pending" }
-      ],
-      "Cumartesi": [
-        { time: "10:00 - 12:15", subject: isLGS ? "LGS Branş Denemesi" : "TYT Genel / Branş Denemesi", topic: "Gerçek sınav provası ve zaman yönetimi çalışması", advice: "Sınav ortamında kesintisiz çöz ve ardından detaylı analiz yap", targetQuestions: 90, status: "pending" },
-        { time: "14:00 - 15:30", subject: "Deneme Analizi ve Eksik Telafisi", topic: "Yanlış yapılan soruların video çözümlerini izleme ve not çıkarma", advice: "Doğrularını değil, yanlışlarının nedenini öğren", targetQuestions: 20, status: "pending" }
-      ],
-      "Pazar": [
-        { time: "10:30 - 12:00", subject: "Kitap Okuma ve Paragraf Ritmi", topic: "30 sayfa kitap okuma + 20 adet zor seviye paragraf sorusu", advice: "Okuma hızını ve odaklanma süreni artıracak", targetQuestions: 20, status: "pending" },
-        { time: "13:30 - 14:45", subject: "Haftalık Değerlendirme & Koçluk Raporu", topic: "Haftalık çözülen soru sayılarını sisteme girme ve yeni haftayı planlama", advice: "Gamze Hoca ile haftalık hedeflerin kontrolü", targetQuestions: 0, status: "pending" }
-      ]
-    };
-  };
+  // Clean empty schedule if backend returns no items or errors
+  const createEmptyWeeklySchedule = (): Record<string, ScheduleItem[]> => ({
+    "Pazartesi": [],
+    "Salı": [],
+    "Çarşamba": [],
+    "Perşembe": [],
+    "Cuma": [],
+    "Cumartesi": [],
+    "Pazar": []
+  });
 
   // Analyze PDF with AI / Backend
   const analyzePdfContent = async (base64Str: string, file: File) => {
@@ -150,13 +119,11 @@ export default function UploadStudentSchedulePdfModal({
           return;
         }
       }
-      // Fallback
-      const fallback = generateClientFallbackSchedule(examGroup);
-      setParsedSchedule(fallback);
+      // If parsing fails or is empty, set clean empty schedule
+      setParsedSchedule(createEmptyWeeklySchedule());
     } catch (err) {
-      console.warn('Backend parse error, using smart fallback schedule:', err);
-      const fallback = generateClientFallbackSchedule(examGroup);
-      setParsedSchedule(fallback);
+      console.warn('Backend parse error:', err);
+      setParsedSchedule(createEmptyWeeklySchedule());
     } finally {
       setIsAnalyzingPdf(false);
     }
@@ -235,7 +202,7 @@ export default function UploadStudentSchedulePdfModal({
       };
 
       // Guarantee we have a schedule
-      const finalSchedule = parsedSchedule || generateClientFallbackSchedule(examGroup);
+      const finalSchedule = parsedSchedule || createEmptyWeeklySchedule();
 
       const updated = await dbSaveStudentUploadedPdf(student.username, pdfData, {
         studentName: student.fullName,
@@ -456,9 +423,19 @@ export default function UploadStudentSchedulePdfModal({
                             <span className="text-[10px] text-stone-400 italic">Serbest</span>
                           ) : (
                             slots.map((s, idx) => (
-                              <div key={idx} className="bg-stone-50 p-1 rounded border border-stone-100 leading-tight">
-                                <div className="font-bold text-slate-800 truncate">{s.subject}</div>
-                                <div className="text-[10px] text-stone-500 truncate">{s.topic}</div>
+                              <div key={idx} className="bg-stone-50 p-1.5 rounded border border-stone-200/80 leading-tight space-y-0.5">
+                                {s.time && s.time.trim() && (
+                                  <div className="font-mono text-[9px] font-bold text-[#C5A059]">{s.time}</div>
+                                )}
+                                <div className="font-bold text-slate-800 text-[11px] leading-snug">{s.subject}</div>
+                                {(s.topic || s.focus) && (
+                                  <div className="text-[10px] text-stone-600 leading-snug break-words">{s.topic || s.focus}</div>
+                                )}
+                                {s.resource && s.resource.trim() && (
+                                  <div className="text-[9px] font-semibold text-amber-950 bg-amber-100/70 px-1 py-0.5 rounded border border-amber-200/60 break-words">
+                                    📚 {s.resource}
+                                  </div>
+                                )}
                               </div>
                             ))
                           )}

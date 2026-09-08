@@ -188,10 +188,13 @@ export interface TopicCumulativeStat {
 
 export interface ScheduleItem {
   id?: string;
-  time: string; // e.g. "09:00 - 10:15"
+  time?: string; // e.g. "09:00 - 10:15" (boş ise PDF'te saat belirtilmemiştir)
   subject: string; // e.g. "TYT Matematik"
-  topic: string; // e.g. "Fonksiyonlar"
-  advice?: string; // Koçun notu/hedefi
+  topic?: string; // e.g. "Fonksiyonlar" veya PDF'teki konu/ödev
+  focus?: string; // Konu/ödev alanı
+  resource?: string; // PDF'te belirtilen kaynak/kitap/yayın adı (örn: "3D Soru Bankası", "Apotemi")
+  advice?: string; // Koçun notu/tavsiyesi
+  color?: string; // Renk stili
   targetQuestions?: number;
   completed?: boolean;
   status?: 'completed' | 'in_progress' | 'pending' | 'missed'; // Renkli gösterim durumu

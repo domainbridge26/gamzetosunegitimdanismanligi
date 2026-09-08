@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { 
   Calendar, Clock, CheckCircle2, AlertCircle, Sparkles, Filter, 
   ChevronLeft, ChevronRight, FileText, Download, Eye, Award, 
-  Check, X, Edit3, MessageSquare, History, BookmarkCheck, ArrowRight
+  Check, X, Edit3, MessageSquare, History, BookmarkCheck, ArrowRight,
+  BookOpen
 } from 'lucide-react';
 import { StudentAccount, StudentScheduleRecord, ScheduleItem, DailyStudyLog } from '../types';
 import { dbUpdateScheduleItemStatus, dbSetActiveProgram, dbDeleteStudentProgram, dbSaveStudentProgram } from '../lib/firebase';
@@ -84,42 +85,14 @@ export default function HorizontalWeeklyScheduleTable({
       }
 
       if (!finalSchedule) {
-        const isLGS = (prog.examGroup || student.studentClass).toUpperCase().includes('LGS');
-        const isEA = (prog.examGroup || student.studentClass).includes('Eşit') || (prog.examGroup || student.studentClass).includes('TM');
         finalSchedule = {
-          "Pazartesi": [
-            { time: "09:00 - 10:15", subject: isLGS ? "LGS Matematik" : "TYT Matematik", focus: isLGS ? "Çarpanlar ve Katlar" : "Temel Kavramlar & Sayı Kümeleri", advice: "Konu tekrarı yap ve en az 35 soru çöz.", color: "bg-blue-50 text-blue-800 border-blue-200", status: "pending" },
-            { time: "10:30 - 11:45", subject: isLGS ? "LGS Türkçe" : "TYT Türkçe", focus: isLGS ? "Fiilimsiler" : "Sözcükte Anlam ve Cümlede Anlam", advice: "25 paragraf sorusu aksatılmadan çözülecek.", color: "bg-emerald-50 text-emerald-800 border-emerald-200", status: "pending" },
-            { time: "14:00 - 15:15", subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "TYT Coğrafya" : "TYT Fizik"), focus: isLGS ? "Mevsimler ve İklim" : (isEA ? "Doğa ve İnsan" : "Fizik Bilimine Giriş"), advice: "Kavram haritası çıkararak çalış.", color: "bg-amber-50 text-amber-800 border-amber-200", status: "pending" }
-          ],
-          "Salı": [
-            { time: "09:00 - 10:15", subject: isLGS ? "LGS Matematik" : "TYT Matematik", focus: isLGS ? "Üslü İfadeler" : "Bölme ve Bölünebilme Kuralları", advice: "Yeni nesil beceri temelli sorulara ağırlık ver.", color: "bg-blue-50 text-blue-800 border-blue-200", status: "pending" },
-            { time: "10:30 - 11:45", subject: isLGS ? "LGS İnkılap Tarihi" : "TYT Tarih", focus: isLGS ? "Bir Kahraman Doğuyor" : "Tarih ve Zaman", advice: "Olayların kronolojik bağlantılarına dikkat et.", color: "bg-rose-50 text-rose-800 border-rose-200", status: "pending" },
-            { time: "14:00 - 15:15", subject: isLGS ? "LGS İngilizce" : (isEA ? "TYT Felsefe" : "TYT Kimya"), focus: isLGS ? "Friendship" : (isEA ? "Felsefeyi Tanıma" : "Kimya Bilimi"), advice: "Kelime listesi veya formül defterine not al.", color: "bg-purple-50 text-purple-800 border-purple-200", status: "pending" }
-          ],
-          "Çarşamba": [
-            { time: "09:00 - 10:15", subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "AYT Edebiyat" : "TYT Biyoloji"), focus: isLGS ? "DNA ve Genetik Kod" : (isEA ? "Güzel Sanatlar ve Edebiyat" : "Canlıların Ortak Özellikleri"), advice: "Görsel ve şemalı özetleri incele.", color: "bg-cyan-50 text-cyan-800 border-cyan-200", status: "pending" },
-            { time: "10:30 - 11:45", subject: isLGS ? "LGS Türkçe" : "TYT Türkçe", focus: "Paragrafta Yapı ve Ana Düşünce", advice: "Süre tutarak 25 paragraf sorusu çöz.", color: "bg-emerald-50 text-emerald-800 border-emerald-200", status: "pending" },
-            { time: "14:00 - 15:15", subject: isLGS ? "LGS Din Kültürü" : (isEA ? "AYT Coğrafya" : "AYT Fizik"), focus: isLGS ? "Kader İnancı" : (isEA ? "Ekosistem ve Madde Döngüsü" : "Vektörler ve Bağıl Hareket"), advice: "Soru bankasından test çöz.", color: "bg-indigo-50 text-indigo-800 border-indigo-200", status: "pending" }
-          ],
-          "Perşembe": [
-            { time: "09:00 - 10:15", subject: isLGS ? "LGS Matematik" : "TYT Matematik", focus: isLGS ? "Kareköklü İfadeler" : "EBOB - EKOK ve Rasyonel Sayılar", advice: "Zorlandığın soru tiplerini video çözümden izle.", color: "bg-blue-50 text-blue-800 border-blue-200", status: "pending" },
-            { time: "10:30 - 11:45", subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "AYT Matematik" : "AYT Matematik"), focus: isLGS ? "Basınç" : (isEA ? "Fonksiyonlar & Polinomlar" : "Fonksiyonlar & Polinomlar"), advice: "ÖSYM tarzı çıkmış soruları tara.", color: "bg-indigo-50 text-indigo-800 border-indigo-200", status: "pending" },
-            { time: "14:00 - 15:15", subject: isLGS ? "LGS İnkılap Tarihi" : "TYT Tarih", focus: "İlk Türk Devletleri ve İslam Tarihi", advice: "Kavram haritası çıkar.", color: "bg-rose-50 text-rose-800 border-rose-200", status: "pending" }
-          ],
-          "Cuma": [
-            { time: "09:00 - 10:15", subject: isLGS ? "LGS Türkçe" : "TYT Türkçe", focus: "Cümlenin Ögeleri ve Yazım Kuralları", advice: "Yazım kuralları istisnalarını deftere yaz.", color: "bg-emerald-50 text-emerald-800 border-emerald-200", status: "pending" },
-            { time: "10:30 - 11:45", subject: isLGS ? "LGS Matematik" : (isEA ? "AYT Edebiyat" : "AYT Kimya"), focus: isLGS ? "Veri Analizi" : (isEA ? "İslamiyet Öncesi Türk Edebiyatı" : "Modern Atom Teorisi ve Gazlar"), advice: "Önemli eser-yazar / formül kartlarını tekrar et.", color: "bg-amber-50 text-amber-800 border-amber-200", status: "pending" },
-            { time: "14:00 - 15:15", subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "AYT Tarih" : "AYT Biyoloji"), focus: isLGS ? "Madde ve Endüstri" : (isEA ? "Yerleşme ve Devletleşme" : "Sinir Sistemi ve Endokrin Sistem"), advice: "Soru çözerek pekiştir.", color: "bg-cyan-50 text-cyan-800 border-cyan-200", status: "pending" }
-          ],
-          "Cumartesi": [
-            { time: "10:00 - 12:30", subject: isLGS ? "Haftalık LGS Branş Denemesi" : "TYT Genel Deneme Sınavı", focus: isLGS ? "90 Soruluk Tam Deneme" : "120 Soruluk TYT Süreli Deneme", advice: "Sınav ortamında kesintisiz süre tutarak uygula.", color: "bg-emerald-100 text-emerald-950 border-emerald-300", status: "pending" },
-            { time: "14:30 - 16:00", subject: "Deneme Analizi ve Eksik Tespiti", focus: "Yapılamayan ve boş bırakılan soruların tek tek analizi", advice: "Yapamadığın soruların doğru çözümlerini hemen öğren.", color: "bg-amber-100 text-amber-950 border-amber-300", status: "pending" }
-          ],
-          "Pazar": [
-            { time: "10:30 - 12:00", subject: "Kitap Okuma ve Paragraf Ritmi", focus: "30 sayfa kitap okuma + 20 adet zor seviye paragraf sorusu", advice: "Okuma hızını ve odaklanma süreni artıracak.", color: "bg-purple-50 text-purple-800 border-purple-200", status: "pending" },
-            { time: "13:30 - 14:45", subject: "Haftalık Değerlendirme & Koçluk Raporu", focus: "Haftalık soru sayılarını sisteme girme ve yeni haftayı planlama", advice: "Gamze Hoca ile haftalık hedeflerin kontrolü.", color: "bg-blue-100 text-blue-950 border-blue-300", status: "pending" }
-          ]
+          "Pazartesi": [],
+          "Salı": [],
+          "Çarşamba": [],
+          "Perşembe": [],
+          "Cuma": [],
+          "Cumartesi": [],
+          "Pazar": []
         };
       }
 
@@ -633,10 +606,16 @@ export default function HorizontalWeeklyScheduleTable({
                           >
                             {/* Card Top: Time & Status Badge */}
                             <div className="flex items-center justify-between gap-1">
-                              <span className="font-mono text-[10px] font-extrabold text-stone-600 flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-[#C5A059]" />
-                                <span>{item.time}</span>
-                              </span>
+                              {item.time && item.time.trim() ? (
+                                <span className="font-mono text-[10px] font-extrabold text-stone-600 flex items-center gap-1 bg-stone-100 px-1.5 py-0.5 rounded">
+                                  <Clock className="w-3 h-3 text-[#C5A059]" />
+                                  <span>{item.time}</span>
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-bold font-mono text-stone-400 bg-stone-100/80 px-1.5 py-0.5 rounded">
+                                  #{idx + 1}. Görev
+                                </span>
+                              )}
 
                               {isCompleted ? (
                                 <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-emerald-600 text-white flex items-center gap-0.5">
@@ -658,14 +637,22 @@ export default function HorizontalWeeklyScheduleTable({
                               )}
                             </div>
 
-                            {/* Subject & Topic */}
-                            <div>
-                              <div className="font-bold text-xs text-slate-900 leading-tight">
+                            {/* Subject, Topic / Focus & Resource */}
+                            <div className="space-y-1">
+                              <div className="font-bold text-xs text-slate-900 leading-snug">
                                 {item.subject}
                               </div>
-                              <div className="text-[11px] text-stone-600 font-medium leading-tight mt-0.5 line-clamp-2">
-                                {item.topic}
-                              </div>
+                              {(item.topic || item.focus) && (
+                                <div className="text-[11px] text-stone-700 font-medium leading-snug whitespace-pre-wrap break-words">
+                                  {item.topic || item.focus}
+                                </div>
+                              )}
+                              {item.resource && item.resource.trim() && (
+                                <div className="text-[10px] font-semibold text-amber-950 bg-amber-50/90 px-1.5 py-0.5 rounded border border-amber-200 flex items-center gap-1.5 mt-0.5">
+                                  <BookOpen className="w-3 h-3 text-[#C5A059] shrink-0" />
+                                  <span className="break-words">Kaynak: {item.resource}</span>
+                                </div>
+                              )}
                             </div>
 
                             {/* Coach Advice */}
@@ -730,7 +717,7 @@ export default function HorizontalWeeklyScheduleTable({
                     Çalışma Durumunu Güncelle
                   </h4>
                   <p className="text-[11px] text-stone-500">
-                    {editingSlot.item.time} &bull; {editingSlot.item.subject}
+                    {editingSlot.item.time ? `${editingSlot.item.time} • ` : ''}{editingSlot.item.subject}
                   </p>
                 </div>
               </div>
@@ -743,9 +730,19 @@ export default function HorizontalWeeklyScheduleTable({
             </div>
 
             <form onSubmit={handleSaveSlotStatus} className="space-y-3.5 text-xs">
-              <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 space-y-1">
-                <div className="font-bold text-slate-900">{editingSlot.item.subject}</div>
-                <div className="text-stone-600">{editingSlot.item.topic}</div>
+              <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 space-y-1.5">
+                <div className="font-bold text-slate-900 text-sm">{editingSlot.item.subject}</div>
+                {(editingSlot.item.topic || editingSlot.item.focus) && (
+                  <div className="text-stone-700 font-medium whitespace-pre-wrap leading-relaxed">
+                    {editingSlot.item.topic || editingSlot.item.focus}
+                  </div>
+                )}
+                {editingSlot.item.resource && (
+                  <div className="text-[11px] font-semibold text-amber-950 bg-amber-50 px-2 py-1 rounded border border-amber-200 flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
+                    <span><strong>Kaynak:</strong> {editingSlot.item.resource}</span>
+                  </div>
+                )}
                 {editingSlot.item.advice && (
                   <div className="text-[11px] text-amber-900 italic mt-1">
                     💡 Koç Notu: {editingSlot.item.advice}
