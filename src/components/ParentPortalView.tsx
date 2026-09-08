@@ -10,6 +10,7 @@ import {
 import TopicAnalyticsBarChart from './TopicAnalyticsBarChart';
 import BookReadingTracker from './BookReadingTracker';
 import StudentReportPdfModal from './StudentReportPdfModal';
+import HorizontalWeeklyScheduleTable from './HorizontalWeeklyScheduleTable';
 
 interface ParentPortalViewProps {
   parent: ParentAccount;
@@ -461,105 +462,14 @@ export default function ParentPortalView({
 
       {/* TAB: SCHEDULE */}
       {activeTab === 'schedule' && (
-        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-stone-200 shadow-sm space-y-4">
-          <div className="border-b border-stone-100 pb-3">
-            <h3 className="font-serif font-black text-lg text-slate-900">
-              Haftalık Ders Çalışma Programı
-            </h3>
-            <p className="text-slate-500 text-xs mt-0.5">
-              Gamze Hoca tarafından öğrenciye özel olarak hazırlanmış haftalık ders ve soru hedefleri.
-            </p>
-          </div>
-
-          {/* Uploaded PDF Schedule for Parent View */}
-          {scheduleRecord?.uploadedPdf && (
-            <div className="bg-gradient-to-r from-amber-50 via-stone-50 to-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#C5A059] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                      Özel PDF Ders Programı
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {scheduleRecord.uploadedPdf.uploadedAt}
-                    </span>
-                  </div>
-                  <h4 className="font-bold text-xs text-slate-800 mt-0.5">
-                    {scheduleRecord.uploadedPdf.title || scheduleRecord.uploadedPdf.fileName}
-                  </h4>
-                  <p className="text-[10px] text-slate-500">
-                    {scheduleRecord.uploadedPdf.fileName} ({scheduleRecord.uploadedPdf.fileSize})
-                  </p>
-                  {scheduleRecord.uploadedPdf.note && (
-                    <p className="text-[11px] text-amber-900 bg-amber-100/60 rounded p-1.5 mt-1 border-l-2 border-[#C5A059]">
-                      💡 Gamze Hoca Notu: {scheduleRecord.uploadedPdf.note}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <a
-                  href={scheduleRecord.uploadedPdf.dataUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-[#C5A059] rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Görüntüle</span>
-                </a>
-                <a
-                  href={scheduleRecord.uploadedPdf.dataUrl}
-                  download={scheduleRecord.uploadedPdf.fileName}
-                  className="px-3 py-1.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>İndir (PDF)</span>
-                </a>
-              </div>
-            </div>
-          )}
-
-          {!scheduleRecord?.schedule ? (
-            !scheduleRecord?.uploadedPdf && (
-              <div className="text-center py-10 text-slate-400 text-xs sm:text-sm">
-                Bu öğrenci için henüz haftalık ders programı tanımlanmamış.
-              </div>
-            )
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-3">
-              {['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'].map((day) => {
-                const dayPlan = scheduleRecord.schedule[day] || [];
-                return (
-                  <div key={day} className="bg-stone-50 p-3 rounded-xl border border-stone-200 flex flex-col justify-between">
-                    <div>
-                      <div className="font-bold text-xs text-slate-900 border-b border-stone-200 pb-1.5 mb-2 text-center uppercase tracking-wider">
-                        {day}
-                      </div>
-                      {dayPlan.length === 0 ? (
-                        <p className="text-[10px] text-slate-400 italic text-center py-3">Serbest / Tekrar</p>
-                      ) : (
-                        <div className="space-y-1.5">
-                          {dayPlan.map((item: any, i: number) => (
-                            <div key={i} className="bg-white p-2 rounded-lg border border-stone-200 text-[10px]">
-                              <span className="font-bold text-slate-800 block truncate">{item.subject}</span>
-                              <span className="text-slate-500 truncate block">{item.topic}</span>
-                              <div className="flex items-center justify-between text-[#C5A059] font-bold mt-1">
-                                <span>{item.targetQuestions} Soru</span>
-                                <span>{item.duration} dk</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+        <div className="space-y-4">
+          <HorizontalWeeklyScheduleTable
+            student={student}
+            allPrograms={scheduleRecord?.allPrograms || (scheduleRecord ? [scheduleRecord] : [])}
+            currentProgram={scheduleRecord}
+            dailyLogs={dailyLogs}
+            isCoachView={false}
+          />
         </div>
       )}
 

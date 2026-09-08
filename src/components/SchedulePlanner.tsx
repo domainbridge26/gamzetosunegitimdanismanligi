@@ -1035,7 +1035,16 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
       
       const sorted: Record<string, ScheduleItem[]> = {};
       Object.keys(existing.schedule).forEach(day => {
-        sorted[day] = sortScheduleSlots(existing.schedule[day] || []);
+        const rawSlots = (existing.schedule[day] || []) as any[];
+        const mapped: ScheduleItem[] = rawSlots.map((s, idx) => ({
+          id: s.id || `slot-${day}-${idx}`,
+          time: s.time || '17:00 - 18:00',
+          subject: s.subject || 'Ders',
+          focus: s.focus || s.topic || 'Konu Tekrarı & Soru Çözümü',
+          advice: s.advice || '',
+          color: s.color || 'bg-blue-50 text-blue-800 border-blue-200'
+        }));
+        sorted[day] = sortScheduleSlots(mapped);
       });
       setSchedule(sorted);
       setIsGenerated(true);

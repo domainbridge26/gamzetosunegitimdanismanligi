@@ -26,7 +26,8 @@ import {
   BookReadingLog,
   CurriculumProgress,
   StudentScheduleRecord,
-  UploadedSchedulePdf
+  UploadedSchedulePdf,
+  ScheduleItem
 } from '../types';
 import { TESTIMONIALS_DATA } from '../data';
 
@@ -1358,107 +1359,337 @@ export async function dbSaveCurriculumProgress(studentUsername: string, complete
 // COACHING STUDENT SCHEDULE SERVICES
 // ==========================================
 
-export async function dbSaveStudentSchedule(studentUsername: string, record: Omit<StudentScheduleRecord, 'studentUsername'>): Promise<void> {
+export async function dbGetStudentPrograms(studentUsername: string): Promise<StudentScheduleRecord[]> {
   const usernameKey = studentUsername.toLowerCase();
-  const scheduleData: StudentScheduleRecord = {
-    ...record,
-    studentUsername: usernameKey,
-    hasUnreadNotification: true
-  };
+  let list: StudentScheduleRecord[] = [];
 
   try {
     const ref = doc(db, 'coaching_student_schedules', usernameKey);
-    await setDoc(ref, scheduleData);
+    const docSnap = await getDoc(ref);
+    if (docSnap.exists()) {
+      const data = docSnap.data() as any;
+      if (Array.isArray(data.allPrograms) && data.allPrograms.length > 0) {
+        list = data.allPrograms;
+      } else if (data.schedule || data.uploadedPdf) {
+        // Wrap existing single program
+        const singleProg: StudentScheduleRecord = {
+          id: data.id || `prog_${usernameKey}_initial`,
+          studentUsername: usernameKey,
+          studentName: data.studentName || 'Öğrenci',
+          title: data.title || (data.uploadedPdf?.title || 'Haftalık Ders Programı'),
+          examGroup: data.examGroup || 'Genel',
+          targetGoal: data.targetGoal || 'Bireysel Başarı Hedefi',
+          createdAt: data.createdAt || new Date().toLocaleDateString('tr-TR'),
+          schedule: data.schedule || {},
+          hasUnreadNotification: data.hasUnreadNotification,
+          uploadedPdf: data.uploadedPdf || null,
+          isActive: true
+        };
+        list = [singleProg];
+      }
+    }
   } catch (error) {
-    console.error('Failed to save student schedule in Firestore:', error);
+    console.error('Failed to fetch student programs from Firestore:', error);
+  }
+
+  // Fallback to localStorage if empty
+  if (list.length === 0) {
+    try {
+      const rawProgs = localStorage.getItem(`gamze_student_programs_${usernameKey}`);
+      if (rawProgs) {
+        list = JSON.parse(rawProgs);
+      } else {
+        const rawSingle = localStorage.getItem(`gamze_student_schedule_${usernameKey}`);
+        if (rawSingle) {
+          const parsed = JSON.parse(rawSingle);
+          if (Array.isArray(parsed.allPrograms) && parsed.allPrograms.length > 0) {
+            list = parsed.allPrograms;
+          } else if (parsed.schedule || parsed.uploadedPdf) {
+            list = [{
+              id: parsed.id || `prog_${usernameKey}_initial`,
+              ...parsed,
+              isActive: true
+            }];
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  return list;
+}
+
+export async function dbGetStudentSchedule(studentUsername: string, programId?: string): Promise<StudentScheduleRecord | null> {
+  const usernameKey = studentUsername.toLowerCase();
+  const programs = await dbGetStudentPrograms(usernameKey);
+  
+  if (programs.length === 0) {
+    return null;
+  }
+
+  if (programId) {
+    const found = programs.find(p => p.id === programId);
+    if (found) return { ...found, allPrograms: programs };
+  }
+
+  // Find the active program, or the first program in the list
+  const active = programs.find(p => p.isActive) || programs[0];
+  return { ...active, allPrograms: programs };
+}
+
+export async function dbSaveStudentProgram(
+  studentUsername: string, 
+  programData: Partial<StudentScheduleRecord> & { schedule?: Record<string, ScheduleItem[]> }
+): Promise<StudentScheduleRecord> {
+  const usernameKey = studentUsername.toLowerCase();
+  const existingPrograms = await dbGetStudentPrograms(usernameKey);
+  
+  const progId = programData.id || `prog_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const nowStr = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const newOrUpdatedProgram: StudentScheduleRecord = {
+    id: progId,
+    studentUsername: usernameKey,
+    studentName: programData.studentName || existingPrograms[0]?.studentName || 'Öğrenci',
+    title: programData.title || `Ders Programı #${existingPrograms.length + 1}`,
+    examGroup: programData.examGroup || existingPrograms[0]?.examGroup || 'YKS',
+    targetGoal: programData.targetGoal || existingPrograms[0]?.targetGoal || 'Bireysel Başarı Hedefi',
+    createdAt: programData.createdAt || nowStr,
+    updatedAt: nowStr,
+    schedule: programData.schedule || {},
+    uploadedPdf: programData.uploadedPdf !== undefined ? programData.uploadedPdf : (existingPrograms.find(p => p.id === progId)?.uploadedPdf || null),
+    hasUnreadNotification: true,
+    isActive: true
+  };
+
+  // Mark all other programs as isActive: false
+  const updatedProgramsList: StudentScheduleRecord[] = [
+    newOrUpdatedProgram,
+    ...existingPrograms
+      .filter(p => p.id !== progId)
+      .map(p => ({ ...p, isActive: false }))
+  ];
+
+  try {
+    const ref = doc(db, 'coaching_student_schedules', usernameKey);
+    await setDoc(ref, {
+      ...newOrUpdatedProgram,
+      allPrograms: updatedProgramsList,
+      hasUnreadNotification: true
+    });
+  } catch (error) {
+    console.error('Failed to save student program in Firestore:', error);
   }
 
   try {
-    localStorage.setItem(`gamze_student_schedule_${usernameKey}`, JSON.stringify(scheduleData));
-    // Also dispatch custom event for real-time notification in open tabs
-    window.dispatchEvent(new CustomEvent('gamze-schedule-updated', { detail: { studentUsername: usernameKey } }));
+    localStorage.setItem(`gamze_student_schedule_${usernameKey}`, JSON.stringify({
+      ...newOrUpdatedProgram,
+      allPrograms: updatedProgramsList
+    }));
+    localStorage.setItem(`gamze_student_programs_${usernameKey}`, JSON.stringify(updatedProgramsList));
+    window.dispatchEvent(new CustomEvent('gamze-schedule-updated', { detail: { studentUsername: usernameKey, programId: progId } }));
   } catch (e) {}
+
+  return { ...newOrUpdatedProgram, allPrograms: updatedProgramsList };
+}
+
+export async function dbSetActiveProgram(studentUsername: string, programId: string): Promise<StudentScheduleRecord | null> {
+  const usernameKey = studentUsername.toLowerCase();
+  const existingPrograms = await dbGetStudentPrograms(usernameKey);
+  const target = existingPrograms.find(p => p.id === programId);
+  if (!target) return null;
+
+  const updatedProgramsList = existingPrograms.map(p => ({
+    ...p,
+    isActive: p.id === programId
+  }));
+
+  const activeRecord = { ...target, isActive: true, allPrograms: updatedProgramsList };
+
+  try {
+    const ref = doc(db, 'coaching_student_schedules', usernameKey);
+    await setDoc(ref, activeRecord);
+  } catch (error) {
+    console.error('Failed to set active program in Firestore:', error);
+  }
+
+  try {
+    localStorage.setItem(`gamze_student_schedule_${usernameKey}`, JSON.stringify(activeRecord));
+    localStorage.setItem(`gamze_student_programs_${usernameKey}`, JSON.stringify(updatedProgramsList));
+    window.dispatchEvent(new CustomEvent('gamze-schedule-updated', { detail: { studentUsername: usernameKey, programId } }));
+  } catch (e) {}
+
+  return activeRecord;
+}
+
+export async function dbUpdateScheduleItemStatus(
+  studentUsername: string,
+  programId: string,
+  day: string,
+  itemIndex: number,
+  update: Partial<ScheduleItem>
+): Promise<StudentScheduleRecord | null> {
+  const usernameKey = studentUsername.toLowerCase();
+  const existingPrograms = await dbGetStudentPrograms(usernameKey);
+  const targetProgram = existingPrograms.find(p => p.id === programId) || existingPrograms[0];
+  if (!targetProgram) return null;
+
+  const updatedSchedule = { ...(targetProgram.schedule || {}) };
+  const dayItems = [...(updatedSchedule[day] || [])];
+  if (dayItems[itemIndex]) {
+    dayItems[itemIndex] = {
+      ...dayItems[itemIndex],
+      ...update,
+      completedAt: update.completed || update.status === 'completed' ? new Date().toLocaleDateString('tr-TR') : dayItems[itemIndex].completedAt
+    };
+    updatedSchedule[day] = dayItems;
+  }
+
+  const updatedProgram: StudentScheduleRecord = {
+    ...targetProgram,
+    schedule: updatedSchedule,
+    updatedAt: new Date().toLocaleDateString('tr-TR')
+  };
+
+  const updatedProgramsList = existingPrograms.map(p => 
+    p.id === targetProgram.id ? updatedProgram : p
+  );
+
+  const mainRecord = targetProgram.isActive 
+    ? { ...updatedProgram, allPrograms: updatedProgramsList }
+    : { ...(existingPrograms.find(p => p.isActive) || updatedProgram), allPrograms: updatedProgramsList };
+
+  try {
+    const ref = doc(db, 'coaching_student_schedules', usernameKey);
+    await setDoc(ref, mainRecord);
+  } catch (error) {
+    console.error('Failed to update schedule item in Firestore:', error);
+  }
+
+  try {
+    localStorage.setItem(`gamze_student_schedule_${usernameKey}`, JSON.stringify(mainRecord));
+    localStorage.setItem(`gamze_student_programs_${usernameKey}`, JSON.stringify(updatedProgramsList));
+    window.dispatchEvent(new CustomEvent('gamze-schedule-updated', { detail: { studentUsername: usernameKey, programId: targetProgram.id } }));
+  } catch (e) {}
+
+  return { ...updatedProgram, allPrograms: updatedProgramsList };
+}
+
+export async function dbSaveStudentSchedule(studentUsername: string, record: Omit<StudentScheduleRecord, 'studentUsername'>): Promise<void> {
+  await dbSaveStudentProgram(studentUsername, record as any);
 }
 
 export async function dbSaveStudentUploadedPdf(
   studentUsername: string, 
   pdf: UploadedSchedulePdf, 
-  extraInfo?: { studentName?: string; examGroup?: string; targetGoal?: string }
+  extraInfo?: { 
+    studentName?: string; 
+    examGroup?: string; 
+    targetGoal?: string; 
+    parsedSchedule?: Record<string, ScheduleItem[]>;
+    programTitle?: string;
+  }
 ): Promise<StudentScheduleRecord> {
   const usernameKey = studentUsername.toLowerCase();
-  const existing = await dbGetStudentSchedule(usernameKey);
-  
-  const scheduleData: StudentScheduleRecord = {
+  const existingPrograms = await dbGetStudentPrograms(usernameKey);
+  const nowStr = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  // Create a brand new program entry so previous programs are NEVER deleted!
+  const newProgId = `prog_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const title = extraInfo?.programTitle || pdf.title || `Hafta ${existingPrograms.length + 1} - PDF Programı`;
+
+  const newProgram: StudentScheduleRecord = {
+    id: newProgId,
     studentUsername: usernameKey,
-    studentName: extraInfo?.studentName || existing?.studentName || 'Öğrenci',
-    examGroup: extraInfo?.examGroup || existing?.examGroup || 'Genel Koçluk',
-    targetGoal: extraInfo?.targetGoal || existing?.targetGoal || 'Bireysel Başarı Hedefi',
-    createdAt: existing?.createdAt || new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }),
-    schedule: existing?.schedule || {},
+    studentName: extraInfo?.studentName || existingPrograms[0]?.studentName || 'Öğrenci',
+    title: title,
+    examGroup: extraInfo?.examGroup || existingPrograms[0]?.examGroup || 'YKS',
+    targetGoal: extraInfo?.targetGoal || existingPrograms[0]?.targetGoal || 'Bireysel Başarı Hedefi',
+    createdAt: nowStr,
+    updatedAt: nowStr,
+    schedule: extraInfo?.parsedSchedule || {},
+    uploadedPdf: pdf,
     hasUnreadNotification: true,
-    uploadedPdf: pdf
+    isActive: true
   };
 
-  try {
-    const ref = doc(db, 'coaching_student_schedules', usernameKey);
-    await setDoc(ref, scheduleData, { merge: true });
-  } catch (error) {
-    console.error('Failed to save uploaded PDF schedule in Firestore:', error);
-  }
-
-  try {
-    localStorage.setItem(`gamze_student_schedule_${usernameKey}`, JSON.stringify(scheduleData));
-    window.dispatchEvent(new CustomEvent('gamze-schedule-updated', { detail: { studentUsername: usernameKey } }));
-  } catch (e) {}
-
-  return scheduleData;
+  return await dbSaveStudentProgram(usernameKey, newProgram);
 }
 
-export async function dbRemoveStudentUploadedPdf(studentUsername: string): Promise<StudentScheduleRecord | null> {
+export async function dbRemoveStudentUploadedPdf(studentUsername: string, programId?: string): Promise<StudentScheduleRecord | null> {
   const usernameKey = studentUsername.toLowerCase();
-  const existing = await dbGetStudentSchedule(usernameKey);
-  if (!existing) return null;
+  const existingPrograms = await dbGetStudentPrograms(usernameKey);
+  if (existingPrograms.length === 0) return null;
 
-  const scheduleData: StudentScheduleRecord = {
-    ...existing,
+  const targetProgram = programId 
+    ? existingPrograms.find(p => p.id === programId) 
+    : existingPrograms.find(p => p.isActive) || existingPrograms[0];
+  
+  if (!targetProgram) return null;
+
+  const updatedProgram: StudentScheduleRecord = {
+    ...targetProgram,
     uploadedPdf: null
   };
 
+  const updatedProgramsList = existingPrograms.map(p => 
+    p.id === targetProgram.id ? updatedProgram : p
+  );
+
+  const mainRecord = targetProgram.isActive 
+    ? { ...updatedProgram, allPrograms: updatedProgramsList }
+    : { ...(existingPrograms.find(p => p.isActive) || updatedProgram), allPrograms: updatedProgramsList };
+
   try {
     const ref = doc(db, 'coaching_student_schedules', usernameKey);
-    await setDoc(ref, scheduleData);
+    await setDoc(ref, mainRecord);
   } catch (error) {
     console.error('Failed to remove uploaded PDF schedule from Firestore:', error);
   }
 
   try {
-    localStorage.setItem(`gamze_student_schedule_${usernameKey}`, JSON.stringify(scheduleData));
+    localStorage.setItem(`gamze_student_schedule_${usernameKey}`, JSON.stringify(mainRecord));
+    localStorage.setItem(`gamze_student_programs_${usernameKey}`, JSON.stringify(updatedProgramsList));
     window.dispatchEvent(new CustomEvent('gamze-schedule-updated', { detail: { studentUsername: usernameKey } }));
   } catch (e) {}
 
-  return scheduleData;
+  return { ...updatedProgram, allPrograms: updatedProgramsList };
 }
 
-export async function dbGetStudentSchedule(studentUsername: string): Promise<StudentScheduleRecord | null> {
+export async function dbDeleteStudentProgram(studentUsername: string, programId: string): Promise<void> {
   const usernameKey = studentUsername.toLowerCase();
+  const existingPrograms = await dbGetStudentPrograms(usernameKey);
+  const remaining = existingPrograms.filter(p => p.id !== programId);
+
+  if (remaining.length > 0 && !remaining.some(p => p.isActive)) {
+    remaining[0].isActive = true;
+  }
+
+  const mainRecord = remaining.length > 0 
+    ? { ...(remaining.find(p => p.isActive) || remaining[0]), allPrograms: remaining }
+    : null;
+
   try {
     const ref = doc(db, 'coaching_student_schedules', usernameKey);
-    const docSnap = await getDoc(ref);
-    if (docSnap.exists()) {
-      const data = docSnap.data() as StudentScheduleRecord;
-      localStorage.setItem(`gamze_student_schedule_${usernameKey}`, JSON.stringify(data));
-      return data;
+    if (mainRecord) {
+      await setDoc(ref, mainRecord);
+    } else {
+      await deleteDoc(ref);
     }
   } catch (error) {
-    console.error('Failed to fetch student schedule from Firestore:', error);
+    console.error('Failed to delete program from Firestore:', error);
   }
 
   try {
-    const raw = localStorage.getItem(`gamze_student_schedule_${usernameKey}`);
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) {
-    return null;
-  }
+    if (mainRecord) {
+      localStorage.setItem(`gamze_student_schedule_${usernameKey}`, JSON.stringify(mainRecord));
+      localStorage.setItem(`gamze_student_programs_${usernameKey}`, JSON.stringify(remaining));
+    } else {
+      localStorage.removeItem(`gamze_student_schedule_${usernameKey}`);
+      localStorage.removeItem(`gamze_student_programs_${usernameKey}`);
+    }
+    window.dispatchEvent(new CustomEvent('gamze-schedule-updated', { detail: { studentUsername: usernameKey } }));
+  } catch (e) {}
 }
 
 export async function dbMarkScheduleAsRead(studentUsername: string): Promise<void> {

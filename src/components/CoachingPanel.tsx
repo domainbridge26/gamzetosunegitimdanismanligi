@@ -29,6 +29,7 @@ import ParentManagementTab from './ParentManagementTab';
 import StudentReportPdfModal from './StudentReportPdfModal';
 import UploadStudentSchedulePdfModal from './UploadStudentSchedulePdfModal';
 import ParentPortalView from './ParentPortalView';
+import HorizontalWeeklyScheduleTable from './HorizontalWeeklyScheduleTable';
 
 interface CoachingPanelProps {
   isOpen: boolean;
@@ -1156,186 +1157,18 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
               </div>
 
               {/* TAB: DERS PROGRAMIM */}
-              {studentActiveTab === 'program' && (
+              {studentActiveTab === 'program' && currentStudent && (
                 <div className="space-y-6">
-                  {/* Uploaded PDF Card (if coach uploaded custom PDF) */}
-                  {studentSchedule?.uploadedPdf && (
-                    <div className="bg-gradient-to-r from-amber-500/10 via-stone-50 to-amber-500/10 border-2 border-[#C5A059] rounded-2xl p-5 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4 text-left animate-in fade-in">
-                      <div className="flex items-start gap-3.5">
-                        <div className="w-12 h-12 rounded-xl bg-[#C5A059] text-slate-950 flex items-center justify-center shrink-0 shadow mt-0.5">
-                          <FileText className="w-6 h-6" />
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[10px] uppercase font-black tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-700 text-white">
-                              Gamze Hoca Özel PDF Programı
-                            </span>
-                            <span className="text-xs text-stone-500 font-mono">
-                              {studentSchedule.uploadedPdf.uploadedAt}
-                            </span>
-                          </div>
-                          <h4 className="font-serif font-bold text-base text-slate-900">
-                            {studentSchedule.uploadedPdf.title || studentSchedule.uploadedPdf.fileName}
-                          </h4>
-                          <p className="text-xs text-stone-600">
-                            Dosya: <span className="font-mono text-slate-800 font-bold">{studentSchedule.uploadedPdf.fileName}</span> ({studentSchedule.uploadedPdf.fileSize})
-                          </p>
-                          {studentSchedule.uploadedPdf.note && (
-                            <p className="text-xs text-amber-950 bg-amber-100/80 rounded-lg p-2 font-medium border-l-2 border-[#C5A059]">
-                              💡 Koç Notu: {studentSchedule.uploadedPdf.note}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <a
-                          href={studentSchedule.uploadedPdf.dataUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-[#C5A059] rounded-xl text-xs font-bold transition-all shadow flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Eye className="w-4 h-4" />
-                          <span>Görüntüle / Aç</span>
-                        </a>
-                        <a
-                          href={studentSchedule.uploadedPdf.dataUrl}
-                          download={studentSchedule.uploadedPdf.fileName}
-                          className="px-4 py-2.5 bg-[#C5A059] hover:bg-[#b08d4b] text-white rounded-xl text-xs font-bold transition-all shadow flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Download className="w-4 h-4" />
-                          <span>İndir (PDF)</span>
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                  {studentSchedule && studentSchedule.schedule ? (
-                    <div className="bg-white rounded-2xl shadow-lg border border-stone-200 overflow-hidden">
-                      {/* Banner */}
-                      <div className="bg-slate-900 text-white p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="bg-[#C5A059] text-slate-950 text-[10px] font-extrabold px-2.5 py-0.5 rounded-md uppercase">
-                              Gamze Tosun Tarafından Hazırlandı
-                            </span>
-                            <span className="text-xs text-stone-400">{studentSchedule.createdAt}</span>
-                          </div>
-                          <h3 className="font-serif text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-                            <GraduationCap className="w-6 h-6 text-[#C5A059]" />
-                            {studentSchedule.studentName} - Haftalık Ders Programı
-                          </h3>
-                          <p className="text-stone-300 text-xs">
-                            <span className="font-bold text-[#C5A059]">Sınav Grubu:</span> {studentSchedule.examGroup} &bull; <span className="font-bold text-[#C5A059]">Hedef:</span> {studentSchedule.targetGoal}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            onClick={() => window.print()}
-                            className="px-3.5 py-2 bg-stone-800 hover:bg-stone-700 text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <FileText className="w-4 h-4 text-[#C5A059]" />
-                            <span>Yazdır / PDF</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Days Tab Selector */}
-                      <div className="bg-stone-100 p-3 border-b border-stone-200 flex flex-wrap gap-1.5 justify-center">
-                        {['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'].map((day) => {
-                          const slots = studentSchedule.schedule[day] || [];
-                          const hasSlots = slots.length > 0;
-                          return (
-                            <button
-                              key={day}
-                              onClick={() => setSelectedScheduleDay(day)}
-                              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                                selectedScheduleDay === day
-                                  ? 'bg-[#2D2D2D] text-[#C5A059] shadow-md scale-105 font-extrabold'
-                                  : 'bg-white text-slate-700 hover:bg-stone-200 border border-stone-200/80'
-                              }`}
-                            >
-                              <span>{day}</span>
-                              {hasSlots && (
-                                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                                  selectedScheduleDay === day ? 'bg-[#C5A059] text-slate-950' : 'bg-stone-200 text-slate-600'
-                                }`}>
-                                  {slots.length} etüt
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Schedule Table for Selected Day */}
-                      <div className="p-4 sm:p-6">
-                        <div className="mb-4 flex items-center justify-between">
-                          <h4 className="font-serif font-bold text-lg text-slate-900 flex items-center gap-2">
-                            <Calendar className="w-5 h-5 text-[#C5A059]" />
-                            {selectedScheduleDay} Etüt & Çalışma Akışı
-                          </h4>
-                          <span className="text-xs text-stone-500">
-                            {(studentSchedule.schedule[selectedScheduleDay] || []).length} Çalışma Bloğu
-                          </span>
-                        </div>
-
-                        {(studentSchedule.schedule[selectedScheduleDay] || []).length > 0 ? (
-                          <div className="overflow-x-auto rounded-xl border border-stone-200 shadow-sm">
-                            <table className="w-full text-left border-collapse min-w-[600px]">
-                              <thead>
-                                <tr className="bg-slate-900 text-white text-xs font-bold uppercase tracking-wider">
-                                  <th className="p-3.5 w-32">Saat</th>
-                                  <th className="p-3.5 w-44">Ders / Alan</th>
-                                  <th className="p-3.5">Odak & Konu Başlığı</th>
-                                  <th className="p-3.5 w-72">Gamze Hoca'nın Notu</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-stone-200 text-xs">
-                                {studentSchedule.schedule[selectedScheduleDay].map((item: any, idx: number) => (
-                                  <tr key={idx} className="hover:bg-amber-50/40 transition-colors">
-                                    <td className="p-3.5 font-bold text-slate-800 bg-stone-50 font-mono">
-                                      <div className="flex items-center gap-1.5">
-                                        <Clock className="w-3.5 h-3.5 text-[#C5A059]" />
-                                        <span>{item.time}</span>
-                                      </div>
-                                    </td>
-                                    <td className="p-3.5">
-                                      <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold border ${item.color || 'bg-blue-50 text-blue-800 border-blue-200'}`}>
-                                        {item.subject}
-                                      </span>
-                                    </td>
-                                    <td className="p-3.5 font-semibold text-slate-800">
-                                      {item.focus}
-                                    </td>
-                                    <td className="p-3.5 italic text-amber-900 bg-amber-50/60 rounded-lg border-l-2 border-[#C5A059]">
-                                      💡 {item.advice}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        ) : (
-                          <div className="p-12 text-center bg-stone-50 rounded-xl border border-dashed border-stone-300 space-y-2">
-                            <Calendar className="w-10 h-10 text-stone-300 mx-auto" />
-                            <p className="text-xs text-slate-500 font-medium">{selectedScheduleDay} günü için belirlenmiş serbest çalışma veya dinlenme zamanı.</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : !studentSchedule?.uploadedPdf ? (
-                    <div className="bg-white rounded-2xl p-12 text-center border border-stone-200 shadow-sm space-y-4">
-                      <div className="w-16 h-16 bg-amber-50 text-[#C5A059] rounded-2xl flex items-center justify-center mx-auto border border-amber-200">
-                        <Sparkles className="w-8 h-8" />
-                      </div>
-                      <div className="space-y-1.5 max-w-md mx-auto">
-                        <h4 className="font-serif text-lg font-bold text-slate-900">Henüz Ders Programınız Eklenmedi</h4>
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                          Eğitmeniniz Gamze Tosun sizin için haftalık özel ders programınızı hazırladığında veya sisteme PDF olarak yüklediğinde burada görüntülenecektir.
-                        </p>
-                      </div>
-                    </div>
-                  ) : null}
+                  <HorizontalWeeklyScheduleTable
+                    student={currentStudent}
+                    allPrograms={studentSchedule?.allPrograms || (studentSchedule ? [studentSchedule] : [])}
+                    currentProgram={studentSchedule}
+                    dailyLogs={dailyLogs.filter(d => d.studentUsername.toLowerCase() === currentStudent.username.toLowerCase())}
+                    isCoachView={false}
+                    onStatusChange={(updatedProgram) => {
+                      setStudentSchedule(updatedProgram);
+                    }}
+                  />
                 </div>
               )}
 

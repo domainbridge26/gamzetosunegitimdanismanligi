@@ -186,24 +186,47 @@ export interface TopicCumulativeStat {
   lastStudiedDate: string;
 }
 
+export interface ScheduleItem {
+  id?: string;
+  time: string; // e.g. "09:00 - 10:15"
+  subject: string; // e.g. "TYT Matematik"
+  topic: string; // e.g. "Fonksiyonlar"
+  advice?: string; // Koçun notu/hedefi
+  targetQuestions?: number;
+  completed?: boolean;
+  status?: 'completed' | 'in_progress' | 'pending' | 'missed'; // Renkli gösterim durumu
+  solvedQuestions?: number;
+  correctCount?: number;
+  wrongCount?: number;
+  studentNote?: string;
+  completedAt?: string;
+}
+
 export interface UploadedSchedulePdf {
+  id?: string;
   fileName: string;
   fileSize: string; // e.g. "320 KB"
   uploadedAt: string; // e.g. "08.09.2026 15:45"
   dataUrl: string; // Base64 data url (data:application/pdf;base64,...)
   title?: string;
   notes?: string;
+  note?: string;
 }
 
 export interface StudentScheduleRecord {
+  id?: string; // Unique program id e.g. "prog_1725791234567"
   studentUsername: string;
   studentName: string;
+  title?: string; // e.g. "1. Hafta Programı", "Mart Kampı"
   examGroup: string;
   targetGoal: string;
   createdAt: string;
-  schedule: Record<string, any>;
+  updatedAt?: string;
+  schedule: Record<string, ScheduleItem[]>;
   hasUnreadNotification?: boolean;
   uploadedPdf?: UploadedSchedulePdf | null;
+  isActive?: boolean;
+  allPrograms?: StudentScheduleRecord[]; // List of all historical and current programs
 }
 
 
