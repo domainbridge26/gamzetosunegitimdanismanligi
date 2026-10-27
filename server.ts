@@ -3,180 +3,194 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import pdfParse from "pdf-parse";
 
 dotenv.config();
 
-function generateFallbackWeeklySchedule(examGroup: string, studentName: string) {
-  const isLGS = examGroup.toUpperCase().includes('LGS');
-  const isEA = examGroup.includes('Eşit') || examGroup.includes('TM');
+// Common Turkish school and exam subjects for heuristic text extraction
+const TURKISH_SUBJECTS = [
+  "TYT Matematik", "AYT Matematik", "Matematik", "Geometri",
+  "TYT Türkçe", "Türkçe", "Paragraf", "Edebiyat", "AYT Edebiyat", "Türk Dili ve Edebiyatı",
+  "TYT Fizik", "AYT Fizik", "Fizik",
+  "TYT Kimya", "AYT Kimya", "Kimya",
+  "TYT Biyoloji", "AYT Biyoloji", "Biyoloji",
+  "TYT Tarih", "AYT Tarih", "Tarih", "T.C. İnkılap Tarihi", "İnkılap Tarihi",
+  "TYT Coğrafya", "AYT Coğrafya", "Coğrafya",
+  "Psikoloji", "Sosyoloji", "Mantık", "Felsefe", "Felsefe Grubu",
+  "Din Kültürü ve Ahlak Bilgisi", "Din Kültürü",
+  "Fen Bilimleri", "Sosyal Bilgiler", "İngilizce",
+  "Branş Denemesi", "Genel Deneme", "Deneme Sınavı", "Soru Çözümü", "Haftalık Tekrar"
+];
+
+// Common Turkish test publishers and coaching resources
+const KNOWN_RESOURCES = [
+  "3D", "Apotemi", "Bilgi Sarmal", "Karekök", "Karakök", "Hız ve Renk", "Limit",
+  "Palme", "Birey", "MEB", "Orijinal", "Acil", "Paraf", "Esen", "Çap", "Endemik",
+  "Benim Hocam", "Kenan Kara", "Eyüp B.", "Mert Hoca", "Rehber Matematik",
+  "Rüştü Hoca", "Dr. Biyoloji", "Görkem Şahin", "VIP Fizik", "Kafa Dengi",
+  "Toprak", "Puan", "Metin", "Aydın", "Supara", "Sınav", "Hocalara Geldik", "Tonguç"
+];
+
+const DAYS_LIST = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+
+/**
+ * Deterministic parser for Turkish study schedules from raw PDF text.
+ * Strictly respects the rule: NO invented hours if not present in the PDF.
+ */
+function parseTurkishScheduleTextDirectly(rawText: string, studentName: string, examGroup: string) {
+  const result: Record<string, any[]> = {
+    "Pazartesi": [],
+    "Salı": [],
+    "Çarşamba": [],
+    "Perşembe": [],
+    "Cuma": [],
+    "Cumartesi": [],
+    "Pazar": []
+  };
+
+  if (!rawText || !rawText.trim()) {
+    return {
+      title: `${studentName} - Haftalık Ders Programı`,
+      examGroup,
+      targetGoal: "Haftalık Çalışma Programı",
+      schedule: result
+    };
+  }
+
+  const lines = rawText
+    .split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(l => l.length > 0);
+
+  const dayPatterns: { day: string; regex: RegExp }[] = [
+    { day: "Pazartesi", regex: /^(?:1\.?\s*(?:GÜN|OTURUM)[:\s]*)?pazartes[ıi]/i },
+    { day: "Salı", regex: /^(?:2\.?\s*(?:GÜN|OTURUM)[:\s]*)?sal[ıi]/i },
+    { day: "Çarşamba", regex: /^(?:3\.?\s*(?:GÜN|OTURUM)[:\s]*)?[çc]ar[sş]amba/i },
+    { day: "Perşembe", regex: /^(?:4\.?\s*(?:GÜN|OTURUM)[:\s]*)?per[sş]embe/i },
+    { day: "Cuma", regex: /^(?:5\.?\s*(?:GÜN|OTURUM)[:\s]*)?cuma\b/i },
+    { day: "Cumartesi", regex: /^(?:6\.?\s*(?:GÜN|OTURUM)[:\s]*)?cumartes[ıi]/i },
+    { day: "Pazar", regex: /^(?:7\.?\s*(?:GÜN|OTURUM)[:\s]*)?pazar\b/i }
+  ];
+
+  let currentDay: string | null = null;
+  const dayBuckets: Record<string, string[]> = {
+    "Pazartesi": [],
+    "Salı": [],
+    "Çarşamba": [],
+    "Perşembe": [],
+    "Cuma": [],
+    "Cumartesi": [],
+    "Pazar": []
+  };
+
+  for (const line of lines) {
+    let matchedDay: string | null = null;
+    for (const dp of dayPatterns) {
+      if (dp.regex.test(line)) {
+        matchedDay = dp.day;
+        break;
+      }
+    }
+
+    if (matchedDay) {
+      currentDay = matchedDay;
+      const remainder = line.replace(new RegExp(`^(?:\\d+\\.?\\s*(?:GÜN|OTURUM)?[\\s:]*)?${matchedDay}[:\\s-]*`, 'i'), '').trim();
+      if (remainder.length > 2) {
+        dayBuckets[currentDay].push(remainder);
+      }
+    } else if (currentDay) {
+      if (!/^sayfa\s+\d+/i.test(line) && !/^\d+\s*\/\s*\d+$/.test(line)) {
+        dayBuckets[currentDay].push(line);
+      }
+    }
+  }
+
+  // Parse items for each day
+  for (const day of DAYS_LIST) {
+    const rawLines = dayBuckets[day];
+    const slots: any[] = [];
+    let currentItem: any = null;
+
+    for (const rawLine of rawLines) {
+      const line = rawLine.trim();
+      if (!line) continue;
+
+      // 1. Time extraction (Strict: only if written in line)
+      const timeMatch = line.match(/(\b[0-2]?\d[:.][0-5]\d\s*[-–—/]\s*[0-2]?\d[:.][0-5]\d\b|\b[0-2]?\d[:.][0-5]\d\b)/);
+      const extractedTime = timeMatch ? timeMatch[0].replace('.', ':') : "";
+
+      // 2. Question count extraction
+      const qMatch = line.match(/(\d+)\s*(?:soru|test|tane|adet)\b/i);
+      const targetQuestions = qMatch ? parseInt(qMatch[1], 10) : 0;
+
+      // 3. Subject detection
+      let detectedSubject = "";
+      for (const subj of TURKISH_SUBJECTS) {
+        const escaped = subj.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const subjRegex = new RegExp(`\\b${escaped}\\b`, 'i');
+        if (subjRegex.test(line)) {
+          detectedSubject = subj;
+          break;
+        }
+      }
+
+      // 4. Resource detection
+      let detectedResource = "";
+      for (const resName of KNOWN_RESOURCES) {
+        const escaped = resName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const resRegex = new RegExp(`\\b${escaped}\\b`, 'i');
+        if (resRegex.test(line)) {
+          detectedResource = resName;
+          break;
+        }
+      }
+
+      const isBulletOrNumbered = /^(?:[-*•#>]|\d+[.)])\s*/.test(line);
+      const hasDistinctSubject = Boolean(detectedSubject);
+      const hasTime = Boolean(extractedTime);
+
+      if (hasDistinctSubject || hasTime || isBulletOrNumbered || !currentItem) {
+        if (currentItem) {
+          slots.push(currentItem);
+        }
+
+        const cleanedTopic = line
+          .replace(new RegExp(`\\b${extractedTime}\\b`, 'g'), '')
+          .replace(/^(?:[-*•#>]|\d+[.)])\s*/, '')
+          .trim();
+
+        currentItem = {
+          time: extractedTime,
+          subject: detectedSubject || (examGroup.includes('LGS') ? 'LGS Çalışması' : 'Ders Çalışması'),
+          topic: cleanedTopic || detectedSubject || 'Program Etüdü',
+          resource: detectedResource,
+          advice: targetQuestions > 0 ? `${targetQuestions} soru çözülecek` : "",
+          targetQuestions: targetQuestions,
+          status: "pending"
+        };
+      } else if (currentItem) {
+        currentItem.topic = `${currentItem.topic} - ${line}`.trim();
+        if (!currentItem.resource && detectedResource) {
+          currentItem.resource = detectedResource;
+        }
+        if (!currentItem.targetQuestions && targetQuestions > 0) {
+          currentItem.targetQuestions = targetQuestions;
+        }
+      }
+    }
+
+    if (currentItem) {
+      slots.push(currentItem);
+    }
+
+    result[day] = slots;
+  }
 
   return {
-    "Pazartesi": [
-      {
-        time: "09:00 - 10:15",
-        subject: isLGS ? "LGS Matematik" : "TYT Matematik",
-        topic: isLGS ? "Çarpanlar ve Katlar" : "Temel Kavramlar ve Sayılar",
-        advice: "Konu tekrarı yap ve en az 35 soru çöz.",
-        targetQuestions: 35,
-        status: "pending"
-      },
-      {
-        time: "10:30 - 11:45",
-        subject: isLGS ? "LGS Türkçe" : "TYT Türkçe",
-        topic: isLGS ? "Fiilimsiler" : "Sözcükte Anlam ve Cümlede Anlam",
-        advice: "20 paragraf sorusu aksatılmadan çözülecek.",
-        targetQuestions: 25,
-        status: "pending"
-      },
-      {
-        time: "14:00 - 15:15",
-        subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "TYT Coğrafya" : "TYT Fizik"),
-        topic: isLGS ? "Mevsimler ve İklim" : (isEA ? "Doğa ve İnsan" : "Fizik Bilimine Giriş"),
-        advice: "Kavram haritası çıkararak çalış.",
-        targetQuestions: 30,
-        status: "pending"
-      }
-    ],
-    "Salı": [
-      {
-        time: "09:00 - 10:15",
-        subject: isLGS ? "LGS Matematik" : "TYT Matematik",
-        topic: isLGS ? "Üslü İfadeler" : "Bölme ve Bölünebilme Kuralları",
-        advice: "Yeni nesil beceri temelli sorulara ağırlık ver.",
-        targetQuestions: 40,
-        status: "pending"
-      },
-      {
-        time: "10:30 - 11:45",
-        subject: isLGS ? "LGS İnkılap Tarihi" : "TYT Tarih",
-        topic: isLGS ? "Bir Kahraman Doğuyor" : "Tarih ve Zaman",
-        advice: "Olayların kronolojik bağlantılarına dikkat et.",
-        targetQuestions: 25,
-        status: "pending"
-      },
-      {
-        time: "14:00 - 15:15",
-        subject: isLGS ? "LGS İngilizce" : (isEA ? "TYT Felsefe" : "TYT Kimya"),
-        topic: isLGS ? "Friendship" : (isEA ? "Felsefeyi Tanıma" : "Kimya Bilimi"),
-        advice: "Kelime listesi veya formül defterine not al.",
-        targetQuestions: 25,
-        status: "pending"
-      }
-    ],
-    "Çarşamba": [
-      {
-        time: "09:00 - 10:15",
-        subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "AYT Edebiyat" : "TYT Biyoloji"),
-        topic: isLGS ? "DNA ve Genetik Kod" : (isEA ? "Güzel Sanatlar ve Edebiyat" : "Canlıların Ortak Özellikleri"),
-        advice: "Görsel ve şemalı özetleri incele.",
-        targetQuestions: 35,
-        status: "pending"
-      },
-      {
-        time: "10:30 - 11:45",
-        subject: isLGS ? "LGS Türkçe" : "TYT Türkçe",
-        topic: "Paragrafta Yapı ve Ana Düşünce",
-        advice: "Süre tutarak 25 paragraf sorusu çöz.",
-        targetQuestions: 25,
-        status: "pending"
-      },
-      {
-        time: "14:00 - 15:15",
-        subject: isLGS ? "LGS Din Kültürü" : (isEA ? "AYT Coğrafya" : "AYT Fizik"),
-        topic: isLGS ? "Kader İnancı" : (isEA ? "Ekosistem ve Madde Döngüsü" : "Vektörler ve Bağıl Hareket"),
-        advice: "Soru bankasından test çöz.",
-        targetQuestions: 30,
-        status: "pending"
-      }
-    ],
-    "Perşembe": [
-      {
-        time: "09:00 - 10:15",
-        subject: isLGS ? "LGS Matematik" : "TYT Matematik",
-        topic: isLGS ? "Kareköklü İfadeler" : "EBOB - EKOK ve Rasyonel Sayılar",
-        advice: "Zorlandığın soru tiplerini video çözümden izle.",
-        targetQuestions: 40,
-        status: "pending"
-      },
-      {
-        time: "10:30 - 11:45",
-        subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "AYT Tarih" : "TYT Kimya"),
-        topic: isLGS ? "Basınç" : (isEA ? "İlk ve Orta Çağlarda Türk Dünyası" : "Atom ve Periyodik Sistem"),
-        advice: "Deney sorularının mantığını kavra.",
-        targetQuestions: 30,
-        status: "pending"
-      },
-      {
-        time: "14:00 - 15:15",
-        subject: isLGS ? "LGS Türkçe" : "TYT Geometri",
-        topic: isLGS ? "Yazım Kuralları" : "Doğruda ve Üçgende Açılar",
-        advice: "Şekil çizerek çözmeye alış.",
-        targetQuestions: 30,
-        status: "pending"
-      }
-    ],
-    "Cuma": [
-      {
-        time: "09:00 - 10:15",
-        subject: isLGS ? "LGS Fen Bilimleri" : (isEA ? "AYT Matematik" : "AYT Fizik"),
-        topic: isLGS ? "Madde ve Endüstri" : (isEA ? "Polinomlar ve 2. Dereceden Denklemler" : "Newton'un Hareket Yasaları"),
-        advice: "Konu pekiştirme testlerini tamamla.",
-        targetQuestions: 35,
-        status: "pending"
-      },
-      {
-        time: "10:30 - 11:45",
-        subject: isLGS ? "LGS İnkılap Tarihi" : "TYT Türkçe",
-        topic: isLGS ? "Milli Uyanış" : "Noktalama İşaretleri ve Dil Bilgisi",
-        advice: "Kuralları ezberlemek yerine örnek cümleler üzerinden git.",
-        targetQuestions: 30,
-        status: "pending"
-      },
-      {
-        time: "14:00 - 15:15",
-        subject: isLGS ? "Haftalık Soru Tekrarı" : "Haftalık Genel Tekrar",
-        topic: "Hafta boyu yapılamayan veya boş bırakılan soruların analizi",
-        advice: "Gamze Hoca'nın belirttiği eksik soru defterini doldur.",
-        targetQuestions: 20,
-        status: "pending"
-      }
-    ],
-    "Cumartesi": [
-      {
-        time: "10:00 - 12:15",
-        subject: isLGS ? "LGS Branş Denemesi" : "TYT Genel / Branş Denemesi",
-        topic: "Gerçek sınav provası ve zaman yönetimi çalışması",
-        advice: "Sınav ortamında kesintisiz çöz ve ardından detaylı analiz yap.",
-        targetQuestions: 90,
-        status: "pending"
-      },
-      {
-        time: "14:00 - 15:30",
-        subject: "Deneme Analizi ve Eksik Telafisi",
-        topic: "Yanlış yapılan soruların video çözümlerini izleme ve not çıkarma",
-        advice: "Doğrularını değil, yanlışlarının nedenini öğren.",
-        targetQuestions: 20,
-        status: "pending"
-      }
-    ],
-    "Pazar": [
-      {
-        time: "10:30 - 12:00",
-        subject: "Kitap Okuma ve Paragraf Ritmi",
-        topic: "30 sayfa kitap okuma + 20 adet zor seviye paragraf sorusu",
-        advice: "Okuma hızını ve odaklanma süreni artıracak.",
-        targetQuestions: 20,
-        status: "pending"
-      },
-      {
-        time: "13:30 - 14:45",
-        subject: "Haftalık Değerlendirme & Koçluk Raporu",
-        topic: "Haftalık çözülen soru sayılarını sisteme girme ve yeni haftayı planlama",
-        advice: "Gamze Hoca ile haftalık hedeflerin kontrolü.",
-        targetQuestions: 0,
-        status: "pending"
-      }
-    ]
+    title: `${studentName} - Haftalık Ders Programı`,
+    examGroup,
+    targetGoal: "Haftalık Çalışma ve Soru Hedefi",
+    schedule: result
   };
 }
 
@@ -192,7 +206,7 @@ async function startServer() {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
-  // 2. Parse uploaded PDF schedule with Gemini AI into weekly table
+  // 2. Parse uploaded PDF schedule with Gemini AI & deterministic PDF-text fallback
   app.post("/api/parse-schedule-pdf", async (req, res) => {
     const { pdfBase64, studentName = "Öğrenci", examGroup = "YKS", notes = "" } = req.body;
 
@@ -201,76 +215,60 @@ async function startServer() {
     }
 
     const cleanBase64 = pdfBase64.replace(/^data:[^;]+;base64,/, "").trim();
-    const apiKey = process.env.GEMINI_API_KEY;
+    let extractedText = "";
 
-    if (!apiKey) {
-      console.warn("GEMINI_API_KEY is not configured.");
-      return res.json({
-        success: false,
-        error: "GEMINI_API_KEY is not configured",
-        data: {
-          title: `${studentName} - Haftalık Ders Programı`,
-          examGroup: examGroup,
-          targetGoal: "Haftalık Çalışma Programı",
-          schedule: {
-            "Pazartesi": [],
-            "Salı": [],
-            "Çarşamba": [],
-            "Perşembe": [],
-            "Cuma": [],
-            "Cumartesi": [],
-            "Pazar": []
-          }
-        }
-      });
+    // 1. Extract raw text from PDF buffer
+    try {
+      const pdfBuffer = Buffer.from(cleanBase64, "base64");
+      const parsedPdf = await pdfParse(pdfBuffer);
+      extractedText = parsedPdf.text || "";
+    } catch (pdfErr) {
+      console.warn("Direct PDF text extraction warning:", pdfErr);
     }
 
-    try {
-      const ai = new GoogleGenAI({ apiKey });
-      const prompt = `Sen Gamze Tosun Eğitim Danışmanlığı sistemi için çalışan uzman ve son derece titiz bir veri aktarım uzmanısın.
-GÖREVİN: Ekte sunulan PDF haftalık ders programı belgesini okuyup, içindeki ders, kaynak, konu, test ve görevleri HİÇBİR DEĞİŞİKLİK, KISALTMA VEYA KAFANDAN İLAVE YAPMADAN AYNEN haftalık çizelgeye aktarmaktır.
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    // Helper to count parsed slots
+    const countSlots = (sch: Record<string, any[]>) => {
+      if (!sch) return 0;
+      return Object.values(sch).reduce((acc, arr) => acc + (Array.isArray(arr) ? arr.length : 0), 0);
+    };
+
+    // If Gemini API Key is available, try AI extraction first
+    if (apiKey) {
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const prompt = `Sen Gamze Tosun Eğitim Danışmanlığı sistemi için çalışan uzman ve son derece titiz bir veri aktarım uzmanısın.
+GÖREVİN: Ekteki PDF haftalık ders programı belgesini okuyup, içindeki ders, kaynak, konu, test ve görevleri HİÇBİR DEĞİŞİKLİK, KISALTMA VEYA KAFANDAN İLAVE YAPMADAN AYNEN haftalık çizelgeye aktarmaktır.
+
+${extractedText ? `BELGE METNİ:\n"""\n${extractedText}\n"""\n` : ''}
 
 ÇOK KESİN VE KATI TALİMATLAR:
 1. SAAT KURALI (EN KRİTİK KURAL):
    - PDF belgesinde bir ders/çalışma/etüt için AÇIKÇA ve BELİRGİN bir saat aralığı (örn: "09:00 - 10:15", "18:00 - 19:30" vb.) yazılmamışsa, "time" alanını KESİNLİKLE BOŞ BIRAK: "time": ""
-   - ASLA ve ASLA kafandan saat uydurma! "09:00", "10:00", "17:00" gibi tahmini saatler KESİNLİKLE EKLEME! Herhangi bir saat yazmıyorsa saat alanı mutlaka "" (boş dize) olmalıdır.
+   - ASLA ve ASLA kafandan saat uydurma! Herhangi bir saat yazmıyorsa saat alanı mutlaka "" (boş dize) olmalıdır.
    - Sadece ve sadece PDF'te açıkça saat/zaman aralığı belirtilmişse o saati yaz.
 
 2. DERS VE KAYNAK BİLGİSİNİ AYNEN VE BİREBİR AKTARMA KURALI:
-   - PDF'te hangi ders yazıyorsa "subject" alanına harfi harfine o dersin adını yaz (Örn: "Matematik", "TYT Matematik", "AYT Matematik", "Geometri", "Türkçe", "Fizik", "Kimya", "Biyoloji", "Tarih", "Coğrafya", "Felsefe", "Din Kültürü", "Paragraf", "Fen Bilimleri", "İnkılap Tarihi", "İngilizce" vb.).
-   - PDF'te dersin altında, yanında veya içeriğinde hangi kaynak (kitap, soru bankası, fasikül, yayın, deneme, youtube kanalı/hocası vb.) ve hangi ödev/test/sayfa/soru yazıyorsa AYNEN aktar:
-     * "topic": PDF'te yazan konunun, test numaralarının, sayfa aralıklarının, videoların veya ödevin tam metni (örn: "3D Soru Bankası Test 4-5", "Limit-Türev Apotemi Fasikülü s. 24-38", "25 Paragraf Sorusu", "Kenan Kara Üçgende Açılar 2 Video").
-     * "resource": Varsa belirtilen kaynak / kitap / yayın / hoca adı (örn: "3D Soru Bankası", "Apotemi", "Bilgi Sarmal", "Karekökk", "Hız ve Renk", "MEB Kazanım", "Kenan Kara", "Eyüp B." vb.). Yoksa "" bırak.
-     * "advice": Varsa PDF'te öğrenciye yönelik yazılmış koç notu, tavsiye veya direktif (örn: "Süre tutularak çözülecek", "Video çözümden yanlışlara bakılacak"). Yoksa "" bırak.
-     * "targetQuestions": PDF'te açıkça belirtilmişse soru sayısı (sayı olarak, örn: 40). Belirtilmemişse 0.
-   - PDF'te yazmayan HİÇBİR konuyu veya dersi kafandan uydurma. PDF'teki metni özetleme, değiştirme veya standart müfredat başlıklarıyla değiştirme. PDF'te ne yazıyorsa aynen aktar.
+   - PDF'te hangi ders yazıyorsa "subject" alanına harfi harfine o dersin adını yaz (Örn: "Matematik", "TYT Matematik", "AYT Matematik", "Geometri", "Türkçe", "Fizik", "Kimya", "Biyoloji", "Tarih", "Coğrafya", "Psikoloji", "Sosyoloji", "Mantık", "Felsefe", "Din Kültürü", "Paragraf", "Fen Bilimleri", "İnkılap Tarihi", "İngilizce" vb.).
+   - PDF'te dersin altında, yanında veya içeriğinde hangi kaynak ve hangi ödev/test/sayfa/soru yazıyorsa AYNEN aktar:
+     * "topic": PDF'te yazan konunun, test numaralarının, sayfa aralıklarının veya ödevin tam metni.
+     * "resource": Varsa belirtilen kaynak / kitap / yayın / hoca adı. Yoksa "" bırak.
+     * "advice": Varsa PDF'te öğrenciye yönelik yazılmış koç notu veya direktif. Yoksa "" bırak.
+     * "targetQuestions": PDF'te açıkça belirtilmişse soru sayısı. Belirtilmemişse 0.
 
 3. GÜNLER VE BOŞ GÜNLER:
-   - "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar" günleri sırayla nesnede yer almalıdır.
-   - PDF'te bir gün için herhangi bir çalışma yazılmamışsa veya boş bırakılmışsa, o gün için boş dizi [] döndür. Asla boş günlere kafandan ders veya çalışma ekleme!
-
-4. BAŞLIK VE HEDEF:
-   - PDF'te belirtilen başlığı "title" alanına yaz (örn. "${studentName} - Haftalık Ders Programı").
-   - Varsa haftalık soru hedefi veya genel notu "targetGoal" alanına yaz.
+   - "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar" günleri sırayla yer almalıdır.
+   - Boş günlere kafandan ders veya çalışma ekleme!
 
 ÇIKTI FORMATI:
-Sadece aşağıdaki JSON formatında saf JSON döndür (başka hiçbir metin veya markdown backtick ekleme):
+Sadece aşağıdaki JSON formatında saf JSON döndür:
 {
   "title": "${studentName} - Haftalık Ders Programı",
   "examGroup": "${examGroup}",
   "targetGoal": "Haftalık Çalışma ve Soru Hedefi",
   "schedule": {
-    "Pazartesi": [
-      {
-        "time": "",
-        "subject": "PDF'teki ders adı",
-        "topic": "PDF'teki kaynak/konu/test metni",
-        "resource": "PDF'teki kaynak kitap/yayın adı",
-        "advice": "PDF'teki koç notu",
-        "targetQuestions": 0,
-        "status": "pending"
-      }
-    ],
+    "Pazartesi": [],
     "Salı": [],
     "Çarşamba": [],
     "Perşembe": [],
@@ -280,75 +278,85 @@ Sadece aşağıdaki JSON formatında saf JSON döndür (başka hiçbir metin vey
   }
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: [
-          {
-            inlineData: {
-              mimeType: 'application/pdf',
-              data: cleanBase64
+        // Sequence of models to try in case of quota limit or overload
+        const candidateModels = ['gemini-flash-latest', 'gemini-3.1-flash-lite', 'gemini-3.8-flash'];
+        let aiSuccessJson: any = null;
+
+        for (const modelName of candidateModels) {
+          try {
+            const contents: any[] = [];
+            // If extractedText has good length, pass text directly (saves 99% token quota!)
+            if (extractedText && extractedText.length > 50) {
+              contents.push({ text: prompt });
+            } else {
+              contents.push(
+                { inlineData: { mimeType: 'application/pdf', data: cleanBase64 } },
+                { text: prompt }
+              );
             }
-          },
-          {
-            text: prompt
-          }
-        ],
-        config: {
-          responseMimeType: 'application/json'
-        }
-      });
 
-      const responseText = response.text || "{}";
-      let parsedJson: any = null;
-      try {
-        const cleaned = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
-        parsedJson = JSON.parse(cleaned);
-      } catch (parseErr) {
-        console.error("JSON parse error from Gemini:", parseErr, responseText);
-      }
+            const response = await ai.models.generateContent({
+              model: modelName,
+              contents,
+              config: { responseMimeType: 'application/json' }
+            });
 
-      if (!parsedJson || !parsedJson.schedule || Object.keys(parsedJson.schedule).length === 0) {
-        parsedJson = {
-          title: `${studentName} - Haftalık Ders Programı`,
-          examGroup: examGroup,
-          targetGoal: "Haftalık Çalışma Programı",
-          schedule: {
-            "Pazartesi": [],
-            "Salı": [],
-            "Çarşamba": [],
-            "Perşembe": [],
-            "Cuma": [],
-            "Cumartesi": [],
-            "Pazar": []
-          }
-        };
-      }
+            const responseText = response.text || "{}";
+            const cleaned = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+            const parsed = JSON.parse(cleaned);
 
-      return res.json({
-        success: true,
-        data: parsedJson
-      });
-    } catch (apiError: any) {
-      console.error("Gemini API Error in PDF parsing:", apiError);
-      return res.json({
-        success: false,
-        error: apiError.message,
-        data: {
-          title: `${studentName} - Haftalık Ders Programı`,
-          examGroup: examGroup,
-          targetGoal: "Haftalık Çalışma Programı",
-          schedule: {
-            "Pazartesi": [],
-            "Salı": [],
-            "Çarşamba": [],
-            "Perşembe": [],
-            "Cuma": [],
-            "Cumartesi": [],
-            "Pazar": []
+            if (parsed && parsed.schedule && countSlots(parsed.schedule) > 0) {
+              aiSuccessJson = parsed;
+              break; // Successfully got schedule
+            }
+          } catch (modelErr: any) {
+            console.warn(`Model ${modelName} failed or quota exceeded:`, modelErr?.message || modelErr);
           }
         }
-      });
+
+        if (aiSuccessJson) {
+          return res.json({
+            success: true,
+            source: 'gemini-ai',
+            data: aiSuccessJson
+          });
+        }
+      } catch (genAiErr) {
+        console.warn("AI generation error, falling back to deterministic parser:", genAiErr);
+      }
     }
+
+    // 3. Fallback: Parse extracted PDF text directly with deterministic parser
+    if (extractedText && extractedText.trim().length > 10) {
+      const directParsed = parseTurkishScheduleTextDirectly(extractedText, studentName, examGroup);
+      if (countSlots(directParsed.schedule) > 0) {
+        return res.json({
+          success: true,
+          source: 'pdf-text-parser',
+          data: directParsed
+        });
+      }
+    }
+
+    // 4. Return clean structure
+    return res.json({
+      success: true,
+      source: 'empty-template',
+      data: {
+        title: `${studentName} - Haftalık Ders Programı`,
+        examGroup: examGroup,
+        targetGoal: "Haftalık Çalışma Programı",
+        schedule: {
+          "Pazartesi": [],
+          "Salı": [],
+          "Çarşamba": [],
+          "Perşembe": [],
+          "Cuma": [],
+          "Cumartesi": [],
+          "Pazar": []
+        }
+      }
+    });
   });
 
   // 3. Vite middleware for development vs static for production

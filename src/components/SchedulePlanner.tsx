@@ -524,15 +524,60 @@ const EXAM_SUBJECTS: Record<string, SubjectTemplate[]> = {
       ] 
     },
     { 
-      name: 'Felsefe Grubu', 
+      name: 'Felsefe', 
       color: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-800', 
       focusTopics: [
-        'Felsefeye Giriş, Bilgi Felsefesi (Epistemoloji) ve Varlık Felsefesi (Ontoloji)',
-        'Ahlak, Siyaset, Sanat ve Din Felsefesi Doktrinleri',
-        'Psikolojinin Konusu, Duyum, Algı, Öğrenme ve Bellek',
-        'Sosyolojiye Giriş, Toplumsal Yapı, Değişme ve Kültür',
-        'Klasik Mantık: Kavram, Önerme ve Çıkarım Kuralları',
-        'Sembolik Mantık: Önermeler Mantığı ve Doğruluk Çizelgesi'
+        'Felsefe (Genel Konu)',
+        'Felsefe (Branş Denemesi)',
+        'Felsefeyi Tanıma & Felsefi Düşünce',
+        'Varlık Felsefesi (Ontoloji)',
+        'Bilgi Felsefesi (Epistemoloji)',
+        'Ahlak Felsefesi (Etik)',
+        'Siyaset, Sanat ve Din Felsefesi',
+        'Felsefi Akıl Yürütme ve Metin Analizi'
+      ] 
+    },
+    { 
+      name: 'Psikoloji', 
+      color: 'bg-purple-50 border-purple-200 text-purple-800', 
+      focusTopics: [
+        'Psikoloji (Genel Konu)',
+        'Psikoloji (Branş Denemesi)',
+        'Psikoloji Bilimini Tanıyalım & Yaklaşımlar',
+        'Psikolojinin Temel Süreçleri (Duyum, Algı, Dikkat)',
+        'Öğrenme, Bellek, Düşünme ve Zeka',
+        'Ruh Sağlığının Temelleri, Stres ve Başa Çıkma',
+        'Kişilik Kuramları ve Sosyal Davranış'
+      ] 
+    },
+    { 
+      name: 'Sosyoloji', 
+      color: 'bg-pink-50 border-pink-200 text-pink-800', 
+      focusTopics: [
+        'Sosyoloji (Genel Konu)',
+        'Sosyoloji (Branş Denemesi)',
+        'Sosyolojiye Giriş & Sosyolojik Yöntem',
+        'Toplumsal Yapı ve Toplumsal İlişkiler',
+        'Toplum ve Kültür',
+        'Toplumsal Değişme ve Gelişme',
+        'Toplumsal Kurumlar (Aile, Eğitim, Din, Ekonomi, Siyaset)',
+        'Toplumsal Tabakalaşma ve Hareketlilik',
+        'Toplumsal Sapma ve Toplumsal Kontrol'
+      ] 
+    },
+    { 
+      name: 'Mantık', 
+      color: 'bg-violet-50 border-violet-200 text-violet-800', 
+      focusTopics: [
+        'Mantık (Genel Konu)',
+        'Mantık (Branş Denemesi)',
+        'Mantığa Giriş & Doğru Düşünme İlkeleri',
+        'Klasik Mantık: Kavram, Terim ve Tanım',
+        'Önermeler ve Önerme Türleri',
+        'Kıyas ve Çıkarım Kuralları',
+        'Sembolik Mantık (Önermeler Mantığı)',
+        'Doğruluk Çizelgeleri & Tutarlılık/Geçerlilik',
+        'Yüklemler Mantığı & Çok Değerli Mantık'
       ] 
     },
     { 
@@ -1064,6 +1109,7 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
 
     try {
       let finalSchedule: Record<string, any> | null = null;
+      let slotCount = 0;
       try {
         const res = await fetch('/api/parse-schedule-pdf', {
           method: 'POST',
@@ -1078,15 +1124,21 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
         if (res.ok) {
           const json = await res.json();
           if (json.data?.schedule && Object.keys(json.data.schedule).length > 0) {
-            finalSchedule = json.data.schedule;
+            const total = Object.values(json.data.schedule).reduce((acc: number, arr: any) => acc + (Array.isArray(arr) ? arr.length : 0), 0);
+            if (total > 0) {
+              finalSchedule = json.data.schedule;
+              slotCount = total;
+            }
           }
         }
       } catch (backendErr) {
-        console.warn('Backend parse attempt warning, falling back to smart curriculum:', backendErr);
+        console.warn('Backend parse attempt error:', backendErr);
       }
 
-      if (!finalSchedule) {
-        finalSchedule = generateFallbackWeeklyPlan(studentExamGroup);
+      if (!finalSchedule || slotCount === 0) {
+        setParseNotice('⚠️ PDF içeriğinde ders/etüt kaydı okunamadı. Lütfen dosyanızı kontrol ediniz.');
+        setTimeout(() => setParseNotice(''), 5000);
+        return;
       }
 
       const updated = await dbSaveStudentProgram(un, {
@@ -1102,17 +1154,21 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
         const rawSlots = (finalSchedule[day] || []) as any[];
         const mapped: ScheduleItem[] = rawSlots.map((s, idx) => ({
           id: s.id || `slot-${day}-${idx}`,
-          time: s.time || '17:00 - 18:00',
+          time: s.time || '',
           subject: s.subject || 'Ders',
-          focus: s.focus || s.topic || 'Konu Tekrarı & Soru Çözümü',
+          topic: s.topic || s.focus || '',
+          focus: s.focus || s.topic || '',
+          resource: s.resource || '',
           advice: s.advice || '',
+          targetQuestions: s.targetQuestions || 0,
+          status: s.status || 'pending',
           color: s.color || 'bg-blue-50 text-blue-800 border-blue-200'
         }));
         sorted[day] = sortScheduleSlots(mapped);
       });
       setSchedule(sorted);
       setIsGenerated(true);
-      setParseNotice(`PDF ders programı başarıyla çözümlendi ve yatay tablo şablonuna eklendi!`);
+      setParseNotice(`✅ PDF ders programı başarıyla çözümlendi ve yatay tabloya aktarıldı (${slotCount} ders/etüt)!`);
       setTimeout(() => setParseNotice(''), 5000);
     } catch (err) {
       console.error('Error auto-parsing PDF:', err);
@@ -1172,10 +1228,14 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
           const rawSlots = (existing.schedule[day] || []) as any[];
           const mapped: ScheduleItem[] = rawSlots.map((s, idx) => ({
             id: s.id || `slot-${day}-${idx}`,
-            time: s.time || '17:00 - 18:00',
+            time: s.time || '',
             subject: s.subject || 'Ders',
-            focus: s.focus || s.topic || 'Konu Tekrarı & Soru Çözümü',
+            topic: s.topic || s.focus || '',
+            focus: s.focus || s.topic || '',
+            resource: s.resource || '',
             advice: s.advice || '',
+            targetQuestions: s.targetQuestions || 0,
+            status: s.status || 'pending',
             color: s.color || 'bg-blue-50 text-blue-800 border-blue-200'
           }));
           sorted[day] = sortScheduleSlots(mapped);
@@ -2267,10 +2327,14 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
                             const rawSlots = (updated.schedule[day] || []) as any[];
                             const mapped: ScheduleItem[] = rawSlots.map((s, idx) => ({
                               id: s.id || `slot-${day}-${idx}`,
-                              time: s.time || '17:00 - 18:00',
+                              time: s.time || '',
                               subject: s.subject || 'Ders',
-                              focus: s.focus || s.topic || 'Konu Tekrarı & Soru Çözümü',
+                              topic: s.topic || s.focus || '',
+                              focus: s.focus || s.topic || '',
+                              resource: s.resource || '',
                               advice: s.advice || '',
+                              targetQuestions: s.targetQuestions || 0,
+                              status: s.status || 'pending',
                               color: s.color || 'bg-blue-50 text-blue-800 border-blue-200'
                             }));
                             sorted[day] = sortScheduleSlots(mapped);

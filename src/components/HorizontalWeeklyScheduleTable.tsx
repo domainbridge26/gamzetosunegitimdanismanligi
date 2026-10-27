@@ -63,6 +63,7 @@ export default function HorizontalWeeklyScheduleTable({
 
     try {
       let finalSchedule: Record<string, any> | null = null;
+      let slotCount = 0;
       try {
         const res = await fetch('/api/parse-schedule-pdf', {
           method: 'POST',
@@ -77,23 +78,21 @@ export default function HorizontalWeeklyScheduleTable({
         if (res.ok) {
           const json = await res.json();
           if (json.data?.schedule && Object.keys(json.data.schedule).length > 0) {
-            finalSchedule = json.data.schedule;
+            const total = Object.values(json.data.schedule).reduce((acc: number, arr: any) => acc + (Array.isArray(arr) ? arr.length : 0), 0);
+            if (total > 0) {
+              finalSchedule = json.data.schedule;
+              slotCount = total;
+            }
           }
         }
       } catch (err) {
         console.warn('Backend parse attempt error:', err);
       }
 
-      if (!finalSchedule) {
-        finalSchedule = {
-          "Pazartesi": [],
-          "Salı": [],
-          "Çarşamba": [],
-          "Perşembe": [],
-          "Cuma": [],
-          "Cumartesi": [],
-          "Pazar": []
-        };
+      if (!finalSchedule || slotCount === 0) {
+        setParsingMsg('⚠️ PDF içeriğinde ders/etüt kaydı okunamadı. Lütfen PDF dosyanızı kontrol ediniz.');
+        setTimeout(() => setParsingMsg(''), 5000);
+        return;
       }
 
       const updated = await dbSaveStudentProgram(student.username, {
@@ -103,8 +102,8 @@ export default function HorizontalWeeklyScheduleTable({
       });
 
       if (onStatusChange) onStatusChange(updated);
-      setParsingMsg('PDF ders programı başarıyla çözümlendi ve tabloya aktarıldı!');
-      setTimeout(() => setParsingMsg(''), 5000);
+      setParsingMsg(`✅ PDF ders programı başarıyla çözümlendi ve yatay tabloya aktarıldı (${slotCount} ders/etüt)!`);
+      setTimeout(() => setParsingMsg(''), 6000);
     } catch (e) {
       console.error('Error parsing PDF to table:', e);
       setParsingMsg('PDF çözümlenirken bir hata oluştu.');

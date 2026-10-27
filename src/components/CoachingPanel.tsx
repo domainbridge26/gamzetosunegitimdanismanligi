@@ -227,6 +227,9 @@ export const CURRICULUM_DATA: Record<string, { subject: string; topics: string[]
     {
       subject: 'AYT Matematik',
       topics: [
+        'Polinomlar',
+        'İkinci Dereceden Denklemler & Karmaşık Sayılar',
+        'Eşitsizlikler ve Parabol',
         'Trigonometri',
         'Logaritma',
         'Diziler ve Seriler',
@@ -343,9 +346,70 @@ export const CURRICULUM_DATA: Record<string, { subject: string; topics: string[]
         'Küresel ve Bölgesel Örgütler (BM, NATO, AB vb.)',
         'Çevre Sorunları ve Sürdürülebilir Doğal Kaynaklar'
       ]
+    },
+    {
+      subject: 'Psikoloji',
+      topics: [
+        'Psikoloji Bilimini Tanıyalım & Psikolojinin Alanları',
+        'Psikolojinin Temel Süreçleri (Duyum, Algı, Dikkat)',
+        'Öğrenme, Bellek, Düşünme ve Zeka',
+        'Ruh Sağlığının Temelleri & Stresle Başa Çıkma',
+        'Kişilik Kuramları ve Sosyal Davranış'
+      ]
+    },
+    {
+      subject: 'Sosyoloji',
+      topics: [
+        'Sosyolojiye Giriş & Sosyolojik Yöntem',
+        'Toplumsal Yapı ve Toplumsal İlişkiler',
+        'Toplum ve Kültür',
+        'Toplumsal Değişme ve Gelişme',
+        'Toplumsal Kurumlar (Aile, Eğitim, Din, Ekonomi, Siyaset)',
+        'Toplumsal Tabakalaşma ve Hareketlilik',
+        'Toplumsal Sapma ve Toplumsal Kontrol'
+      ]
+    },
+    {
+      subject: 'Mantık',
+      topics: [
+        'Mantığa Giriş & Doğru Düşünme İlkeleri',
+        'Klasik Mantık: Kavram, Terim ve Tanım',
+        'Önermeler ve Önerme Türleri',
+        'Kıyas ve Çıkarım Kuralları',
+        'Sembolik Mantık (Önermeler Mantığı)',
+        'Doğruluk Çizelgeleri & Tutarlılık/Geçerlilik',
+        'Yüklemler Mantığı & Çok Değerli Mantık'
+      ]
+    },
+    {
+      subject: 'Felsefe',
+      topics: [
+        'Felsefeyi Tanıma & Felsefi Düşünce',
+        'Varlık Felsefesi (Ontoloji)',
+        'Bilgi Felsefesi (Epistemoloji)',
+        'Ahlak Felsefesi (Etik)',
+        'Siyaset, Sanat ve Din Felsefesi',
+        'Felsefi Akıl Yürütme ve Metin Analizi'
+      ]
     }
   ]
 };
+
+// Helper function to guarantee (Genel Konu) and (Branş Denemesi) options exist for any subject
+export function getTopicsForSubject(subject: string, rawTopics: string[] = []): string[] {
+  if (!subject) return [];
+  const genelKonu = `${subject} (Genel Konu)`;
+  const bransDenemesi = `${subject} (Branş Denemesi)`;
+  
+  const filtered = rawTopics.filter(
+    t => t !== genelKonu && 
+         t !== bransDenemesi && 
+         !t.toLowerCase().endsWith('(genel konu)') && 
+         !t.toLowerCase().endsWith('(branş denemesi)')
+  );
+  
+  return [genelKonu, bransDenemesi, ...filtered];
+}
 
 export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
   // Authentication State
@@ -496,10 +560,12 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
       const groupKey = getGroupKey(currentStudent.studentClass);
       const groupCurr = CURRICULUM_DATA[groupKey] || [];
       if (groupCurr.length > 0) {
+        const firstSub = groupCurr[0].subject;
+        const topicList = getTopicsForSubject(firstSub, groupCurr[0].topics);
         setDailyForm(prev => ({
           ...prev,
-          subject: groupCurr[0].subject,
-          topic: groupCurr[0].topics[0] || ''
+          subject: firstSub,
+          topic: topicList[0] || `${firstSub} (Genel Konu)`
         }));
       }
     }
@@ -1232,10 +1298,11 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                             const groupKey = getGroupKey(currentStudent.studentClass);
                             const groupCurr = CURRICULUM_DATA[groupKey] || [];
                             const matched = groupCurr.find(c => c.subject === sub);
+                            const availableTopics = getTopicsForSubject(sub, matched ? matched.topics : []);
                             setDailyForm({
                               ...dailyForm,
                               subject: sub,
-                              topic: matched ? matched.topics[0] || '' : ''
+                              topic: availableTopics[0] || `${sub} (Genel Konu)`
                             });
                           }}
                           className="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-xs font-bold text-slate-900"
@@ -1249,23 +1316,45 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                         </select>
                       </div>
 
-                      {/* Topic Dropdown / Input */}
+                      {/* Topic Dropdown / Input with Quick Select for Genel Konu & Branş Denemesi */}
                       <div>
-                        <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                          Çalışılan Konu
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-xs font-bold uppercase text-slate-700">
+                            Çalışılan Konu / Tür
+                          </label>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setDailyForm({ ...dailyForm, topic: `${dailyForm.subject || 'Ders'} (Genel Konu)` })}
+                              className="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded border border-amber-300 transition-colors cursor-pointer"
+                              title="Genel konu tekrarı seç"
+                            >
+                              📌 Genel Konu
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDailyForm({ ...dailyForm, topic: `${dailyForm.subject || 'Ders'} (Branş Denemesi)` })}
+                              className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-bold px-2 py-0.5 rounded border border-indigo-300 transition-colors cursor-pointer"
+                              title="Branş denemesi seç"
+                            >
+                              📝 Branş Denemesi
+                            </button>
+                          </div>
+                        </div>
                         {(() => {
                           const groupKey = getGroupKey(currentStudent.studentClass);
                           const groupCurr = CURRICULUM_DATA[groupKey] || [];
                           const matched = groupCurr.find(c => c.subject === dailyForm.subject);
-                          if (matched && matched.topics.length > 0) {
+                          const topicList = getTopicsForSubject(dailyForm.subject, matched ? matched.topics : []);
+                          
+                          if (topicList.length > 0) {
                             return (
                               <select
                                 value={dailyForm.topic}
                                 onChange={(e) => setDailyForm({ ...dailyForm, topic: e.target.value })}
                                 className="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-xs font-bold text-slate-900"
                               >
-                                {matched.topics.map((tp) => (
+                                {topicList.map((tp) => (
                                   <option key={tp} value={tp}>
                                     {tp}
                                   </option>
