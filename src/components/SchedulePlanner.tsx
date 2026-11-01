@@ -1124,7 +1124,7 @@ export default function SchedulePlanner({ studentsList = [], onScheduleSavedForS
         if (res.ok) {
           const json = await res.json();
           if (json.data?.schedule && Object.keys(json.data.schedule).length > 0) {
-            const total = Object.values(json.data.schedule).reduce((acc: number, arr: any) => acc + (Array.isArray(arr) ? arr.length : 0), 0);
+            const total: number = (Object.values(json.data.schedule) as any[]).reduce((acc: number, arr: any) => acc + (Array.isArray(arr) ? arr.length : 0), 0);
             if (total > 0) {
               finalSchedule = json.data.schedule;
               slotCount = total;

@@ -3,13 +3,14 @@ import {
   X, Check, Trash2, Archive, Shield, Phone, 
   Mail, Calendar, Users, FileSpreadsheet, PlusCircle, UserCheck,
   ListFilter, Sparkles, MessageSquare, ThumbsUp, LogOut, Clock, Info,
-  Eye, TrendingUp, Globe, Zap, HeartPulse
+  Eye, TrendingUp, Globe, Zap, HeartPulse, RefreshCw
 } from 'lucide-react';
 import { ContactSubmission, Testimonial } from '../types';
 import { TESTIMONIALS_DATA } from '../data';
 import AnxietyControlPanel from './AnxietyControlPanel';
 import { 
   dbGetInquiries, 
+  dbSubscribeToInquiries,
   dbUpdateInquiryStatus, 
   dbDeleteInquiry, 
   dbClearAllInquiries, 
@@ -68,17 +69,54 @@ export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading, onOpen
     data: any;
   }[]>([]);
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   // Load inquiries from Firestore
   const loadInquiries = async () => {
-    const data = await dbGetInquiries();
-    setInquiries(data);
+    try {
+      const data = await dbGetInquiries();
+      setInquiries(data);
+    } catch (e) {
+      console.warn('Failed to load inquiries:', e);
+    }
   };
 
   // Load testimonials from Firestore
   const loadTestimonials = async () => {
-    const data = await dbGetTestimonials();
-    setTestimonials(data);
+    try {
+      const data = await dbGetTestimonials();
+      setTestimonials(data);
+    } catch (e) {
+      console.warn('Failed to load testimonials:', e);
+    }
   };
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const data = await dbGetInquiries();
+      setInquiries(data);
+      const tests = await dbGetTestimonials();
+      setTestimonials(tests);
+    } catch (e) {
+      console.warn('Manual refresh error:', e);
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
+  };
+
+  // Real-time subscription to inquiries from Firestore & Cache
+  useEffect(() => {
+    if (isOpen) {
+      const unsub = dbSubscribeToInquiries((list) => {
+        setInquiries(list);
+      });
+      loadTestimonials();
+      return () => {
+        unsub();
+      };
+    }
+  }, [isOpen, isAuthenticated]);
 
   // Check auto-login and load data on open
   useEffect(() => {
@@ -395,43 +433,52 @@ export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading, onOpen
       <div className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-6xl h-[95vh] sm:h-[85vh] shadow-2xl flex flex-col overflow-hidden border border-stone-200">
         
         {/* Header */}
-        <div className="bg-slate-900 text-white px-6 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-600 rounded-xl">
+        <div className="bg-slate-900 text-white px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="p-2 bg-emerald-600 rounded-xl shrink-0">
               <Shield className="w-5 h-5 text-white" />
             </div>
-            <div className="text-left">
+            <div className="text-left min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="font-display font-bold text-lg leading-none">Gamze Hanım Yönetici Paneli</h2>
+                <h2 className="font-display font-bold text-base sm:text-lg leading-tight truncate">Gamze Hanım Yönetici Paneli</h2>
                 {isLoadedFromCloud ? (
-                  <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full border border-emerald-500/30 font-semibold flex items-center gap-1">
+                  <span className="bg-emerald-500/20 text-emerald-300 text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full border border-emerald-500/30 font-semibold flex items-center gap-1 shrink-0">
                     <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping shrink-0" />
-                    <span>Bulut Bağlantısı Aktif (Firestore)</span>
+                    <span>Bulut (Canlı Firestore)</span>
                   </span>
                 ) : (
-                  <span className="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-full border border-amber-500/30 font-semibold flex items-center gap-1">
+                  <span className="bg-amber-500/20 text-amber-300 text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full border border-amber-500/30 font-semibold flex items-center gap-1 shrink-0">
                     <span className="w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0" />
-                    <span>Yerel Depolama (Çevrimdışı)</span>
+                    <span>Çevrimdışı Bellek</span>
                   </span>
                 )}
               </div>
-              <span className="text-xs text-slate-400 font-medium mt-1 block">Gelen Danışmanlık ve Koçluk Talepleri Takip Sistemi</span>
+              <span className="text-[11px] sm:text-xs text-slate-400 font-medium mt-0.5 block truncate">Gelen Danışmanlık ve Koçluk Talepleri Takip Sistemi</span>
             </div>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <button
+              onClick={handleManualRefresh}
+              className={`p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all cursor-pointer border border-slate-700/60 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`}
+              title="Buluttan Verileri Yenile"
+            >
+              <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+            <button 
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="bg-slate-900/95 border-t border-slate-800 px-6 py-2 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+        {/* Tab Switcher - Mobile scrollable */}
+        <div className="bg-slate-900/95 border-t border-slate-800 px-3 sm:px-6 py-2 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar scrollbar-none snap-x">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={() => setActiveTab('requests')}
-              className={`px-4 py-2 text-xs font-bold transition-all rounded-lg flex items-center gap-2 cursor-pointer ${
+              className={`shrink-0 min-w-max px-3 sm:px-4 py-2 text-xs font-bold transition-all rounded-lg flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
                 activeTab === 'requests'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
@@ -447,7 +494,7 @@ export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading, onOpen
             </button>
             <button
               onClick={() => setActiveTab('comments')}
-              className={`px-4 py-2 text-xs font-bold transition-all rounded-lg flex items-center gap-2 cursor-pointer ${
+              className={`shrink-0 min-w-max px-3 sm:px-4 py-2 text-xs font-bold transition-all rounded-lg flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
                 activeTab === 'comments'
                   ? 'bg-amber-600 text-white shadow-sm'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
@@ -463,7 +510,7 @@ export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading, onOpen
             </button>
             <button
               onClick={() => setActiveTab('anxiety')}
-              className={`px-4 py-2 text-xs font-bold transition-all rounded-lg flex items-center gap-2 cursor-pointer ${
+              className={`shrink-0 min-w-max px-3 sm:px-4 py-2 text-xs font-bold transition-all rounded-lg flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
                 activeTab === 'anxiety'
                   ? 'bg-[#C5A059] text-slate-950 shadow-sm font-extrabold'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
@@ -479,10 +526,10 @@ export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading, onOpen
                   onClose();
                   onOpenCoaching();
                 }}
-                className="px-4 py-2 text-xs font-extrabold transition-all rounded-lg flex items-center gap-2 cursor-pointer bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm"
+                className="shrink-0 min-w-max px-3 sm:px-4 py-2 text-xs font-extrabold transition-all rounded-lg flex items-center gap-1.5 sm:gap-2 cursor-pointer bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm"
               >
                 <Users className="w-4 h-4" />
-                <span>Koçluk Panelini Aç 🎓</span>
+                <span>Koçluk Paneli 🎓</span>
               </button>
             )}
 
@@ -492,10 +539,10 @@ export default function AdminPanel({ isOpen, onClose, onOpenSpeedReading, onOpen
                   onClose();
                   onOpenSpeedReading();
                 }}
-                className="px-4 py-2 text-xs font-extrabold transition-all rounded-lg flex items-center gap-2 cursor-pointer bg-[#C5A059] text-stone-950 hover:bg-[#b08d4b]"
+                className="shrink-0 min-w-max px-3 sm:px-4 py-2 text-xs font-extrabold transition-all rounded-lg flex items-center gap-1.5 sm:gap-2 cursor-pointer bg-[#C5A059] text-stone-950 hover:bg-[#b08d4b]"
               >
                 <Zap className="w-4 h-4" />
-                <span>Hızlı Okuma Panelini Aç 🚀</span>
+                <span>Hızlı Okuma 🚀</span>
               </button>
             )}
           </div>

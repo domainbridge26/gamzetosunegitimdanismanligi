@@ -70,6 +70,34 @@ export async function dbGetInquiries(): Promise<ContactSubmission[]> {
       });
     });
 
+    // Check if there are any locally stored inquiries not yet in Firestore, and preserve them
+    try {
+      const raw = localStorage.getItem('gamze_inquiries');
+      if (raw) {
+        const localList: ContactSubmission[] = JSON.parse(raw);
+        if (Array.isArray(localList)) {
+          for (const localInq of localList) {
+            if (localInq && localInq.id && !result.some(r => r.id === localInq.id || (r.phone === localInq.phone && r.fullName === localInq.fullName))) {
+              result.push(localInq);
+              // Also sync this local-only record to Firestore in the background
+              addDoc(collection(db, 'inquiries'), {
+                fullName: localInq.fullName || '',
+                phone: localInq.phone || '',
+                email: localInq.email || '',
+                studentClass: localInq.studentClass || '',
+                selectedService: localInq.selectedService || '',
+                message: localInq.message || '',
+                createdAt: localInq.createdAt || new Date().toLocaleString('tr-TR'),
+                status: localInq.status || 'Yeni'
+              }).catch(e => console.warn('Background sync failed:', e));
+            }
+          }
+        }
+      }
+    } catch (cacheMergeErr) {
+      console.warn('Cache merge warning:', cacheMergeErr);
+    }
+
     // Sort in memory by parsed date or createdAt string descending
     result.sort((a, b) => {
       const dateA = a.createdAt ? parseTurkishDateTime(a.createdAt) : 0;
@@ -78,6 +106,10 @@ export async function dbGetInquiries(): Promise<ContactSubmission[]> {
     });
 
     isLoadedFromCloud = true;
+    try {
+      localStorage.setItem('gamze_inquiries', JSON.stringify(result));
+    } catch (e) {}
+
     return result;
   } catch (error) {
     console.error('Failed to fetch inquiries from Firestore, falling back to localStorage:', error);
@@ -85,6 +117,81 @@ export async function dbGetInquiries(): Promise<ContactSubmission[]> {
     const raw = localStorage.getItem('gamze_inquiries');
     return raw ? JSON.parse(raw) : [];
   }
+}
+
+/**
+ * Real-time listener for inquiries (Contact Submissions)
+ * Emits immediately from cache, then listens to live Firestore changes
+ */
+export function dbSubscribeToInquiries(callback: (inquiries: ContactSubmission[]) => void): () => void {
+  // 1. Immediately emit from localStorage if available
+  try {
+    const raw = localStorage.getItem('gamze_inquiries');
+    if (raw) {
+      const cached = JSON.parse(raw);
+      if (Array.isArray(cached) && cached.length > 0) {
+        callback(cached);
+      }
+    }
+  } catch (e) {}
+
+  // 2. Set up real-time onSnapshot listener
+  const unsubscribe = onSnapshot(collection(db, 'inquiries'), (snapshot) => {
+    const list: ContactSubmission[] = [];
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      list.push({
+        id: docSnap.id,
+        fullName: data.fullName || '',
+        phone: data.phone || '',
+        email: data.email || '',
+        studentClass: data.studentClass || '',
+        selectedService: data.selectedService || '',
+        message: data.message || '',
+        createdAt: data.createdAt || '',
+        status: data.status || 'Yeni'
+      });
+    });
+
+    // Merge any offline unsynced items
+    try {
+      const raw = localStorage.getItem('gamze_inquiries');
+      if (raw) {
+        const localList: ContactSubmission[] = JSON.parse(raw);
+        if (Array.isArray(localList)) {
+          for (const localInq of localList) {
+            if (localInq && localInq.id && !list.some(r => r.id === localInq.id || (r.phone === localInq.phone && r.fullName === localInq.fullName))) {
+              list.push(localInq);
+            }
+          }
+        }
+      }
+    } catch (e) {}
+
+    list.sort((a, b) => {
+      const dateA = a.createdAt ? parseTurkishDateTime(a.createdAt) : 0;
+      const dateB = b.createdAt ? parseTurkishDateTime(b.createdAt) : 0;
+      return dateB - dateA;
+    });
+
+    isLoadedFromCloud = true;
+    try {
+      localStorage.setItem('gamze_inquiries', JSON.stringify(list));
+    } catch (e) {}
+
+    callback(list);
+  }, (err) => {
+    console.error('Inquiries live subscription error:', err);
+    // On network failure, read from local cache
+    try {
+      const raw = localStorage.getItem('gamze_inquiries');
+      if (raw) {
+        callback(JSON.parse(raw));
+      }
+    } catch (e) {}
+  });
+
+  return unsubscribe;
 }
 
 // Simple date parser helper for "12.07.2026 11:32:09" style Turkish date-time strings

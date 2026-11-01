@@ -3,12 +3,13 @@ import {
   X, User, Lock, Key, LogOut, CheckCircle2, AlertCircle, Plus, Trash2, Edit, Save, 
   Calendar, BookOpen, Clock, BarChart2, Award, Sparkles, Filter, RefreshCw, ChevronRight, 
   Search, Shield, GraduationCap, Check, FileText, Sliders, ArrowUpRight, TrendingUp, HeartPulse, Eye, Users, Printer, Bookmark,
-  FileUp, Download
+  FileUp, Download, Mail, Phone, MessageSquare, Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   StudentAccount, StudentExerciseLog, DailyStudyLog, MockExamLog,
-  ParentAccount, BookReadingLog, TopicCumulativeStat, StudentScheduleRecord
+  ParentAccount, BookReadingLog, TopicCumulativeStat, StudentScheduleRecord,
+  ContactSubmission
 } from '../types';
 import { 
   dbGetCoachingStudents, dbAddCoachingStudent, dbUpdateCoachingStudent, dbDeleteCoachingStudent, DEFAULT_COACHING_STUDENTS,
@@ -19,7 +20,8 @@ import {
   dbGetCurriculumProgress, dbSaveCurriculumProgress, dbAddStudentLog,
   dbGetStudentSchedule, dbMarkScheduleAsRead,
   dbGetCoachingParents, dbAddCoachingParent, dbUpdateCoachingParent, dbDeleteCoachingParent,
-  dbGetBookReadingLogs, dbAddBookReadingLog, dbUpdateBookReadingLog, dbDeleteBookReadingLog
+  dbGetBookReadingLogs, dbAddBookReadingLog, dbUpdateBookReadingLog, dbDeleteBookReadingLog,
+  dbSubscribeToInquiries, dbUpdateInquiryStatus, dbDeleteInquiry
 } from '../lib/firebase';
 import AnxietyControlPanel from './AnxietyControlPanel';
 import SchedulePlanner from './SchedulePlanner';
@@ -426,7 +428,13 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
 
   // Active Main Tabs
   const [studentActiveTab, setStudentActiveTab] = useState<'program' | 'kaygi' | 'gunluk' | 'kitap' | 'analiz' | 'deneme' | 'mufredat'>('program');
-  const [coachActiveTab, setCoachActiveTab] = useState<'ogrenciler' | 'veliler' | 'ders_programi' | 'konu_raporlari' | 'kitap_okuma' | 'egzersiz_raporu' | 'gunluk_rapor' | 'deneme_rapor'>('ogrenciler');
+  const [coachActiveTab, setCoachActiveTab] = useState<'basvurular' | 'ogrenciler' | 'veliler' | 'ders_programi' | 'konu_raporlari' | 'kitap_okuma' | 'egzersiz_raporu' | 'gunluk_rapor' | 'deneme_rapor'>('ogrenciler');
+
+  // Inquiries (Gelen Başvurular) State for Coach
+  const [inquiriesList, setInquiriesList] = useState<ContactSubmission[]>([]);
+  const [inquiryFilter, setInquiryFilter] = useState<'Tümü' | 'Yeni' | 'Görüşüldü' | 'Arşivlendi'>('Tümü');
+  const [inquirySearch, setInquirySearch] = useState('');
+  const [inquiryMgmtMsg, setInquiryMgmtMsg] = useState('');
 
   // Student Schedule State
   const [studentSchedule, setStudentSchedule] = useState<StudentScheduleRecord | null>(null);
@@ -546,6 +554,62 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
       }
     }
   }, [isOpen]);
+
+  // Live real-time subscription for inquiries in Coach View
+  useEffect(() => {
+    if (isOpen) {
+      const unsub = dbSubscribeToInquiries((list) => {
+        setInquiriesList(list);
+      });
+      return () => unsub();
+    }
+  }, [isOpen]);
+
+  // Convert Inquiry to registered coaching student
+  const handleConvertInquiryToStudent = async (inq: ContactSubmission) => {
+    try {
+      const base = inq.fullName.toLowerCase()
+        .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
+        .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
+        .replace(/[^a-z0-9]/g, '');
+      let generatedUsername = base || 'ogrenci';
+      if (studentsList.some(s => s.username === generatedUsername)) {
+        generatedUsername = `${generatedUsername}${Math.floor(Math.random() * 89 + 10)}`;
+      }
+      const firstName = inq.fullName.split(' ')[0] || 'Ogrenci';
+      const cleanFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+      const generatedPassword = `${cleanFirstName}2026`;
+
+      const created = await dbAddCoachingStudent({
+        username: generatedUsername,
+        password: generatedPassword,
+        fullName: inq.fullName.trim(),
+        studentClass: inq.studentClass || '8. Sınıf (LGS)',
+        createdAt: new Date().toLocaleDateString('tr-TR')
+      });
+
+      setStudentsList(prev => [...prev, created]);
+      await dbUpdateInquiryStatus(inq.id, 'Görüşüldü');
+
+      setInquiryMgmtMsg(`🎉 "${inq.fullName}" başarıyla Koçluk Öğrenci Listesine eklendi! Giriş Bilgileri -> Kullanıcı Adı: ${generatedUsername} / Şifre: ${generatedPassword}`);
+      setTimeout(() => setInquiryMgmtMsg(''), 8000);
+    } catch (err) {
+      console.error('Convert inquiry error:', err);
+      alert('Öğrenci eklenirken bir hata oluştu.');
+    }
+  };
+
+  const handleUpdateInquiryStatus = async (id: string, status: 'Yeni' | 'Görüşüldü' | 'Arşivlendi') => {
+    await dbUpdateInquiryStatus(id, status);
+    setInquiriesList(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+  };
+
+  const handleDeleteInquiry = async (id: string, name: string) => {
+    if (confirm(`"${name}" adlı başvuru kaydını silmek istediğinize emin misiniz?`)) {
+      await dbDeleteInquiry(id);
+      setInquiriesList(prev => prev.filter(i => i.id !== id));
+    }
+  };
 
   // Load student progress and schedule when logged in as student or parent
   useEffect(() => {
@@ -1805,7 +1869,28 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
             <div className="space-y-6">
               
               {/* Coach Summary Cards Header */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                {/* Gelen Başvurular Summary Card */}
+                <div 
+                  onClick={() => setCoachActiveTab('basvurular')}
+                  className="bg-white p-3.5 rounded-xl shadow-xs border-2 border-emerald-500/40 hover:border-emerald-600 transition-all cursor-pointer flex items-center gap-2.5 group"
+                >
+                  <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-lg shrink-0 group-hover:scale-105 transition-transform">
+                    <Mail className="w-5 h-5 text-emerald-700" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-emerald-900 font-extrabold uppercase truncate block">Başvurular</span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <h4 className="text-xl font-black text-slate-900 leading-none">{inquiriesList.length}</h4>
+                      {inquiriesList.filter(i => i.status === 'Yeni').length > 0 && (
+                        <span className="bg-rose-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full animate-pulse">
+                          {inquiriesList.filter(i => i.status === 'Yeni').length} Yeni
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="bg-white p-3.5 rounded-xl shadow-xs border border-stone-200 flex items-center gap-2.5">
                   <div className="p-2.5 bg-amber-100 text-[#C5A059] rounded-lg shrink-0">
                     <User className="w-5 h-5" />
@@ -1869,6 +1954,23 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
 
               {/* Coach Nav Tabs */}
               <div className="flex overflow-x-auto no-scrollbar scrollbar-none bg-white p-1.5 rounded-xl shadow border border-stone-200 gap-1.5 snap-x">
+                <button
+                  onClick={() => setCoachActiveTab('basvurular')}
+                  className={`shrink-0 min-w-max py-2 sm:py-2.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    coachActiveTab === 'basvurular'
+                      ? 'bg-emerald-700 text-white shadow'
+                      : 'text-slate-700 hover:text-slate-900 hover:bg-stone-50'
+                  }`}
+                >
+                  <Mail className="w-4 h-4 text-emerald-300 shrink-0" />
+                  <span>Gelen Başvurular</span>
+                  {inquiriesList.filter(i => i.status === 'Yeni').length > 0 && (
+                    <span className="bg-rose-600 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full animate-pulse ml-0.5">
+                      {inquiriesList.filter(i => i.status === 'Yeni').length} Yeni
+                    </span>
+                  )}
+                </button>
+
                 <button
                   onClick={() => setCoachActiveTab('ogrenciler')}
                   className={`shrink-0 min-w-max py-2 sm:py-2.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
@@ -1965,6 +2067,307 @@ export default function CoachingPanel({ isOpen, onClose }: CoachingPanelProps) {
                   <span>Egzersiz Raporları</span>
                 </button>
               </div>
+
+              {/* COACH TAB 0: GELEN BAŞVURULAR (ÖN GÖRÜŞME TALEPLERİ) */}
+              {coachActiveTab === 'basvurular' && (
+                <div className="space-y-6">
+                  {/* Success Alert */}
+                  {inquiryMgmtMsg && (
+                    <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl flex items-center gap-3 shadow-xs">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <span className="text-xs sm:text-sm font-bold">{inquiryMgmtMsg}</span>
+                    </div>
+                  )}
+
+                  {/* Quick Stat Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs flex items-center gap-3 text-left">
+                      <div className="p-2.5 bg-blue-50 text-blue-700 rounded-xl shrink-0">
+                        <Users className="w-5 h-5" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Toplam Başvuru</span>
+                        <span className="text-xl font-black text-slate-800">{inquiriesList.length}</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-2xl border border-rose-200 shadow-xs flex items-center gap-3 text-left">
+                      <div className="p-2.5 bg-rose-50 text-rose-700 rounded-xl shrink-0 animate-pulse">
+                        <AlertCircle className="w-5 h-5" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[10px] font-bold text-rose-500 uppercase tracking-wider truncate">Bekleyen Yeni</span>
+                        <span className="text-xl font-black text-rose-700">
+                          {inquiriesList.filter(i => i.status === 'Yeni').length}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs flex items-center gap-3 text-left">
+                      <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl shrink-0">
+                        <CheckCircle2 className="w-5 h-5" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Görüşülenler</span>
+                        <span className="text-xl font-black text-slate-800">
+                          {inquiriesList.filter(i => i.status === 'Görüşüldü').length}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs flex items-center gap-3 text-left">
+                      <div className="p-2.5 bg-stone-100 text-stone-600 rounded-xl shrink-0">
+                        <Bookmark className="w-5 h-5" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Arşivlenen</span>
+                        <span className="text-xl font-black text-slate-800">
+                          {inquiriesList.filter(i => i.status === 'Arşivlendi').length}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Controls: Search, Filter, Status */}
+                  <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                    {/* Status Tabs */}
+                    <div className="flex flex-wrap gap-1">
+                      {(['Tümü', 'Yeni', 'Görüşüldü', 'Arşivlendi'] as const).map((st) => (
+                        <button
+                          key={st}
+                          onClick={() => setInquiryFilter(st)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            inquiryFilter === st
+                              ? 'bg-emerald-700 text-white shadow-xs'
+                              : 'bg-stone-100 text-slate-600 hover:bg-stone-200'
+                          }`}
+                        >
+                          {st}
+                          {st === 'Yeni' && inquiriesList.filter(i => i.status === 'Yeni').length > 0 && (
+                            <span className="ml-1.5 px-1.5 py-0.2 bg-rose-600 text-white rounded-full text-[9px] font-black">
+                              {inquiriesList.filter(i => i.status === 'Yeni').length}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Search Bar */}
+                    <div className="relative flex-1 sm:max-w-xs">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="İsim, telefon veya mesajda ara..."
+                        value={inquirySearch}
+                        onChange={(e) => setInquirySearch(e.target.value)}
+                        className="w-full pl-9 pr-3 py-1.5 bg-stone-50 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-emerald-600 focus:bg-white transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Inquiries Cards List */}
+                  {(() => {
+                    const filtered = inquiriesList.filter(inq => {
+                      if (!inq) return false;
+                      const matchesStatus = inquiryFilter === 'Tümü' || inq.status === inquiryFilter;
+                      const q = inquirySearch.toLowerCase().trim();
+                      if (!q) return matchesStatus;
+                      const fullName = (inq.fullName || '').toLowerCase();
+                      const phone = (inq.phone || '').toLowerCase();
+                      const email = (inq.email || '').toLowerCase();
+                      const sClass = (inq.studentClass || '').toLowerCase();
+                      const serv = (inq.selectedService || '').toLowerCase();
+                      const msg = (inq.message || '').toLowerCase();
+                      const matchesSearch = fullName.includes(q) || phone.includes(q) || email.includes(q) || sClass.includes(q) || serv.includes(q) || msg.includes(q);
+                      return matchesStatus && matchesSearch;
+                    });
+
+                    if (filtered.length === 0) {
+                      return (
+                        <div className="bg-white p-12 rounded-2xl border-2 border-dashed border-stone-200 text-center space-y-3">
+                          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                            <Mail className="w-6 h-6" />
+                          </div>
+                          <h4 className="font-serif font-bold text-slate-900 text-base">Başvuru Bulunamadı</h4>
+                          <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+                            {inquirySearch ? 'Arama kriterlerinize uygun başvuru kaydı bulunmamaktadır.' : 'Seçtiğiniz filtrede henüz başvuru kaydı yok. Yeni başvurular anında burada listelenir.'}
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {filtered.map((inq) => {
+                          const cleanPhone = (inq.phone || '').replace(/\D/g, '');
+                          const waPhone = cleanPhone.startsWith('90') ? cleanPhone : cleanPhone.startsWith('0') ? `90${cleanPhone.slice(1)}` : `90${cleanPhone}`;
+                          const waMessage = encodeURIComponent(`Merhaba ${inq.fullName}, Gamze Tosun Eğitim Danışmanlığı web sitemiz üzerinden ilettiğiniz danışmanlık başvurunuz için ulaşıyorum.`);
+                          const isAlreadyStudent = studentsList.some(s => s.fullName.toLowerCase().trim() === inq.fullName.toLowerCase().trim());
+
+                          return (
+                            <div 
+                              key={inq.id} 
+                              className={`bg-white rounded-2xl p-5 border shadow-xs space-y-4 text-left transition-all relative ${
+                                inq.status === 'Yeni' ? 'border-emerald-300 ring-2 ring-emerald-500/10' : 'border-stone-200'
+                              }`}
+                            >
+                              {/* Header: Name, ID, Badges */}
+                              <div className="flex items-start justify-between gap-3 border-b border-stone-100 pb-3">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="font-serif font-black text-slate-900 text-base leading-tight">
+                                      {inq.fullName}
+                                    </h4>
+                                    {inq.status === 'Yeni' && (
+                                      <span className="bg-rose-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                                        Yeni
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400 font-mono">
+                                    <span>ID: #{inq.id}</span>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1 font-sans">
+                                      <Calendar className="w-3 h-3" />
+                                      {inq.createdAt}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold shrink-0 ${
+                                  inq.status === 'Yeni'
+                                    ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                                    : inq.status === 'Görüşüldü'
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                    : 'bg-stone-200 text-stone-700 border border-stone-300'
+                                }`}>
+                                  {inq.status}
+                                </span>
+                              </div>
+
+                              {/* Class & Service Badges */}
+                              <div className="flex flex-wrap gap-2">
+                                <span className="text-[11px] font-black text-slate-800 bg-stone-100 px-3 py-1 rounded-lg border border-stone-200">
+                                  🎓 {inq.studentClass || 'Sınıf Belirtilmedi'}
+                                </span>
+                                <span className="text-[11px] font-black text-emerald-800 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">
+                                  ⭐ {inq.selectedService || 'Öğrenci Koçluğu'}
+                                </span>
+                              </div>
+
+                              {/* Candidate Message & Study Goals */}
+                              {inq.message && (
+                                <div className="bg-stone-50 rounded-xl p-3.5 border border-stone-200/60 space-y-1">
+                                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
+                                    Öğrencinin Hedefi ve Mesajı
+                                  </span>
+                                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                                    "{inq.message}"
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Contact Details & Quick Call Buttons */}
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+                                <a
+                                  href={`tel:${cleanPhone}`}
+                                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                                  title="Adayı Hemen Ara"
+                                >
+                                  <Phone className="w-3.5 h-3.5" />
+                                  <span>Hemen Ara</span>
+                                </a>
+
+                                <a
+                                  href={`https://api.whatsapp.com/send?phone=${waPhone}&text=${waMessage}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                                  title="WhatsApp ile Mesaj Gönder"
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                  <span>WhatsApp</span>
+                                </a>
+
+                                {inq.email ? (
+                                  <a
+                                    href={`mailto:${inq.email}`}
+                                    className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 py-2.5 px-3 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                                    title="E-posta Gönder"
+                                  >
+                                    <Mail className="w-3.5 h-3.5" />
+                                    <span>E-Posta</span>
+                                  </a>
+                                ) : (
+                                  <div className="col-span-2 sm:col-span-1 flex items-center justify-center py-2.5 px-3 bg-stone-100 text-stone-400 rounded-xl text-xs font-medium">
+                                    <span>E-Posta Yok</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Action: Convert to Student & Status Toggle */}
+                              <div className="pt-3 border-t border-stone-100 flex flex-col gap-2">
+                                {!isAlreadyStudent ? (
+                                  <button
+                                    onClick={() => handleConvertInquiryToStudent(inq)}
+                                    className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-[#C5A059] hover:brightness-105 active:scale-[0.99] text-slate-950 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-all"
+                                    title="Bu başvuruyu doğrudan Koçluk Öğrenci Listesine hesap olarak aktarır"
+                                  >
+                                    <GraduationCap className="w-4 h-4 text-slate-950" />
+                                    <span>Tek Tıkla Öğrenci Olarak Kaydet</span>
+                                  </button>
+                                ) : (
+                                  <div className="p-2 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-1.5">
+                                    <Check className="w-4 h-4 text-emerald-600" />
+                                    <span>Bu öğrenci zaten Koçluk Sisteminde kayıtlı</span>
+                                  </div>
+                                )}
+
+                                <div className="flex items-center justify-between gap-1.5 pt-1">
+                                  <div className="flex items-center gap-1">
+                                    {inq.status !== 'Görüşüldü' && (
+                                      <button
+                                        onClick={() => handleUpdateInquiryStatus(inq.id, 'Görüşüldü')}
+                                        className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-bold cursor-pointer transition-colors"
+                                      >
+                                        ✓ Görüşüldü Yap
+                                      </button>
+                                    )}
+                                    {inq.status !== 'Arşivlendi' && (
+                                      <button
+                                        onClick={() => handleUpdateInquiryStatus(inq.id, 'Arşivlendi')}
+                                        className="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-slate-700 border border-stone-200 rounded-lg text-[11px] font-bold cursor-pointer transition-colors"
+                                      >
+                                        Arşive Al
+                                      </button>
+                                    )}
+                                    {inq.status === 'Arşivlendi' && (
+                                      <button
+                                        onClick={() => handleUpdateInquiryStatus(inq.id, 'Yeni')}
+                                        className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-[11px] font-bold cursor-pointer transition-colors"
+                                      >
+                                        Yeniye Taşı
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  <button
+                                    onClick={() => handleDeleteInquiry(inq.id, inq.fullName)}
+                                    className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg border border-rose-200 cursor-pointer transition-colors"
+                                    title="Başvuruyu Sil"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
 
               {/* COACH TAB: DERS PROGRAMI ROBOTU */}
               {coachActiveTab === 'ders_programi' && (

@@ -228,16 +228,18 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, o
             >
               <Zap className="w-4 h-4" />
             </button>
+            {/* Yönetici & Başvuru Paneli Mobil Butonu */}
             <button
+              id="btn-admin-portal-mobile-top"
               onClick={onOpenAdmin}
-              className="p-1.5 text-[#2D2D2D]/60 hover:text-[#C5A059] hover:bg-[#2D2D2D]/5 border border-[#2D2D2D]/20 relative"
-              title="Yönetici Paneli"
+              className="flex items-center gap-1 px-2 py-1.5 bg-slate-900 text-white hover:bg-slate-800 border border-slate-700 relative shrink-0 shadow-xs"
+              title="Yönetici Paneli (Başvurular & Onaylar)"
             >
-              <User className="w-4 h-4" />
+              <Settings className="w-3.5 h-3.5 text-[#C5A059]" />
+              <span className="text-[10px] sm:text-[11px] font-black tracking-wider uppercase">Yönetici</span>
               {notifCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                <span className="flex items-center justify-center bg-rose-600 text-white font-extrabold text-[8px] min-w-4 h-4 px-1 rounded-full leading-none shrink-0 shadow-sm animate-pulse ml-0.5">
+                  {notifCount}
                 </span>
               )}
             </button>
@@ -328,20 +330,18 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAdmin, o
                     setIsOpen(false);
                     onOpenAdmin();
                   }}
-                  className="flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-widest text-[#2D2D2D]/70 bg-[#2D2D2D]/5 hover:bg-[#2D2D2D]/10 transition-colors relative"
+                  className="flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider text-[#2D2D2D] bg-[#2D2D2D]/5 hover:bg-[#2D2D2D]/10 border border-[#2D2D2D]/10 transition-colors relative"
                 >
-                  <Settings className="w-4 h-4 text-[#C5A059]" />
-                  <span>Yönetici Girişi</span>
-                  {notifCount > 0 && (
-                    <span className="flex items-center gap-1.5 ml-1">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-                      </span>
-                      <span className="bg-rose-600 text-white font-extrabold text-[8px] px-1.5 py-0.5 rounded-full leading-none">
-                        {notifCount}
-                      </span>
+                  <div className="flex items-center gap-2">
+                    <Settings className="w-4 h-4 text-[#C5A059]" />
+                    <span>Yönetici Paneli (Gelen Başvurular)</span>
+                  </div>
+                  {notifCount > 0 ? (
+                    <span className="flex items-center gap-1 bg-rose-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full animate-pulse">
+                      {notifCount} Yeni
                     </span>
+                  ) : (
+                    <span className="text-[10px] text-[#2D2D2D]/50 font-mono">Giriş</span>
                   )}
                 </button>
                 <button

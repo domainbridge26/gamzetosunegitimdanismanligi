@@ -3,9 +3,31 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
-import pdfParse from "pdf-parse";
 
 dotenv.config();
+
+/**
+ * Safely extracts raw text from a PDF Buffer using pdf-parse v2/v1 without crashing ES module loader.
+ */
+async function extractPdfText(pdfBuffer: Buffer): Promise<string> {
+  try {
+    const pdfModule: any = await import("pdf-parse");
+    if (pdfModule.PDFParse) {
+      const parser = new pdfModule.PDFParse({ data: pdfBuffer });
+      const textResult = await parser.getText();
+      return textResult?.text || "";
+    } else if (typeof pdfModule.default === "function") {
+      const parsed = await pdfModule.default(pdfBuffer);
+      return parsed?.text || "";
+    } else if (typeof pdfModule === "function") {
+      const parsed = await pdfModule(pdfBuffer);
+      return parsed?.text || "";
+    }
+  } catch (err) {
+    console.warn("Direct PDF text extraction warning:", err);
+  }
+  return "";
+}
 
 // Common Turkish school and exam subjects for heuristic text extraction
 const TURKISH_SUBJECTS = [
@@ -220,8 +242,7 @@ async function startServer() {
     // 1. Extract raw text from PDF buffer
     try {
       const pdfBuffer = Buffer.from(cleanBase64, "base64");
-      const parsedPdf = await pdfParse(pdfBuffer);
-      extractedText = parsedPdf.text || "";
+      extractedText = await extractPdfText(pdfBuffer);
     } catch (pdfErr) {
       console.warn("Direct PDF text extraction warning:", pdfErr);
     }

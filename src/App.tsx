@@ -22,7 +22,14 @@ import {
   Linkedin, Calendar, Sparkles, BookOpen, Clock, Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { dbGetInquiries, dbGetTestimonials, dbIncrementPageViews, dbSubscribeToPageViews, PageViews } from './lib/firebase';
+import { 
+  dbGetInquiries, 
+  dbGetTestimonials, 
+  dbIncrementPageViews, 
+  dbSubscribeToPageViews, 
+  dbSubscribeToInquiries,
+  PageViews 
+} from './lib/firebase';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState('hero');
@@ -55,16 +62,25 @@ export default function App() {
       setPageViews(views);
     });
 
+    const unsubInquiries = dbSubscribeToInquiries((inqs) => {
+      const newInqs = inqs.filter((i: any) => i.status === 'Yeni').length;
+      dbGetTestimonials().then(tests => {
+        const pendingTests = tests.filter((t: any) => t.approved === false).length;
+        setNotifCount(newInqs + pendingTests);
+      }).catch(() => {
+        setNotifCount(newInqs);
+      });
+    });
+
     // Listen to custom events
     window.addEventListener('gamze-new-inquiry', updateNotifCount);
     window.addEventListener('gamze-new-testimonial', updateNotifCount);
     window.addEventListener('gamze-testimonials-updated', updateNotifCount);
-    
-    // Also listen to storage events
     window.addEventListener('storage', updateNotifCount);
 
     return () => {
       unsubViews();
+      unsubInquiries();
       window.removeEventListener('gamze-new-inquiry', updateNotifCount);
       window.removeEventListener('gamze-new-testimonial', updateNotifCount);
       window.removeEventListener('gamze-testimonials-updated', updateNotifCount);
